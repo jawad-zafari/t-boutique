@@ -1,0 +1,208 @@
+// --------------------------------------------------------
+// STYLES DE LA RECHERCHE ET CATALOGUE
+// Architecture Mobile-First standard DWWM
+// --------------------------------------------------------
+
+.search-container {
+    width: 100%; 
+    max-width: 1300px; 
+    margin: 0 auto; 
+    padding: 15px 10px; 
+    
+    @media (min-width: $breakpoint-md) { 
+        padding: 25px 15px; 
+    }
+}
+
+/* =============================================================================
+   BARRE D'OUTILS HORIZONTALE (FILTRES ET TRIS) - GRILLE 2x2 SUR MOBILE
+   ============================================================================= */
+.search-toolbar {
+    background-color: $bg-white; 
+    border: 1px solid $border-color; 
+    border-radius: $radius-lg; 
+    box-shadow: $shadow-sm;
+    padding: 12px; 
+    margin-bottom: 25px; 
+    
+    // DESIGN MOBILE : Grille parfaite 2 colonnes
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    align-items: center;
+
+    // DESIGN DESKTOP : Ligne horizontale
+    @media (min-width: $breakpoint-lg) { 
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap; 
+        justify-content: flex-start; 
+        gap: 15px;
+    }
+
+    // Style commun pour tous les Selects
+    select.form-control {
+        width: 100%; 
+        padding: 8px 10px; 
+        background-color: $bg-body; 
+        color: $color-text; 
+        border: 1px solid $border-color; 
+        border-radius: $radius-sm; 
+        outline: none; 
+        font-size: 0.8rem; 
+        cursor: pointer; 
+        font-family: $font-main;
+        transition: all $transition-fast;
+        font-weight: 600;
+        height: 38px; 
+        
+        @media (min-width: $breakpoint-lg) {
+            width: auto; 
+            min-width: 130px;
+            font-size: 0.85rem;
+        }
+        
+        &:focus, &:hover { 
+            border-color: $color-primary; 
+            box-shadow: $shadow-glow; 
+        }
+    }
+}
+
+/* Interrupteur (Toggle) En stock */
+.toggle-switch {
+    display: flex; 
+    align-items: center; 
+    justify-content: flex-start;
+    gap: 8px; 
+    cursor: pointer; 
+    -webkit-user-select: none;
+    user-select: none; 
+    font-size: 0.8rem; 
+    font-weight: 800; 
+    color: $color-text;
+    height: 38px;
+    margin: 0;
+
+    @media (min-width: $breakpoint-lg) {
+        margin-right: auto; 
+        font-size: 0.85rem;
+    }
+
+    input { display: none; }
+    
+    .slider {
+        position: relative; 
+        width: 38px; 
+        height: 22px; 
+        background-color: #cbd5e1; 
+        border-radius: 34px; 
+        transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        flex-shrink: 0;
+        
+        &:before { 
+            content: ""; 
+            position: absolute; 
+            height: 16px; 
+            width: 16px; 
+            left: 3px; 
+            bottom: 3px; 
+            background-color: white; 
+            border-radius: 50%; 
+            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+    }
+    
+    input:checked + .slider { 
+        background-color: $color-primary; 
+        box-shadow: $shadow-glow;
+    }
+    
+    input:checked + .slider:before { 
+        transform: translateX(16px); 
+    }
+}
+
+/* =============================================================================
+   GRILLE DES PRODUITS
+   ============================================================================= */
+.product-grid-wrapper {
+    width: 100%;
+}
+
+.product-grid {
+    list-style: none; padding: 0; margin: 0;
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; 
+    
+    @media (min-width: $breakpoint-md) { grid-template-columns: repeat(3, 1fr); gap: 15px; }
+    @media (min-width: $breakpoint-lg) { grid-template-columns: repeat(4, 1fr); gap: 20px; }
+    @media (min-width: $breakpoint-xl) { grid-template-columns: repeat(5, 1fr); } 
+}
+
+.product-card {
+    background: $bg-white; border-radius: $radius-lg; text-decoration: none; display: flex; flex-direction: column; position: relative; border: 1px solid $border-color; padding: 0; overflow: hidden; transition: transform $transition-fast, box-shadow $transition-fast;
+    
+    &:hover { transform: translateY(-5px); box-shadow: $shadow-glow; border-color: $color-primary;}
+
+    .btn-favorite-toggle {
+        position: absolute; top: 10px; left: 10px; background: rgba(255, 255, 255, 0.9); border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; color: #adb5bd; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        &:hover { transform: scale(1.15); color: $color-danger; }
+        &.active { color: $color-danger; i { font-weight: 900; } }
+    }
+
+    .badge-item { position: absolute; top: 10px; right: 10px; font-size: 0.65rem; font-weight: bold; padding: 4px 8px; border-radius: 20px; z-index: 2; box-shadow: $shadow-sm; }
+    .badge-discount { background: $color-danger; color: $bg-white; }
+    .badge-new { background: $color-success; color: $bg-white; }
+    
+    a { display: block; width: 100%; text-decoration: none;}
+
+    .image-wrapper { 
+        width: 100%; height: 200px; padding: 0; display: flex; align-items: center; justify-content: center; background: $bg-white; border-bottom: 1px solid $border-color;
+        img { width: 100%; height: 100%; object-fit: cover; transition: transform $transition-normal; }
+    }
+    
+    &:hover .image-wrapper img { transform: scale(1.05); }
+    
+    .card-content { 
+        display: flex; flex-direction: column; flex-grow: 1; padding: 15px; text-align: left;
+        
+        .product-title-link {
+            text-decoration: none;
+            .product-title, h4 { font-size: $font-size-sm; color: $color-text; margin: 0 0 10px 0; line-height: 1.4; font-weight: bold; height: 40px; overflow: hidden; transition: color $transition-fast; @media (min-width: $breakpoint-md) { font-size: $font-size-md; } }
+            &:hover .product-title, &:hover h4 { color: $color-primary; }
+        }
+        
+        .price-cart-row {
+            display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 12px; border-top: 1px dashed #e9ecef;
+            
+            .product-price-container { 
+                display: flex; flex-direction: column; gap: 2px; margin: 0; text-align: left; 
+                .price-old { font-size: 0.75rem; color: $color-muted; text-decoration: line-through; font-weight: 600; line-height: 1; } 
+                .product-price { 
+                    font-weight: 900; font-size: 1.1rem; margin: 0; line-height: 1; color: $color-primary; 
+                    &.price-danger { color: $color-danger; text-shadow: $shadow-glow; } 
+                } 
+            }
+            
+            .btn-quick-add { 
+                background-color: rgba(59, 91, 219, 0.1); border: 1px solid transparent; color: $color-primary; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); font-size: 1.1rem; flex-shrink: 0; 
+                &:hover { background-color: $color-primary; color: $bg-white; box-shadow: 0 4px 10px rgba(59, 91, 219, 0.3); transform: scale(1.1); } 
+            }
+        }
+    }
+}
+
+.pagination-container {
+    display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin-top: 30px;
+    .btn-page { 
+        background-color: $bg-white; color: $color-text; border: 1px solid $border-color; padding: 6px 12px; border-radius: $radius-sm; cursor: pointer; transition: all $transition-fast; font-size: $font-size-sm; font-weight: bold; min-width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; 
+        &:hover { background-color: $bg-white; border-color: $color-primary; color: $color-primary; box-shadow: $shadow-sm; } 
+        &.active { background-color: $color-primary; color: $bg-white; border-color: $color-primary; box-shadow: $shadow-glow; } 
+    }
+}
+
+.loading-state, .empty-state, .error-state {
+    grid-column: 1 / -1; text-align: center; padding: 50px 20px; background: $bg-white; border-radius: $radius-lg; border: 1px solid $border-color; color: $color-muted; font-weight: bold;
+    .loading-icon { color: $color-primary; margin-bottom: 15px; }
+}

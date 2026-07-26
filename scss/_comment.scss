@@ -1,0 +1,67 @@
+// --------------------------------------------------------
+// STYLES DE LA PAGE D'AVIS/COMMENTAIRE (LIÉ AUX VARIABLES LUXE)
+// --------------------------------------------------------
+
+.comment-container {
+    max-width: 1200px; margin: 10px auto; padding: 0 10px; font-family: $font-main;
+    @media (min-width: $breakpoint-md) { margin: 20px auto; padding: 0 15px; }
+}
+
+.comment-form {
+    display: flex; flex-direction: column; gap: 15px; background-color: $bg-white; border-radius: $radius-sm; box-shadow: $shadow-sm; overflow: hidden; border: 1px solid $border-color;
+    @media (min-width: $breakpoint-md) { flex-direction: row; gap: 30px; }
+}
+
+.product-summary {
+    background-color: $bg-light; padding: 15px 10px; text-align: center; border-bottom: 1px solid $border-color;
+    @media (min-width: $breakpoint-md) { width: 350px; padding: 30px 20px; border-bottom: none; border-right: 1px solid $border-color; }
+    
+    .product-img { width: 100%; max-width: 150px; border-radius: $radius-sm; box-shadow: $shadow-sm; margin-bottom: 15px; background-color: $bg-body; padding: 10px; border: 1px solid $border-color; @media (min-width: $breakpoint-md) { max-width: 250px; margin-bottom: 20px; } }
+    .product-title { font-size: $font-size-md; color: $color-text; margin-bottom: 6px; font-weight: bold; @media (min-width: $breakpoint-md) { font-size: $font-size-lg; margin-bottom: 10px; } }
+    .product-desc { color: $color-muted; font-size: $font-size-xs; @media (min-width: $breakpoint-md) { font-size: $font-size-sm; } }
+}
+
+.evaluation-section {
+    flex: 1; padding: 15px 10px;
+    @media (min-width: $breakpoint-md) { padding: 30px 20px; } @media (min-width: $breakpoint-lg) { padding: 40px; }
+    
+    .section-title { font-size: $font-size-md; color: $color-text; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; i { color: $color-primary; } @media (min-width: $breakpoint-md) { font-size: $font-size-lg; margin-bottom: 25px; gap: 10px; } }
+}
+
+.sliders-grid {
+    display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 20px;
+    @media (min-width: $breakpoint-lg) { grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 30px; }
+    
+    .slider-group {
+        label { display: block; margin-bottom: 6px; font-weight: bold; font-size: $font-size-xs; color: $color-muted; @media (min-width: $breakpoint-md) { margin-bottom: 8px; font-size: $font-size-sm; } }
+        .range-wrapper { display: flex; align-items: center; gap: 10px; @media (min-width: $breakpoint-md) { gap: 15px; } }
+        
+        .native-range {
+            flex: 1; -webkit-appearance: none; height: 4px; background: $bg-body; border: 1px solid $border-color; border-radius: 4px; outline: none; @media (min-width: $breakpoint-md) { height: 6px; border-radius: 5px; }
+            &::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: $color-primary; cursor: pointer; transition: transform $transition-fast; box-shadow: $shadow-glow; &:hover { transform: scale(1.2); } @media (min-width: $breakpoint-md) { width: 20px; height: 20px; } }
+        }
+        
+        .range-badge { background-color: $color-primary; color: $bg-body; padding: 2px 6px; border-radius: $radius-sm; font-weight: bold; font-size: $font-size-xs; min-width: 28px; text-align: center; @media (min-width: $breakpoint-md) { padding: 4px 10px; font-size: $font-size-sm; min-width: 35px; } }
+    }
+}
+
+.divider { border: none; border-top: 1px dashed $border-color; margin: 15px 0; @media (min-width: $breakpoint-md) { margin: 30px 0; } }
+
+.form-group {
+    margin-bottom: 12px; @media (min-width: $breakpoint-md) { margin-bottom: 20px; }
+    
+    .form-control { width: 100%; padding: 8px 10px; border: 1px solid $border-color; border-radius: $radius-sm; font-family: $font-main; font-size: $font-size-xs; background-color: $bg-body; color: $color-text; transition: border-color $transition-fast, box-shadow $transition-fast; @media (min-width: $breakpoint-md) { padding: 12px 15px; font-size: $font-size-sm; } &:focus { border-color: $color-primary; outline: none; box-shadow: $shadow-glow; } }
+    
+    .input-success { border-left: 3px solid $color-success; @media (min-width: $breakpoint-md) { border-left-width: 4px; } }
+    .input-danger { border-left: 3px solid $color-danger; @media (min-width: $breakpoint-md) { border-left-width: 4px; } }
+    
+    .textarea-large { min-height: 80px; resize: vertical; @media (min-width: $breakpoint-md) { min-height: 150px; } }
+}
+
+.form-row { display: flex; flex-direction: column; gap: 12px; @media (min-width: $breakpoint-md) { flex-direction: row; gap: 20px; .half { flex: 1; } } }
+
+.form-actions {
+    margin-top: 20px; display: flex; justify-content: flex-end; @media (min-width: $breakpoint-md) { margin-top: 30px; }
+    
+    .btn-submit { background-color: $color-primary; color: $bg-body; border: none; padding: 10px 20px; border-radius: $radius-sm; font-size: $font-size-sm; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all $transition-normal; @media (min-width: $breakpoint-md) { padding: 12px 30px; font-size: $font-size-md; gap: 10px; } &:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: $shadow-glow; } }
+}

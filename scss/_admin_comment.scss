@@ -1,0 +1,90 @@
+// --------------------------------------------------------
+// STYLES DE LA GESTION DES COMMENTAIRES
+// --------------------------------------------------------
+
+.action-select-inline {
+    width: 100%;
+    display: block;
+    margin-bottom: 10px;
+    font-size: $font-size-sm; 
+    padding: 10px;
+    background-color: $bg-light;
+    color: $color-text;
+    border: 1px solid $border-color;
+    border-radius: $radius-sm;
+    transition: all $transition-fast;
+    
+    &:focus {
+        border-color: $color-primary;
+        outline: none;
+        box-shadow: $shadow-glow;
+    }
+    
+    @media (min-width: $breakpoint-md) {
+        width: auto;
+        display: inline-block;
+        min-width: 200px;
+        margin-bottom: 0;
+        padding: 12px;
+    }
+}
+
+.input-comment-small, .textarea-comment {
+    width: 100%;
+    padding: 8px; 
+    font-size: $font-size-sm; 
+    border: 1px solid $border-color;
+    border-radius: $radius-sm;
+    background-color: $bg-light;
+    color: $color-text;
+    transition: all $transition-fast;
+
+    &:focus { 
+        border-color: $color-primary; 
+        background-color: $bg-white;
+        outline: none; 
+        box-shadow: $shadow-glow; 
+    }
+}
+
+.input-comment-small { 
+    min-width: 120px; 
+}
+
+.textarea-comment {
+    min-width: 180px; 
+    height: 50px; 
+    resize: vertical;
+    
+    @media (min-width: $breakpoint-lg) { 
+        height: 60px; 
+    }
+}
+
+.status-badge {
+    display: inline-flex; 
+    align-items: center; 
+    gap: 6px;
+    font-weight: 700; 
+    font-size: 0.75rem; 
+    padding: 4px 8px; 
+    border-radius: $radius-sm;
+    white-space: nowrap;
+
+    @media (min-width: $breakpoint-lg) { 
+        font-size: $font-size-sm; 
+        padding: 6px 10px; 
+    }
+
+    &.status-approved { 
+        color: $color-success; 
+        border: 1px solid $color-success; 
+        background-color: rgba(22, 163, 74, 0.1); 
+    }
+    
+    &.status-rejected { 
+        color: $color-danger; 
+        border: 1px solid $color-danger; 
+        background-color: rgba(220, 38, 38, 0.1); 
+    }
+}

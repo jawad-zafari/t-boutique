@@ -1,0 +1,291 @@
+// --------------------------------------------------------
+// STYLES DU PANNEAU D'ADMINISTRATION (MOBILE-FIRST & SÉCURISÉ)
+// --------------------------------------------------------
+
+.admin-container {
+    width: 100%;
+    margin: 0 auto; 
+    padding: 10px;
+    font-family: $font-main;
+
+    @media (min-width: $breakpoint-md) {
+        padding: 20px;
+    }
+}
+
+// En-tête (Header)
+.admin-header {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 20px;
+    background-color: $bg-white;
+    padding: 15px;
+    border-radius: $radius-sm;
+    box-shadow: $shadow-sm;
+    border-left: 3px solid $color-primary;
+    border-right: 1px solid $border-color;
+    border-top: 1px solid $border-color;
+    border-bottom: 1px solid $border-color;
+
+    @media (min-width: $breakpoint-lg) {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        border-left-width: 4px;
+    }
+
+    .admin-breadcrumb {
+        font-size: $font-size-sm;
+        color: $color-text;
+        font-weight: 700;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 5px;
+
+        @media (min-width: $breakpoint-lg) { font-size: $font-size-md; }
+
+        a {
+            color: $color-primary;
+            text-decoration: none;
+            transition: color $transition-fast;
+            &:hover { opacity: 0.8; }
+        }
+        
+        .separator { color: $color-muted; font-weight: normal; margin: 0 4px; }
+        i { color: $color-muted; margin-right: 4px; }
+        .active-breadcrumb-item, .sub-breadcrumb-info { color: $color-text; }
+    }
+
+    .admin-actions {
+        display: flex; 
+        flex-wrap: wrap; 
+        gap: 10px;
+    }
+}
+
+// Tableaux
+.admin-table-wrapper {
+    background-color: $bg-white;
+    border-radius: $radius-sm;
+    box-shadow: $shadow-sm;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 20px;
+    border: 1px solid $border-color;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 700px; 
+    font-size: 0.8rem;
+
+    @media (min-width: $breakpoint-lg) { font-size: $font-size-sm; }
+
+    thead {
+        background-color: $bg-light;
+        
+        th {
+            padding: 12px 10px;
+            text-align: left;
+            font-weight: 700;
+            color: $color-muted;
+            border-bottom: 2px solid $border-color;
+            white-space: nowrap;
+            text-transform: uppercase;
+        }
+    }
+
+    tbody {
+        tr {
+            transition: background-color $transition-fast;
+            border-bottom: 1px solid $border-color;
+            &:hover { background-color: $bg-light; }
+        }
+
+        td {
+            padding: 12px 10px;
+            color: $color-text;
+            vertical-align: middle;
+
+            .text-center { text-align: center; }
+            .text-empty-table { text-align: center; color: $color-muted; font-style: italic; padding: 20px !important; }
+            .font-weight-bold { font-weight: bold; }
+
+            .action-icon {
+                color: $color-muted;
+                font-size: 1.1rem;
+                margin: 0 5px;
+                transition: transform $transition-fast, color $transition-fast;
+                display: inline-block;
+
+                &:hover { transform: scale(1.15); }
+                &.icon-edit:hover, &.icon-list:hover, &.icon-sitemap:hover, &.icon-tags:hover { color: $color-primary; }
+            }
+
+            .admin-checkbox {
+                width: 16px; height: 16px; cursor: pointer;
+                accent-color: $color-primary;
+            }
+        }
+    }
+}
+
+// Boîtes de Formulaires
+.admin-form-box {
+    background-color: $bg-white;
+    padding: 15px;
+    border-radius: $radius-sm;
+    box-shadow: $shadow-sm;
+    width: 100%;
+    border: 1px solid $border-color;
+    
+    @media (min-width: $breakpoint-lg) {
+        padding: 30px;
+        max-width: 800px;
+    }
+
+    &.form-box-wide {
+        max-width: 1000px;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+        
+        @media (min-width: $breakpoint-lg) { margin-bottom: 20px; }
+
+        label {
+            display: block; margin-bottom: 6px; font-weight: 600;
+            color: $color-text; font-size: $font-size-sm;
+            @media (min-width: $breakpoint-lg) { font-size: $font-size-md; margin-bottom: 8px; }
+        }
+
+        .form-control {
+            width: 100%; padding: 10px;
+            border: 1px solid $border-color;
+            border-radius: $radius-sm;
+            font-family: $font-main;
+            font-size: $font-size-sm;
+            background-color: $bg-light;
+            color: $color-text;
+            transition: all $transition-fast;
+
+            @media (min-width: $breakpoint-lg) { padding: 12px; font-size: $font-size-md; }
+
+            &:focus { 
+                border-color: $color-primary; 
+                background-color: $bg-body;
+                outline: none; 
+                box-shadow: $shadow-glow;
+            }
+        }
+    }
+}
+
+// Boutons
+%btn-admin-base {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 8px; padding: 10px 16px; font-size: $font-size-sm;
+    font-weight: 600; border: none; border-radius: $radius-sm;
+    cursor: pointer; font-family: $font-main;
+    transition: all $transition-fast; text-decoration: none;
+
+    @media (min-width: $breakpoint-lg) { padding: 12px 22px; font-size: $font-size-md; }
+}
+
+.btn-admin-primary {
+    @extend %btn-admin-base;
+    background-color: $color-primary; color: #fff;
+    &:hover { opacity: 0.9; box-shadow: $shadow-glow; transform: translateY(-2px); }
+}
+
+.btn-admin-danger {
+    @extend %btn-admin-base;
+    background-color: $color-danger; color: #fff;
+    &:hover { opacity: 0.9; transform: translateY(-2px); }
+}
+
+.btn-admin-submit {
+    @extend %btn-admin-base;
+    background-color: $color-success; color: #fff;
+    margin-top: 10px; width: 100%;
+    
+    @media (min-width: $breakpoint-sm) { width: auto; }
+    &:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+}
+
+.btn-admin-back {
+    @extend %btn-admin-base;
+    background-color: $color-muted; color: #fff;
+    &:hover { opacity: 0.9; transform: translateY(-2px); }
+}
+
+.btn-wide {
+    width: 100% !important;
+    @media (min-width: $breakpoint-md) { width: auto !important; min-width: 250px; }
+}
+
+// ========================================================
+// CLASSES UTILITAIRES POUR IMAGES ET BOUTONS SPÉCIFIQUES
+// ========================================================
+
+.table-img-preview {
+    width: 50px;
+    height: 50px;
+    border-radius: $radius-sm;
+    object-fit: cover;
+    border: 1px solid $border-color;
+    transition: transform $transition-fast;
+
+    &:hover {
+        transform: scale(1.1);
+    }
+}
+
+.current-image-box {
+    margin-bottom: 10px; 
+    padding: 10px; 
+    border: 1px dashed $border-color; 
+    border-radius: $radius-sm; 
+    display: inline-block; 
+    background-color: $bg-light;
+
+    .image-label {
+        display: block; 
+        font-size: 0.85rem; 
+        color: $color-muted; 
+        margin-bottom: 5px;
+        font-weight: 600;
+    }
+
+    img {
+        max-width: 120px; 
+        border-radius: $radius-sm;
+        border: 1px solid $border-color;
+    }
+}
+
+.form-inline-action {
+    display: inline-block;
+    margin: 0;
+}
+
+.btn-icon-transparent {
+    background: none; 
+    border: none; 
+    padding: 0; 
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform $transition-fast;
+
+    &:hover { transform: scale(1.15); }
+
+    &.text-danger {
+        color: $color-danger;
+    }
+}

@@ -1,0 +1,93 @@
+// --------------------------------------------------------
+// COMPOSANTS RÉUTILISABLES (LIÉ AUX VARIABLES LUXE)
+// --------------------------------------------------------
+
+.btn_green {
+    background-color: $color-primary; color: $bg-body; display: block;
+    font-size: $font-size-xs; height: 32px; line-height: 32px; text-align: center; width: 140px;
+    border-radius: $radius-sm; transition: all $transition-fast; font-weight: bold; border: none; cursor: pointer;
+    
+    @media (min-width: $breakpoint-md) { font-size: $font-size-sm; height: 37px; line-height: 37px; width: 170px; }
+    &:hover { opacity: 0.9; box-shadow: $shadow-glow; transform: translateY(-1px); }
+}
+
+.btn_blue {
+    background-color: $bg-light; color: $color-text; display: inline-block;
+    font-size: $font-size-xs; height: 28px; line-height: 28px; text-align: center; padding: 0 10px;
+    border-radius: $radius-sm; transition: all $transition-fast; border: 1px solid $border-color; cursor: pointer;
+    
+    @media (min-width: $breakpoint-md) { font-size: $font-size-sm; height: 30px; line-height: 30px; padding: 0 15px; }
+    &:hover { background-color: $color-primary; color: $bg-body; border-color: $color-primary; box-shadow: $shadow-glow; }
+}
+
+.search-form-group {
+    display: flex; width: 100%; max-width: 500px;
+    border: 1px solid $border-color; border-radius: $radius-sm; overflow: hidden; transition: all $transition-normal; background-color: $bg-body;
+    
+    &:focus-within { border-color: $color-primary; box-shadow: $shadow-glow; }
+
+    .search-input { 
+        flex: 1; padding: 8px 10px; border: none; outline: none; font-size: $font-size-xs; 
+        background-color: transparent; color: $color-text; 
+        @media (min-width: $breakpoint-md) { padding: 10px 15px; font-size: $font-size-sm; } 
+    }
+    
+    .search-btn { 
+        background-color: transparent; border: none; padding: 0 10px; cursor: pointer; color: $color-muted; 
+        display: flex; align-items: center; font-size: $font-size-sm; transition: color $transition-fast; 
+        @media (min-width: $breakpoint-md) { padding: 0 15px; font-size: $font-size-md; } 
+        &:hover { color: $color-primary; text-shadow: $shadow-glow; } 
+    }
+}
+
+.badge-cart {
+    position: absolute; top: -6px; right: -8px;
+    background-color: $color-danger; color: $color-text;
+    font-size: 9px; font-weight: bold; padding: 2px 5px;
+    border-radius: 50%; transition: transform $transition-fast; box-shadow: $shadow-sm;
+    
+    @media (min-width: $breakpoint-md) { top: -8px; right: -10px; font-size: 11px; padding: 2px 6px; }
+}
+
+/* ========================================================
+   NOUVEAUX STYLES : NOTIFICATION TOAST & ANIMATIONS
+   ======================================================== */
+
+.toast-notification {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background-color: #36be2b; /* Vert succès */
+    color: #ffffff;
+    padding: 15px 25px;
+    border-radius: 8px; /* Correspond à $radius-md s'il existe */
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 9999;
+    font-weight: 500;
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+
+    &.show {
+        transform: translateY(0);
+        opacity: 1;
+    }
+
+    i {
+        font-size: 1.2rem;
+    }
+}
+
+/* Animation d'impulsion pour le compteur du panier lors de l'ajout */
+.pulse-anim {
+    animation: pulse-animation 0.3s ease-in-out;
+}
+
+@keyframes pulse-animation {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.4); }
+    100% { transform: scale(1); }
+}

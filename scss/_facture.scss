@@ -1,0 +1,259 @@
+// --------------------------------------------------------
+// STYLES DE LA FACTURE (LIÉ AUX VARIABLES LUXE)
+// --------------------------------------------------------
+
+.facture-body { background-color: $bg-body; padding: 10px 0; @media (min-width: $breakpoint-md) { padding: 20px 0; } }
+
+.facture-container {
+    max-width: 800px; margin: 0 auto; background: $bg-white; padding: 15px; color: $color-text; box-shadow: $shadow-sm; border-radius: $radius-sm; border: 1px solid $border-color;
+    @media (min-width: $breakpoint-md) { padding: 40px; }
+
+    @media print { 
+        box-shadow: none; margin: 0; padding: 0; width: 100%; background: transparent; color: #000; border: none; 
+        .no-print { display: none !important; } 
+        * { text-shadow: none !important; color: #000 !important; background: transparent !important; border-color: #000 !important; } 
+    }
+}
+
+.facture-actions {
+    text-align: right; margin-bottom: 15px; @media (min-width: $breakpoint-md) { margin-bottom: 20px; }
+    
+    .btn-facture-print { background-color: $bg-light; color: $color-text; padding: 8px 15px; border: 1px solid $border-color; border-radius: $radius-sm; cursor: pointer; font-weight: bold; font-size: $font-size-xs; transition: all $transition-fast; @media (min-width: $breakpoint-md) { padding: 12px 25px; font-size: $font-size-sm; } &:hover { background-color: $color-primary; color: $bg-body; border-color: $color-primary; box-shadow: $shadow-glow; } }
+}
+
+.facture-header {
+    display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid $border-color; padding-bottom: 15px; margin-bottom: 20px; gap: 15px;
+    @media (min-width: $breakpoint-sm) { flex-direction: row; align-items: center; border-bottom-width: 2px; padding-bottom: 20px; margin-bottom: 30px; gap: 0; }
+
+    .brand-info {
+        h1 { margin: 0; font-size: $font-size-lg; color: $color-primary; text-shadow: $shadow-glow; @media (min-width: $breakpoint-sm) { font-size: $font-size-xl; } }
+        .facture-ref { margin: 4px 0; font-size: $font-size-sm; color: $color-text; @media (min-width: $breakpoint-sm) { margin: 8px 0 4px 0; font-size: $font-size-md; } }
+        .facture-date { margin: 0; color: $color-muted; font-size: $font-size-xs; @media (min-width: $breakpoint-sm) { font-size: $font-size-sm; } }
+    }
+    
+    .barcode-box img { max-width: 100px; height: auto; background-color: #fff; padding: 4px; border-radius: $radius-sm; @media (min-width: $breakpoint-sm) { max-width: 150px; } }
+}
+
+.facture-parties {
+    display: flex; flex-direction: column; margin-bottom: 20px; gap: 10px;
+    @media (min-width: $breakpoint-sm) { flex-direction: row; justify-content: space-between; margin-bottom: 40px; gap: 20px; }
+
+    .bloc-partie {
+        width: 100%; padding: 10px; border: 1px solid $border-color; border-radius: $radius-sm; background-color: $bg-light;
+        @media (min-width: $breakpoint-sm) { width: 48%; padding: 15px; }
+        
+        &.border-right { border-left: 3px solid $color-primary; @media (min-width: $breakpoint-sm) { border-left-width: 4px; } }
+        
+        .partie-title { margin-top: 0; margin-bottom: 8px; color: $color-primary; font-size: $font-size-sm; border-bottom: 1px solid $border-color; padding-bottom: 4px; @media (min-width: $breakpoint-sm) { margin-bottom: 12px; font-size: $font-size-md; padding-bottom: 5px; } }
+        p { margin: 3px 0; font-size: $font-size-xs; color: $color-text; @media (min-width: $breakpoint-sm) { margin: 4px 0; font-size: $font-size-sm; } }
+    }
+}
+
+.facture-table {
+    width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: $font-size-xs; 
+    @media (min-width: $breakpoint-sm) { margin-bottom: 40px; font-size: $font-size-sm; }
+
+    th, td { border: 1px solid $border-color; padding: 6px; text-align: left; color: $color-text; @media (min-width: $breakpoint-sm) { padding: 12px; } }
+    th { background-color: $bg-light; font-weight: bold; color: $color-primary; }
+    
+    .product-title { font-weight: bold; }
+    .product-options { font-size: $font-size-xs; color: $color-muted; display: block; margin-top: 4px; @media (min-width: $breakpoint-sm) { font-size: $font-size-sm; } }
+    .highlight-qty { font-weight: bold; color: $color-primary; }
+}
+
+.facture-footer-summary {
+    display: flex; justify-content: flex-end; margin-bottom: 30px; @media (min-width: $breakpoint-sm) { margin-bottom: 50px; }
+    
+    .summary-box {
+        width: 100%; padding: 10px; border: 1px solid $border-color; border-radius: $radius-sm; background-color: $bg-light;
+        @media (min-width: $breakpoint-sm) { width: 300px; padding: 15px; }
+        
+        .summary-item {
+            display: flex; justify-content: space-between; margin-bottom: 6px; font-size: $font-size-xs; color: $color-muted; @media (min-width: $breakpoint-sm) { margin-bottom: 10px; font-size: $font-size-sm; }
+            &.total-final { border-top: 1px solid $border-color; padding-top: 8px; margin-bottom: 0; font-weight: bold; font-size: $font-size-sm; color: $color-primary; text-shadow: $shadow-glow; @media (min-width: $breakpoint-sm) { padding-top: 10px; font-size: $font-size-md; } }
+        }
+    }
+}
+
+.facture-signatures {
+    margin-top: 30px; text-align: center; @media (min-width: $breakpoint-sm) { margin-top: 60px; }
+    
+    .signature-thankyou { font-style: italic; color: $color-muted; margin-bottom: 10px; font-size: $font-size-xs; @media (min-width: $breakpoint-sm) { margin-bottom: 15px; font-size: $font-size-sm; } }
+    .signature-stamp { font-weight: bold; margin-top: 20px; color: $color-primary; font-size: $font-size-sm; @media (min-width: $breakpoint-sm) { margin-top: 30px; font-size: $font-size-md; } }
+}
+/* ====================================================================
+   STYLES DÉDIÉS À LA FACTURE (DESIGN LUXE ET ESPACEMENT OPTIMISÉ)
+   ==================================================================== */
+:root {
+    --invoice-primary: #0033fe;
+    --invoice-text: #333333;
+    --invoice-muted: #777777;
+    --invoice-border: #eeeeee;
+    --invoice-bg: #f9f9f9;
+}
+
+.facture-body { 
+    background-color: var(--invoice-bg); 
+    margin: 0; 
+    padding: 50px 25px;
+    font-size: 14px; 
+}
+
+.invoice-box { 
+    max-width: 850px; 
+    margin: auto; 
+    padding: 50px;
+    border: 1px solid var(--invoice-border); 
+    border-radius: 8px; 
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05); 
+    background: #ffffff; 
+}
+
+.invoice-controls { 
+    max-width: 850px; 
+    margin: 0 auto 25px auto; 
+    display: flex; 
+    justify-content: flex-end; 
+}
+
+.btn-print { 
+    background-color: var(--invoice-primary); 
+    color: #fff; 
+    border: none; 
+    padding: 12px 24px; 
+    border-radius: 6px; 
+    cursor: pointer; 
+    font-size: 14px; 
+    font-weight: 600; 
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+    transition: 0.2s; 
+    
+    &:hover { 
+        background-color: #0022b3; 
+        transform: translateY(-2px); 
+    }
+}
+
+.invoice-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: flex-start; 
+    margin-bottom: 40px; 
+    border-bottom: 2px solid var(--invoice-primary); 
+    padding-bottom: 20px; 
+    
+    .brand {
+        h1 { margin: 0; font-size: 28px; color: var(--invoice-primary); font-weight: 800; letter-spacing: -1px; }
+        p { margin: 6px 0 0 0; color: var(--invoice-muted); font-size: 13px; line-height: 1.5; }
+    }
+    
+    .meta-info { 
+        text-align: right; 
+        h2 { margin: 0 0 5px 0; font-size: 20px; color: var(--invoice-text); }
+        p { margin: 3px 0; color: var(--invoice-muted); }
+    }
+}
+
+.invoice-barcode { 
+    margin-top: 15px; 
+    text-align: right; 
+    img { height: 40px; opacity: 0.85; }
+}
+
+.invoice-addresses { 
+    display: flex; 
+    justify-content: space-between; 
+    margin-bottom: 40px; 
+    gap: 20px; 
+    
+    .address-block { 
+        width: 48%; 
+        background: #fdfdfd; 
+        padding: 20px; 
+        border-radius: 6px; 
+        border: 1px solid var(--invoice-border); 
+        
+        h3 { margin: 0 0 15px 0; font-size: 12px; text-transform: uppercase; color: var(--invoice-muted); letter-spacing: 1px; border-bottom: 1px solid var(--invoice-border); padding-bottom: 8px; }
+        p { margin: 5px 0; line-height: 1.5; }
+        strong { color: var(--invoice-text); font-size: 16px; display: block; margin-bottom: 5px; }
+    }
+}
+
+.invoice-table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    margin-bottom: 35px; 
+    
+    th, td { padding: 15px 12px; border-bottom: 1px solid var(--invoice-border); text-align: left; }
+    th { font-weight: 600; color: var(--invoice-muted); text-transform: uppercase; font-size: 11px; letter-spacing: 1px; background-color: #fdfdfd; }
+    
+    td.item-title { font-weight: 600; color: var(--invoice-text); }
+    td.item-desc { font-size: 12px; color: var(--invoice-muted); margin-top: 4px; display: block; }
+}
+
+.invoice-summary { 
+    width: 100%; 
+    max-width: 350px; 
+    margin-left: auto; 
+    border-top: 2px solid var(--invoice-border); 
+    padding-top: 15px; 
+    
+    .summary-line { 
+        display: flex; 
+        justify-content: space-between; 
+        padding: 8px 0; 
+        color: var(--invoice-muted); 
+        
+        &.total { border-top: 2px solid var(--invoice-primary); margin-top: 5px; padding-top: 15px; font-weight: 800; font-size: 18px; color: var(--invoice-primary); }
+    }
+}
+
+.invoice-footer { 
+    margin-top: 50px; 
+    text-align: center; 
+    color: var(--invoice-muted); 
+    font-size: 12px; 
+    border-top: 1px solid var(--invoice-border); 
+    padding-top: 20px; 
+    p { margin: 5px 0; line-height: 1.5; }
+}
+
+/* ====================================================================
+   CONFIGURATION AVANCÉE DE L'IMPRESSION EXCLUSIVE (ANTI-CHEVAUCHEMENT)
+   ==================================================================== */
+@media print {
+    /* 1. Cacher absolument tout le layout admin extérieur */
+    body * { visibility: hidden !important; }
+    
+    /* 2. Rendre uniquement la boîte de facture visible */
+    .invoice-box, .invoice-box * { visibility: visible !important; }
+    
+    /* 3. Ajustement millimétrique pour le papier A4 */
+    .invoice-box {
+        position: absolute; 
+        left: 0; 
+        top: 0;
+        width: 100% !important; 
+        max-width: 100% !important;
+        border: none !important; 
+        box-shadow: none !important;
+        padding: 20px 10px !important; 
+        margin: 0 !important;
+        background: #ffffff !important;
+    }
+    
+    .invoice-controls { display: none !important; }
+    
+    @page { 
+        margin: 2cm 1.5cm; 
+    }
+    
+    .facture-body { background-color: #fff; padding: 0; }
+    .address-block { border: none; background: transparent; padding: 0; }
+    .invoice-table th { background-color: transparent !important; border-bottom: 2px solid #000; color: #000; }
+    .invoice-header { border-bottom-color: #000; }
+    .summary-line.total { border-top-color: #000; color: #000; }
+    * { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
+}

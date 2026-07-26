@@ -1,0 +1,131 @@
+// --------------------------------------------------------
+// STYLES DES STATISTIQUES ET RAPPORTS (MOBILE-FIRST)
+// --------------------------------------------------------
+
+.text-highlight { 
+    color: $color-primary; 
+    font-weight: 800; 
+    background-color: rgba(59, 91, 219, 0.1);
+    padding: 2px 8px;
+    border-radius: $radius-sm;
+}
+
+/* Grille des sélecteurs de date */
+.date-selectors-grid {
+    display: grid; 
+    grid-template-columns: 1fr; 
+    gap: 12px;
+    
+    @media (min-width: $breakpoint-md) { 
+        grid-template-columns: repeat(3, 1fr); 
+        gap: 15px; 
+    }
+    
+    .form-group { 
+        margin-bottom: 0; 
+    }
+}
+
+.filter-section {
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px dashed $border-color;
+    
+    &:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+
+    h4 {
+        margin: 0 0 15px 0;
+        color: $color-text;
+        font-size: $font-size-sm;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        
+        @media (min-width: $breakpoint-lg) { 
+            font-size: $font-size-md; 
+        }
+        
+        i { color: $color-primary; }
+    }
+}
+
+/* Grille des cartes de résumé (Résultats) */
+.stats-summary-grid {
+    display: grid; 
+    grid-template-columns: 1fr; 
+    gap: 15px; 
+    margin-bottom: 25px;
+    
+    @media (min-width: 480px) {
+        grid-template-columns: repeat(2, 1fr); 
+    }
+    
+    @media (min-width: $breakpoint-lg) { 
+        grid-template-columns: repeat(4, 1fr); 
+        gap: 20px; 
+    }
+
+    .summary-card {
+        background-color: $bg-white; 
+        border-radius: $radius-sm; 
+        padding: 15px;
+        box-shadow: $shadow-sm; 
+        border: 1px solid $border-color; 
+        display: flex; 
+        flex-direction: column; 
+        align-items: center; 
+        text-align: center;
+        border-bottom: 4px solid transparent; 
+        transition: transform $transition-fast ease, box-shadow $transition-fast ease;
+        
+        @media (min-width: $breakpoint-lg) { 
+            padding: 20px; 
+        }
+
+        &:hover { 
+            transform: translateY(-5px); 
+            box-shadow: $shadow-glow; 
+        }
+
+        .summary-title {
+            font-size: 0.75rem;
+            color: $color-muted;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            
+            @media (min-width: $breakpoint-lg) { font-size: 0.8rem; }
+        }
+
+        .summary-value {
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: $color-text;
+            
+            @media (min-width: $breakpoint-lg) { font-size: 1.8rem; }
+        }
+
+        /* Thèmes de couleurs des cartes */
+        &.card-blue { 
+            border-bottom-color: #3b82f6; 
+            .summary-value { color: #1d4ed8; } 
+        }
+        &.card-green { 
+            border-bottom-color: #10b981; 
+            .summary-value { color: #047857; } 
+        }
+        &.card-orange { 
+            border-bottom-color: #f59e0b; 
+            .summary-value { color: #b45309; } 
+        }
+        &.card-purple { 
+            border-bottom-color: #8b5cf6; 
+            .summary-value { color: #6d28d9; } 
+        }
+    }
+}

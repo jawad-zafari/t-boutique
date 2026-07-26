@@ -1,0 +1,111 @@
+// --------------------------------------------------------
+// STYLES DE BASE ET RÉINITIALISATION (LIÉ AUX VARIABLES)
+// --------------------------------------------------------
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    font-size: 14px; 
+    @media (min-width: $breakpoint-md) {
+        font-size: 16px; 
+    }
+}
+
+body {
+    font-family: $font-main;
+    background-color: $bg-body;
+    color: $color-text;
+    line-height: 1.5;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+    transition: color $transition-fast;
+}
+
+ul {
+    list-style: none;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+input, button, textarea, select {
+    font-family: inherit;
+}
+/* Style pour la notification de succès (Toast) */
+.toast-notification {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background-color: #36be2b;
+    color: #ffffff;
+    padding: 15px 25px;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 9999;
+    font-weight: 500;
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+
+    /* Classe ajoutée via JavaScript pour l'affichage */
+    &.show {
+        transform: translateY(0);
+        opacity: 1;
+    }
+
+    i {
+        font-size: 1.2rem;
+    }
+}
+
+
+.product-card {
+    position: relative;
+    /* ... vos autres styles ... */
+
+    .btn-favorite-toggle {
+        position: absolute;
+        top: 10px;
+        left: 10px; /* À GAUCHE COMME DEMANDÉ */
+        background: rgba(255, 255, 255, 0.9);
+        border: none;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 10;
+        color: #adb5bd; /* Couleur cœur vide */
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+
+        &:hover {
+            transform: scale(1.15);
+            color: #e03131; /* Devient rouge au survol */
+        }
+
+        /* Quand le produit est en favoris (Géré par JS) */
+        &.active {
+            color: #e03131;
+            i { font-weight: 900; }
+        }
+    }
+}

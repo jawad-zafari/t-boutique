@@ -1,0 +1,137 @@
+// --------------------------------------------------------
+// STYLES DE LA GESTION DES PRODUITS (PANEL ADMIN)
+// APPROCHE MOBILE-FIRST
+// --------------------------------------------------------
+
+.form-row-triple {
+    display: flex; flex-direction: column; gap: 10px; 
+    @media (min-width: $breakpoint-md) { flex-direction: row; .form-group { flex: 1; margin-bottom: 0; } }
+}
+
+.form-row-half {
+    display: flex; flex-direction: column; gap: 15px; 
+    @media (min-width: $breakpoint-md) { flex-direction: row; .form-group { flex: 1; margin-bottom: 0; } }
+}
+
+.admin-divider { border: none; border-top: 1px dashed $border-color; margin: 20px 0; }
+
+.tags-container {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; padding: 10px;
+    background-color: $bg-light; border-radius: $radius-sm; border: 1px dashed $border-color; min-height: 45px;
+
+    .tag-item {
+        display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; border-radius: 12px; 
+        font-size: $font-size-sm; color: $color-text; background-color: $bg-body; 
+        border: 1px solid $border-color; box-shadow: $shadow-sm;
+        
+        .btn-remove-tag { color: $color-danger; cursor: pointer; }
+        .color-dot { width: 12px; height: 12px; border-radius: 50%; border: 1px solid $border-color; }
+    }
+}
+
+.textarea-tall {
+    min-height: 180px; resize: vertical; font-family: $font-main; font-size: $font-size-sm; 
+    padding: 15px; line-height: 1.6; background-color: $bg-body; border: 1px solid $border-color; 
+    border-radius: $radius-sm; color: $color-text; transition: all $transition-fast;
+    &:focus { border-color: $color-primary; box-shadow: $shadow-glow; outline: none; }
+}
+
+.btn-admin-submit-new {
+    background-color: #2b8a3e; color: #fff; padding: 12px 30px; font-size: 1rem; font-weight: 700;
+    border: none; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+    gap: 10px; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(43, 138, 62, 0.2); width: 100%;
+    @media (min-width: $breakpoint-md) { width: auto; min-width: 250px; }
+    &:hover { background-color: #237032; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(43, 138, 62, 0.3); }
+}
+
+.btn-admin-success {
+    background-color: #2b8a3e; color: #fff; border: none; border-radius: 6px; padding: 10px 20px; font-weight: 600;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s ease;
+    &:hover { background-color: #237032; transform: translateY(-2px); }
+}
+
+.admin-list-thumbnail {
+    width: 45px !important; height: 45px !important; object-fit: cover !important; border-radius: 8px;
+    border: 1px solid $border-color; background-color: $bg-white; transition: transform $transition-fast, box-shadow $transition-fast;
+    display: block; margin: 0 auto;
+    &:hover { transform: scale(1.6); z-index: 99; position: relative; box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+}
+
+.alert-sticky {
+    position: sticky; top: 15px; z-index: 1050; margin-bottom: 20px; padding: 15px 20px; border-radius: $radius-sm;
+    font-weight: 700; font-size: $font-size-sm; display: flex; align-items: center; gap: 10px; box-shadow: $shadow-sm;
+    &.danger { background-color: #fff5f5; color: #c92a2a; border: 1px solid #ffe3e3; }
+    &.success { background-color: #e6fcf5; color: #2b8a3e; border: 1px solid #c3fae8; }
+}
+
+/* ========================================================
+   STYLES DE LA GRILLE GALERIE ET ZONE D'UPLOAD
+   ======================================================== */
+.gallery-upload-zone {
+    display: flex; flex-direction: column; gap: 15px; padding: 20px; background-color: #f8fafc;
+    border: 2px dashed #cbd5e1; border-radius: $radius-md; align-items: flex-start;
+    @media (min-width: $breakpoint-md) { flex-direction: row; align-items: flex-end; }
+}
+
+.gallery-grid-layout {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 30px;
+    @media (min-width: 576px) { grid-template-columns: repeat(3, 1fr); }
+    @media (min-width: $breakpoint-md) { grid-template-columns: repeat(4, 1fr); gap: 20px; }
+    @media (min-width: $breakpoint-lg) { grid-template-columns: repeat(5, 1fr); }
+}
+
+.gallery-card-item {
+    background-color: #fff; border: 1px solid $border-color; border-radius: 12px; padding: 10px;
+    display: flex; flex-direction: column; gap: 10px; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+    transition: transform $transition-fast, box-shadow $transition-fast;
+    &:hover { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.08); border-color: #adb5bd; }
+
+    .checkbox-wrapper { position: absolute; top: 15px; right: 15px; z-index: 10; background: rgba(255, 255, 255, 0.9); border-radius: 4px; padding: 2px; }
+    .card-image-wrapper {
+        width: 100%; aspect-ratio: 1 / 1; background-color: $bg-light; border-radius: 8px; overflow: hidden;
+        display: flex; align-items: center; justify-content: center; border: 1px solid #f1f3f5;
+        img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    }
+}
+
+.gallery-empty-state {
+    grid-column: 1 / -1; background-color: #f8f9fa; border: 2px dashed #dee2e6; border-radius: 12px;
+    padding: 40px 20px; text-align: center; color: #495057; font-weight: bold;
+}
+
+/* ========================================================
+   STYLES DES ATTRIBUTS DU PRODUIT
+   ======================================================== */
+.attr-grid-layout {
+    display: grid; grid-template-columns: 1fr; gap: 15px;
+    @media (min-width: $breakpoint-md) { grid-template-columns: repeat(2, 1fr); }
+    @media (min-width: $breakpoint-lg) { grid-template-columns: repeat(3, 1fr); }
+}
+
+.attr-group-card {
+    background: $bg-white; border: 1px solid $border-color; border-radius: $radius-sm; padding: 15px;
+    box-shadow: $shadow-sm; display: flex; flex-direction: column; gap: 10px;
+    
+    .attr-title { font-weight: 700; font-size: $font-size-sm; color: $color-text; }
+    .attr-action-link {
+        margin-top: auto; text-align: right;
+        .link-success { color: $color-success; font-size: 0.8rem; font-weight: bold; text-decoration: none; &:hover { opacity: 0.8; } }
+    }
+}
+
+.border-top-dashed { border-top: 1px dashed $border-color; padding-top: 20px; margin-top: 20px; }
+
+/* Classes Utilitaires */
+.col-img { width: 80px; }
+.col-action { width: 70px; }
+.col-check { width: 60px; }
+.mt-20 { margin-top: 20px; }
+.mt-30 { margin-top: 30px; }
+.mb-15 { margin-bottom: 15px; }
+.mb-25 { margin-bottom: 25px; }
+.m-0 { margin: 0; }
+.flex-grow-1 { flex-grow: 1; }
+.align-self-end { align-self: flex-end; }
+.flex-end-container { display: flex; justify-content: flex-end; }
+.table-thumb-product { width: 50px; height: 50px; border-radius: 6px; object-fit: cover; border: 1px solid #e2e8f0; }
+.empty-state-icon { font-size: 3rem; color: #ced4da; margin-bottom: 10px; }

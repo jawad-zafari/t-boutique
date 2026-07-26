@@ -1,0 +1,120 @@
+// --------------------------------------------------------
+// STYLES DU PIED DE PAGE (LIÉ AUX VARIABLES)
+// --------------------------------------------------------
+
+.site-footer {
+    width: 100%; margin-top: 60px;
+    background-color: $bg-body;
+    color: $color-text;
+    font-size: $font-size-sm;
+}
+
+.footer-top {
+    background-color: $bg-white;
+    color: $color-text;
+    padding: 20px 15px;
+    border-bottom: 1px solid $border-color;
+
+    .footer-top-container {
+        max-width: 1200px; margin: 0 auto; display: flex;
+        flex-direction: column; align-items: center; gap: 15px; text-align: center;
+
+        @media (min-width: $breakpoint-md) { flex-direction: row; justify-content: space-between; text-align: left; }
+    }
+
+    .support-text { font-size: $font-size-md; font-weight: bold; color: $color-text; }
+
+    .contact-list {
+        list-style: none; padding: 0; margin: 0; display: flex;
+        flex-direction: column; gap: 10px;
+
+        @media (min-width: $breakpoint-sm) { flex-direction: row; gap: 20px; }
+
+        a {
+            color: $color-text; text-decoration: none; display: flex;
+            align-items: center; gap: 8px; transition: color $transition-fast;
+
+            &:hover { color: $color-primary; }
+        }
+    }
+}
+
+.footer-main {
+    padding: 40px 15px;
+    background-color: $bg-light;
+    border-bottom: 1px solid $border-color;
+
+    .footer-main-container {
+        max-width: 1200px; margin: 0 auto; display: grid;
+        grid-template-columns: 1fr; gap: 30px;
+
+        @media (min-width: $breakpoint-sm) { grid-template-columns: repeat(2, 1fr); }
+        @media (min-width: $breakpoint-lg) { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    .footer-col { display: flex; flex-direction: column; }
+
+    .footer-col-title {
+        font-size: $font-size-md; font-weight: bold; color: $color-text;
+        margin-bottom: 15px; position: relative; padding-bottom: 5px;
+
+        &::after {
+            content: ''; position: absolute; bottom: 0; left: 0;
+            width: 30px; height: 2px; background-color: $color-primary;
+        }
+    }
+
+    .footer-links {
+        list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px;
+        a {
+            color: $color-muted; text-decoration: none; transition: all $transition-fast;
+            &:hover { color: $color-primary; padding-left: 5px; }
+        }
+    }
+}
+
+.newsletter-col {
+    .newsletter-desc { color: $color-muted; margin-bottom: 15px; line-height: 1.5; }
+
+    .newsletter-form {
+        display: flex; margin-bottom: 20px;
+        border: 1px solid $border-color; border-radius: $radius-sm;
+        overflow: hidden; background-color: $bg-white;
+
+        input[type="email"] {
+            border: none; padding: 10px 14px; width: 100%;
+            font-size: $font-size-sm; outline: none;
+            color: $color-text; background-color: transparent;
+        }
+
+        .btn-subscribe {
+            border: none; background-color: $color-primary; color: $bg-body;
+            padding: 0 20px; cursor: pointer; font-weight: bold; transition: background-color $transition-fast;
+            &:hover { background-color: darken(#D4AF37, 10%); } // darken the primary color slightly
+        }
+    }
+}
+
+.social-apps-container {
+    display: flex; flex-direction: column; gap: 20px;
+
+    .social-networks {
+        display: flex; gap: 12px;
+        a {
+            display: flex; align-items: center; justify-content: center;
+            width: 36px; height: 36px; background-color: $bg-white; color: $color-muted;
+            border-radius: 50%; text-decoration: none; box-shadow: $shadow-sm; transition: all $transition-fast;
+            border: 1px solid $border-color;
+
+            &:hover { background-color: $color-primary; color: $bg-body; transform: translateY(-3px); box-shadow: $shadow-glow; }
+        }
+    }
+
+    .app-downloads { display: flex; gap: 10px; flex-wrap: wrap; img { height: 36px; width: auto; display: block; } }
+}
+
+.footer-bottom {
+    background-color: $bg-white; color: $color-muted;
+    text-align: center; padding: 15px; font-size: $font-size-xs;
+    border-top: 1px solid $border-color;
+}

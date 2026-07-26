@@ -1,0 +1,56 @@
+<?php
+
+/**
+ * Controller AddComment
+ * Gestion de l'ajout des commentaires et avis (Sécurisé avec CSRF unifié et validation HTTP)
+ */
+class AddComment extends Controller
+{
+    public function __construct()
+    {
+        parent::__construct();
+        
+        // SÉCURITÉ : Vérification de l'authentification
+        // Seuls les utilisateurs connectés peuvent laisser un avis
+        Model::sessionInit();
+        $userId = Model::sessionGet('userId');
+
+        if ($userId == false) {
+            header('Location: ' . URL . 'Login/index');
+            exit;
+        }
+    }
+
+    public function index($productId)
+    {
+        // PROTECTION CSRF : Utilisation de la méthode globale du Controller de base
+        $data = [
+            'params'      => $this->model->getParam((int)$productId),
+            'productInfo' => $this->model->productInfo((int)$productId),
+            'commentInfo' => $this->model->commentInfo((int)$productId),
+            'csrf_token'  => $this->generateCsrfToken() // Méthode unifiée et propre
+        ];
+        
+        $this->view('comment/add_comment', $data);
+    }
+
+    public function saveComment($productId)
+    {
+        // SÉCURITÉ : Vérifier que la requête est bien de type POST (Bloque le Method Spoofing)
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('HTTP/1.1 405 Method Not Allowed');
+            exit('Méthode non autorisée. Veuillez utiliser le formulaire.');
+        }
+
+        // VÉRIFICATION CSRF : Utilisation de la méthode globale de vérification
+        $this->checkCsrfToken($_POST['csrf_token'] ?? '');
+
+        // Sauvegarder le commentaire dans la base de données
+        $this->model->saveComment($_POST, (int)$productId);
+        
+        // Redirection vers la page du produit après la soumission (PRG Pattern)
+        header('Location: ' . URL . 'Product/index/' . (int)$productId);
+        exit;
+    }
+}
+?>

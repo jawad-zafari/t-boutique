@@ -1,0 +1,42 @@
+// --------------------------------------------------------
+// STYLES DU TABLEAU DE BORD (MOBILE-FIRST)
+// --------------------------------------------------------
+
+.dashboard-chart-wrapper {
+    background-color: $bg-white;
+    border-radius: $radius-sm;
+    box-shadow: $shadow-sm;
+    padding: 15px; // Mobile: padding réduit
+    margin-top: 20px;
+    
+    // Correction du bug CSS : la bordure générale doit être déclarée AVANT la bordure spécifique
+    border: 1px solid $border-color; 
+    border-top: 4px solid $color-primary; 
+
+    @media (min-width: $breakpoint-md) {
+        padding: 20px; // Tablette/Bureau: padding normal
+    }
+
+    .dashboard-chart {
+        width: 100%;
+        height: 300px; // Mobile: hauteur réduite
+        margin: 0 auto;
+
+        @media (min-width: $breakpoint-md) {
+            height: 400px; // Bureau: hauteur optimale
+        }
+    }
+}
+
+// Classe utilitaire d'accessibilité (Masque visuellement mais reste lisible par les lecteurs d'écran)
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}

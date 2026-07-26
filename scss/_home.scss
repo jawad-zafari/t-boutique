@@ -1,0 +1,552 @@
+// -----------------------------------------------------------------------------
+// STYLES DE LA PAGE D'ACCUEIL (ROBUSTE, RESPONSIVE & MOBILE-FIRST)
+// -----------------------------------------------------------------------------
+
+.home-container {
+    width: 100%; 
+    max-width: 1200px; 
+    margin: 0 auto;
+    padding: 15px 10px; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 25px; 
+
+    @media (min-width: $breakpoint-md) {
+        padding: 25px 15px;
+        gap: 35px;
+    }
+}
+
+.glass-panel {
+    background: $bg-white; 
+    border: 1px solid $border-color;
+    border-radius: $radius-lg; 
+    box-shadow: $shadow-sm;
+    padding: 10px;
+
+    @media (min-width: $breakpoint-md) {
+        padding: 15px;
+    }
+}
+
+.hover-glow {
+    transition: transform $transition-fast, box-shadow $transition-fast;
+    &:hover { 
+        transform: translateY(-5px); 
+        box-shadow: $shadow-glow; 
+    }
+}
+
+/* =============================================================================
+   SLIDER PRINCIPAL
+   ============================================================================= */
+.main-slider {
+    position: relative; 
+    overflow: hidden; 
+    width: 100%; 
+    height: 240px; 
+    margin: 0; 
+    padding: 0;
+
+    @media (min-width: $breakpoint-md) { 
+        height: 420px; 
+    } 
+
+    .slider-track { 
+        display: flex; 
+        height: 100%; 
+        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); 
+    }
+    
+    .slide {
+        min-width: 100%; 
+        height: 100%; 
+        position: relative;
+        display: flex; 
+        align-items: center; 
+        justify-content: center;
+        
+        .slide-link-container { 
+            display: block; 
+            width: 100%; 
+            height: 100%; 
+            position: relative; 
+        }
+
+        .slide-bg { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            z-index: 1; 
+        }
+        
+        .slide-content {
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%);
+            z-index: 3; 
+            padding: 0 15px; 
+            color: $bg-white; 
+            max-width: 800px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            width: 100%; 
+            text-align: center;
+            
+            .slide-title { 
+                font-size: 1.8rem; 
+                font-weight: 900; 
+                margin: 0 0 10px 0; 
+                text-shadow: 0 3px 12px rgba(0,0,0,0.7); 
+                @media (min-width: $breakpoint-md) { font-size: 3.5rem; margin-bottom: 15px; } 
+            }
+            .slide-desc { 
+                font-size: 0.9rem; 
+                margin: 0 0 20px 0; 
+                font-weight: 500; 
+                text-shadow: 0 2px 8px rgba(0,0,0,0.6); 
+                @media (min-width: $breakpoint-md) { font-size: 1.3rem; margin-bottom: 25px; } 
+            }
+            .btn-slide-action {
+                display: inline-flex; 
+                align-items: center; 
+                justify-content: center;
+                background: $bg-white; 
+                color: $color-primary; 
+                padding: 10px 25px; 
+                border-radius: 30px; 
+                font-weight: 800; 
+                font-size: 0.9rem; 
+                transition: all $transition-fast; 
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                @media (min-width: $breakpoint-md) { padding: 14px 40px; font-size: 1.05rem; }
+                &:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.3); color: $color-secondary; }
+            }
+        }
+    }
+
+    .cyber-btn {
+        position: absolute; 
+        top: 50%; 
+        transform: translateY(-50%); 
+        z-index: 10;
+        background: rgba(0, 0, 0, 0.4); 
+        border: none; 
+        -webkit-backdrop-filter: blur(4px); 
+        backdrop-filter: blur(4px);
+        width: 36px; 
+        height: 36px; 
+        border-radius: 50%; 
+        cursor: pointer; 
+        color: $bg-white; 
+        font-size: 1rem; 
+        transition: all $transition-fast; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center;
+        
+        &:hover { background: rgba(0, 0, 0, 0.7); transform: translateY(-50%) scale(1.05); }
+        &.prev { left: 10px; @media (min-width: $breakpoint-md) { left: 20px; } } 
+        &.next { right: 10px; @media (min-width: $breakpoint-md) { right: 20px; } }
+    }
+
+    .slider-dots {
+        position: absolute; 
+        bottom: 12px; 
+        left: 50%; 
+        transform: translateX(-50%); 
+        display: flex; 
+        gap: 8px; 
+        z-index: 10;
+        
+        .dot { 
+            width: 9px; 
+            height: 9px; 
+            border-radius: 50%; 
+            background: rgba(255, 255, 255, 0.4); 
+            cursor: pointer; 
+            transition: all $transition-fast;
+            &.active { background: $bg-white; transform: scale(1.15); }
+        }
+    }
+}
+
+/* =============================================================================
+   EN-TÊTES DE SECTION (COMMUNS)
+   ============================================================================= */
+.section-header {
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    margin-bottom: 15px; 
+    width: 100%;
+    color: $color-primary;
+
+    .header-titles {
+        display: flex; 
+        flex-direction: column;
+        
+        .section-title { margin: 0; font-size: 1.1rem; color: $color-primary; font-weight: 800; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+        .section-subtitle { margin: 0; font-size: 0.75rem; color: $color-muted; }
+    }
+
+    .btn-see-all {
+        font-size: 0.8rem; font-weight: 700; color: $color-primary; display: flex; align-items: center; gap: 4px;
+        &:hover { color: $color-secondary; }
+    }
+
+    .header-nav-buttons {
+        display: flex; 
+        gap: 8px;
+        
+        .nav-btn {
+            width: 32px; 
+            height: 32px; 
+            background: $bg-white; 
+            border: 1px solid $border-color;
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            color: $color-text; 
+            font-size: 0.9rem; 
+            cursor: pointer; 
+            transition: all $transition-fast;
+            
+            &:hover { background: $color-primary; color: #fff; border-color: $color-primary; }
+        }
+    }
+}
+
+/* =============================================================================
+   TRUST BADGES (FEATURES ROW)
+   ============================================================================= */
+.features-row {
+    display: grid; 
+    grid-template-columns: repeat(2, 1fr); 
+    gap: 10px;
+    background: $bg-white; 
+    border-radius: $radius-md; 
+    box-shadow: $shadow-sm; 
+    padding: 10px 5px; 
+    border: 1px solid $border-color;
+
+    @media (min-width: $breakpoint-md) { 
+        grid-template-columns: repeat(4, 1fr); 
+        padding: 12px 15px; 
+        gap: 15px; 
+    }
+
+    .feature-item {
+        display: flex; 
+        align-items: center; 
+        gap: 8px; 
+        transition: transform $transition-fast;
+        
+        &:hover { transform: translateY(-2px); .icon-wrapper { background: rgba(59, 91, 219, 0.12); } }
+        
+        .icon-wrapper { 
+            width: 32px; height: 32px; flex-shrink: 0; border-radius: 50%; background: rgba(59, 91, 219, 0.06); 
+            display: flex; align-items: center; justify-content: center; font-size: 1rem; color: $color-primary; transition: background $transition-fast;
+            @media (min-width: $breakpoint-md) { width: 40px; height: 40px; font-size: 1.1rem; } 
+        }
+        .feature-text { 
+            display: flex; flex-direction: column; overflow: hidden;
+            .feature-title { font-size: 0.75rem; font-weight: 800; color: $color-text; margin-bottom: 0px; white-space: nowrap; @media (min-width: $breakpoint-md) { font-size: 0.9rem; } }
+            .feature-subtitle { font-size: 0.65rem; color: $color-muted; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; @media (min-width: $breakpoint-md) { font-size: 0.8rem; } }
+        }
+    }
+}
+
+/* =============================================================================
+   CAROUSEL DES MARQUES
+   ============================================================================= */
+.brands-carousel-section {
+    width: 100%;
+    margin-top: -15px; 
+
+    .section-header { margin-bottom: 5px; }
+
+    .brands-carousel-wrapper {
+        position: relative; 
+        width: 100%; 
+        overflow: hidden; 
+        display: flex; 
+        align-items: center;
+    }
+
+    .brands-carousel-track {
+        display: flex; 
+        gap: 15px; 
+        overflow-x: auto; 
+        scroll-snap-type: x mandatory;
+        scroll-behavior: smooth;
+        scrollbar-width: none; 
+        &::-webkit-scrollbar { display: none; } 
+        -webkit-overflow-scrolling: touch;
+        width: 100%; 
+        padding: 15px 20px; 
+        margin: -10px; 
+    }
+
+    .brands-carousel-item { 
+        flex: 0 0 auto; 
+        scroll-snap-align: start; 
+    }
+
+    .brand-item-circle {
+        width: 65px; height: 65px; border-radius: 50%; background: $bg-white; border: 1px solid $border-color;
+        display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: $shadow-sm; transition: all $transition-normal; padding: 10px;
+        @media (min-width: $breakpoint-md) { width: 80px; height: 80px; padding: 12px; }
+
+        img { max-width: 100%; height: auto; max-height: 100%; object-fit: contain; filter: grayscale(100%); transition: all $transition-fast; }
+        .brand-text-fallback { font-size: 0.7rem; font-weight: 800; color: $color-secondary; text-transform: uppercase; text-align: center; @media (min-width: $breakpoint-md) { font-size: 0.85rem; } }
+
+        &:hover { border-color: $color-primary; box-shadow: $shadow-glow; transform: scale(1.1); img { filter: grayscale(0%); } }
+    }
+}
+
+/* =============================================================================
+   CAROUSELS DE PRODUITS
+   ============================================================================= */
+.product-carousel-section {
+    background-color: $bg-white; 
+    padding: 20px 15px; 
+    border-radius: $radius-lg; 
+    box-shadow: $shadow-sm; 
+    border: 1px solid $border-color;
+    
+    &.promo-section { border-top: 3px solid $color-danger; }
+    
+    .carousel-track { 
+        display: flex; 
+        gap: 15px; 
+        overflow-x: auto; 
+        scroll-snap-type: x mandatory; 
+        scroll-behavior: smooth;
+        padding-bottom: 15px; 
+        scrollbar-width: none; 
+        &::-webkit-scrollbar { display: none; }
+    }
+    
+    .product-card {
+        flex: 0 0 210px; 
+        scroll-snap-align: start; 
+        background: $bg-white; 
+        border-radius: $radius-md; 
+        display: flex; 
+        flex-direction: column; 
+        position: relative; 
+        border: 1px solid $border-color; 
+        overflow: hidden;
+        
+        .badge-item { 
+            position: absolute; top: 8px; right: 8px; font-size: 0.65rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; z-index: 2;
+            &.badge-new { background: $color-primary; color: $bg-white; } 
+            &.badge-discount { background: $color-danger; color: $bg-white; }
+        }
+
+        .image-wrapper { 
+            width: 100%; height: 190px; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid $border-color; 
+            .product-img { width: 100%; height: 100%; object-fit: cover; transition: transform $transition-normal; } 
+        }
+        
+        .card-content { 
+            display: flex; flex-direction: column; flex-grow: 1; padding: 12px;
+            
+            .product-title-link { 
+                .product-title { font-size: 0.85rem; color: $color-text; margin: 0 0 8px 0; line-height: 1.4; font-weight: 700; height: 36px; overflow: hidden; } 
+            }
+            
+            .price-cart-row { 
+                display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 10px; border-top: 1px dashed #f1f3f5;
+                .product-price-container { 
+                    display: flex; flex-direction: column;
+                    .price-old { font-size: 0.7rem; color: $color-muted; text-decoration: line-through; }
+                    .product-price { font-weight: 800; font-size: 1rem; &.price-primary { color: $color-primary; } &.price-danger { color: $color-danger; } }
+                }
+                .btn-quick-add { 
+                    background-color: rgba(59, 91, 219, 0.08); color: $color-primary; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; border: none;
+                    &:hover { background-color: $color-primary; color: $bg-white; transform: scale(1.05); }
+                }
+            }
+        }
+    }
+}
+
+/* =============================================================================
+   COMPOSANT : CAROUSEL BOUTIQUE TV
+   ============================================================================= */
+.dark-cyber-panel {
+    background: $bg-white; 
+    color: $color-primary; 
+    border-radius: $radius-lg; 
+    padding: 20px; 
+    box-shadow: $shadow-sm; 
+    border: 1px solid $border-color;
+}
+
+.tv-carousel-track {
+    display: flex; 
+    gap: 20px; 
+    overflow-x: auto; 
+    scroll-snap-type: x mandatory; 
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 15px; 
+    
+    /* Masquer la scrollbar pour un design épuré */
+    scrollbar-width: none;
+    &::-webkit-scrollbar { display: none; }
+
+    .tv-carousel-item {
+        /* Mobile : 1 vidéo par vue (100% de largeur) */
+        flex: 0 0 100%; 
+        scroll-snap-align: start;
+        
+        /* Desktop/Tablette : 2 vidéos par vue (50% moins l'espace du gap) */
+        @media (min-width: $breakpoint-md) {
+            flex: 0 0 calc(50% - 10px); 
+        }
+    }
+
+    .tv-image-container {
+        position: relative; 
+        border-radius: $radius-md; 
+        overflow: hidden; 
+        cursor: pointer; 
+        border: 1px solid $border-color; 
+        aspect-ratio: 16/9;
+        
+        img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform $transition-normal; opacity: 0.95; }
+        
+        .glowing-circle { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            width: 50px; height: 50px; background: rgba(255, 255, 255, 0.9); 
+            -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); 
+            border: 2px solid $color-primary; border-radius: 50%; 
+            display: flex; justify-content: center; align-items: center; 
+            color: $color-primary; font-size: 1.2rem; transition: all $transition-fast; z-index: 5; 
+        }
+        
+        .tv-item-caption { 
+            position: absolute; bottom: 0; left: 0; width: 100%; 
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.85)); 
+            color: #fff; padding: 25px 15px 12px 15px; font-size: 0.9rem; font-weight: 700; z-index: 4; 
+        }
+
+        &:hover { 
+            img { transform: scale(1.02); opacity: 1; } 
+            .glowing-circle { background: $color-primary; color: $bg-white; box-shadow: $shadow-glow; } 
+        }
+    }
+}
+
+/* =============================================================================
+   SECTION ACTUALITÉS (NEWS)
+   ============================================================================= */
+.full-width-panel {
+    background: transparent;
+    padding: 0;
+    margin-top: 10px;
+}
+
+.news-carousel-track {
+    display: flex; 
+    gap: 20px; 
+    overflow-x: auto; 
+    scroll-snap-type: x mandatory; 
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 15px; 
+    
+    scrollbar-width: none;
+    &::-webkit-scrollbar { display: none; }
+    
+    .news-card {
+        /* Mobile : 1 actualité par vue */
+        flex: 0 0 100%; 
+        scroll-snap-align: start; 
+        background: $bg-white; 
+        border-radius: $radius-lg; 
+        border: 1px solid $border-color;
+        overflow: hidden; 
+        display: flex; 
+        flex-direction: column; 
+        cursor: pointer; 
+        box-shadow: $shadow-sm; 
+        transition: all $transition-fast;
+
+        /* Tablette : 2 actualités par vue */
+        @media (min-width: $breakpoint-md) { 
+            flex: 0 0 calc(50% - 10px); 
+        } 
+        
+        /* Grand écran (Desktop) : 3 actualités par vue */
+        @media (min-width: 1024px) { 
+            flex: 0 0 calc(33.333% - 13.33px); 
+        } 
+
+        &:hover { 
+            border-color: $color-primary; 
+            .news-card-img img { transform: scale(1.05); } 
+            .news-read-more { color: $color-primary; transform: translateX(3px); } 
+        }
+
+        .news-card-img {
+            width: 100%; height: 160px; overflow: hidden; border-bottom: 1px solid $border-color;
+            img { width: 100%; height: 100%; object-fit: cover; transition: transform $transition-normal; }
+        }
+
+        .news-card-body {
+            padding: 15px; display: flex; flex-direction: column; flex-grow: 1;
+
+            .news-date { font-size: 0.75rem; font-weight: 700; color: $color-primary; margin-bottom: 5px; }
+            .news-title { font-size: 1rem; color: $color-text; font-weight: 800; margin: 0 0 10px 0; line-height: 1.3; }
+            .news-excerpt { font-size: 0.85rem; color: $color-muted; line-height: 1.5; flex-grow: 1; margin-bottom: 15px; }
+            
+            .news-read-more { font-size: 0.8rem; font-weight: 700; color: $color-text; display: flex; align-items: center; gap: 5px; transition: all $transition-fast; }
+        }
+    }
+}
+
+/* =============================================================================
+   SYSTEME DE MODAL (ACTUALITÉS)
+   ============================================================================= */
+.news-modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); z-index: 99999; display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: all 0.35s ease; padding: 15px;
+    &.show { opacity: 1; visibility: visible; .news-modal-content { transform: scale(1); } }
+}
+
+.news-modal-content { 
+    position: relative; width: 100%; max-width: 650px; background: $bg-white; border-radius: $radius-lg; overflow: hidden; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4); transform: scale(0.92); transition: transform 0.35s ease; 
+}
+
+.news-modal-body { 
+    display: flex; flex-direction: column; width: 100%;
+    .modal-news-img { width: 100%; height: 200px; object-fit: cover; border-bottom: 1px solid $border-color; @media (min-width: $breakpoint-md) { height: 260px; } }
+    .news-modal-text-content { 
+        padding: 20px;
+        .modal-news-date { font-size: 0.75rem; color: $color-primary; font-weight: 700; display: block; margin-bottom: 6px; }
+        .modal-news-title { font-size: 1.2rem; color: $color-text; font-weight: 800; margin: 0 0 12px 0; line-height: 1.4; }
+        .modal-news-desc { font-size: 0.9rem; color: $color-text; line-height: 1.6; max-height: 200px; overflow-y: auto; padding-right: 5px; }
+    }
+}
+
+.close-news-modal { 
+    position: absolute; top: 12px; right: 12px; width: 36px; height: 36px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 1.2rem; transition: background $transition-fast; z-index: 50; border: none; background: rgba(255, 255, 255, 0.8); color: $color-text; box-shadow: $shadow-sm; 
+    &:hover { color: #fff; background: $color-danger; } 
+}
+
+.text-empty-msg-center {
+    color: #888;
+    text-align: center;
+    width: 100%;
+    padding: 20px 0;
+    font-size: 1rem;
+}

@@ -1,0 +1,48 @@
+// -----------------------------------------------------------------------------
+// VARIABLES GLOBALES - DESIGN ULTRA-MODERNE ET COMPACT
+// -----------------------------------------------------------------------------
+
+// --- COULEURS CHARTE GRAPHIQUE ---
+$color-primary: #0033fe;   /* Bleu Royal */
+$color-secondary: #2d3748; /* Gris Anthracite / Foncé (Pour les icônes du header) */
+$color-danger: #e03131;    /* Rouge Promo */
+$color-success: #36be2b;   /* Vert Toast */
+$color-warning: #f5821e;   /* Orange */
+
+// --- TYPOGRAPHIE ET TEXTES ---
+$color-text: #1a202c;      /* Noir doux */
+$color-muted: #718096;     /* Gris intermédiaire */
+
+// --- EN-TÊTE ET ARRIÈRE-PLANS ---
+$bg-body: #f7fafc;         
+$bg-white: #ffffff;        
+$bg-light: #edf2f7;        
+$border-color: #e2e8f0;    
+
+// --- POLICES IMPORTÉES DU VISUEL (PLUS JAKARTA SANS & INTER) ---
+$font-main: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+
+$font-size-xs: 0.75rem;
+$font-size-sm: 0.85rem;
+$font-size-md: 0.95rem;
+$font-size-lg: 1.2rem;
+$font-size-xl: 1.5rem;
+
+// --- RAYONS ET EFFETS ---
+$radius-lg: 10px;           
+$radius-md: 8px;           /* Variable ajoutee pour corriger l'erreur de compilation */
+$radius-sm: 6px;           
+
+$shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+$shadow-md: 0 4px 12px rgba(0, 0, 0, 0.05);
+$shadow-glow: 0 4px 14px rgba(59, 91, 219, 0.18);
+
+// --- TRANSITIONS ---
+$transition-fast: 0.15s ease;
+$transition-normal: 0.25s ease;
+
+// --- RESPONSIVE BREAKPOINTS ---
+$breakpoint-sm: 576px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 992px;
+$breakpoint-xl: 1200px;

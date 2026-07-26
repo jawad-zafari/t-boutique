@@ -1,0 +1,121 @@
+<?php
+
+/**
+ * Modèle ModelAccount
+ * Gère les données de l'espace client.
+ * L'architecture est sécurisée par des requêtes préparées (PDO) contre les injections SQL.
+ */
+class ModelAccount extends Model
+{
+    public function __construct()
+    {
+        parent::__construct();
+    }
+
+    public function getUserInfo($userId)
+    {
+        $sql = "SELECT * FROM users WHERE id = ?";
+        $result = $this->doSelect($sql, [(int)$userId]);
+        return $result[0] ?? [];
+    }
+
+    public function updateProfile($data, $userId)
+    {
+        // SÉCURITÉ : Nettoyage strict des entrées utilisateur (Protection contre Stored XSS)
+        $username = htmlspecialchars($data['username'] ?? '', ENT_QUOTES, 'UTF-8');
+        $email = filter_var($data['email'] ?? '', FILTER_SANITIZE_EMAIL);
+        $lastName = htmlspecialchars($data['last_name'] ?? '', ENT_QUOTES, 'UTF-8');
+        $mobile = htmlspecialchars($data['mobile'] ?? '', ENT_QUOTES, 'UTF-8');
+        $phone = htmlspecialchars($data['phone'] ?? '', ENT_QUOTES, 'UTF-8');
+        $address = htmlspecialchars($data['address'] ?? '', ENT_QUOTES, 'UTF-8');
+        $city = htmlspecialchars($data['city'] ?? '', ENT_QUOTES, 'UTF-8');
+        $postalCode = htmlspecialchars($data['postal_code'] ?? '', ENT_QUOTES, 'UTF-8');
+        $gender = (int) ($data['gender'] ?? 1); // Typage strict
+        $newsletter = isset($data['newsletter']) ? 1 : 0;
+
+        $sql = "UPDATE users SET username = ?, email = ?, last_name = ?, mobile = ?, phone = ?, address = ?, city = ?, postal_code = ?, gender = ?, newsletter = ? WHERE id = ?";
+        $this->doQuery($sql, [$username, $email, $lastName, $mobile, $phone, $address, $city, $postalCode, $gender, $newsletter, (int)$userId]);
+    }
+
+    public function checkOldPassword($userId, $oldPassword)
+    {
+        // SÉCURITÉ CRITIQUE : Récupérer d'abord le hachage, puis le vérifier avec password_verify
+        $sql = "SELECT password FROM users WHERE id = ?";
+        $result = $this->doSelect($sql, [(int)$userId]);
+        
+        if (!empty($result)) {
+            $hashedPassword = $result[0]['password'];
+            return password_verify($oldPassword, $hashedPassword); // Comparaison sécurisée
+        }
+        
+        return false;
+    }
+
+    public function updatePassword($userId, $newPassword)
+    {
+        // SÉCURITÉ CRITIQUE : Hachage du nouveau mot de passe (Bcrypt) avant la sauvegarde
+        $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+        
+        $sql = "UPDATE users SET password = ? WHERE id = ?";
+        $this->doQuery($sql, [$hashedPassword, (int)$userId]);
+    }
+
+    public function deleteUser($userId)
+    {
+        $sql = "DELETE FROM users WHERE id = ?";
+        $this->doQuery($sql, [(int)$userId]);
+    }
+
+    public function getOrders($userId)
+    {
+        $sql = "SELECT * FROM orders WHERE user_id = ? ORDER BY id DESC";
+        return $this->doSelect($sql, [(int)$userId]);
+    }
+
+    // PROTECTION IDOR (Insecure Direct Object Reference)
+    // Explication : On oblige la base de données à vérifier que l'Order ID 
+    // appartient bien au User ID connecté. Un hacker ne peut donc pas voir les commandes des autres.
+    public function getOrderById($orderId, $userId)
+    {
+        $sql = "SELECT * FROM orders WHERE id = ? AND user_id = ?";
+        $result = $this->doSelect($sql, [(int)$orderId, (int)$userId], true);
+        return $result;
+    }
+
+    // =======================================================
+    // GESTION DES FAVORIS (WISH LIST)
+    // =======================================================
+
+    public function toggleFavorite($userId, $productId)
+    {
+        $sqlCheck = "SELECT id FROM favorites WHERE user_id = ? AND product_id = ?";
+        $exists = $this->doSelect($sqlCheck, [(int)$userId, (int)$productId]);
+
+        if (!empty($exists)) {
+            $sqlDelete = "DELETE FROM favorites WHERE id = ?";
+            $this->doQuery($sqlDelete, [$exists[0]['id']]);
+            return 'removed';
+        } else {
+            $sqlInsert = "INSERT INTO favorites (user_id, product_id, folder_id, title) VALUES (?, ?, 0, '')";
+            $this->doQuery($sqlInsert, [(int)$userId, (int)$productId]);
+            return 'added';
+        }
+    }
+
+    public function getFavorites($userId)
+    {
+        $sql = "SELECT p.*, f.id as favorite_id 
+                FROM favorites f 
+                INNER JOIN products p ON f.product_id = p.id 
+                WHERE f.user_id = ? 
+                ORDER BY f.id DESC";
+        $products = $this->doSelect($sql, [(int)$userId]);
+        
+        // Si vous avez une fonction calculateProductsPrices dans le Model de base, on l'utilise
+        if (method_exists($this, 'calculateProductsPrices')) {
+            return $this->calculateProductsPrices($products);
+        }
+        return $products;
+    }
+}
+?>

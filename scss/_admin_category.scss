@@ -1,0 +1,47 @@
+// --------------------------------------------------------
+// STYLES DE LA GESTION DES CATÉGORIES ET ATTRIBUTS
+// --------------------------------------------------------
+
+.values-grid-layout {
+    display: grid;
+    grid-template-columns: 1fr; // Mobile-first: 1 colonne
+    gap: 15px;
+    margin-top: 20px;
+
+    @media (min-width: $breakpoint-sm) { 
+        grid-template-columns: repeat(2, 1fr); // Tablette: 2 colonnes
+    }
+    
+    @media (min-width: $breakpoint-lg) { 
+        grid-template-columns: repeat(3, 1fr); // Bureau: 3 colonnes
+        gap: 20px; 
+    }
+
+    .form-group {
+        margin-bottom: 0;
+
+        label {
+            font-size: $font-size-sm; 
+            color: $color-text;
+        }
+
+        .form-control {
+            font-size: $font-size-sm; 
+            padding: 10px;
+            background-color: $bg-light;
+            color: $color-text;
+            border: 1px solid $border-color;
+            transition: all $transition-fast;
+
+            &:focus { border-color: $color-primary; box-shadow: $shadow-glow; }
+        }
+    }
+
+    .control-existing {
+        border-left: 4px solid $color-success !important;
+    }
+
+    .control-new {
+        border-left: 4px dashed $color-muted !important; 
+    }
+}

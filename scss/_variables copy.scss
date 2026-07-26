@@ -1,0 +1,48 @@
+// --------------------------------------------------------
+// VARIABLES GLOBALES - THÈME CYBER-TECH (VOLT & NOIR)
+// --------------------------------------------------------
+
+// --- COULEURS PRINCIPALES (ÉNERGIE ET TECHNOLOGIE) ---
+$color-primary: #FFE600;   // Jaune Volt (Boutons d'achat, badges, accents forts)
+$color-secondary: #000000; // Noir Absolu (En-tête, Pied de page, Contraste lourd)
+$color-danger: #FF3333;    // Rouge Tech (Alertes, ruptures de stock)
+$color-success: #00FF66;   // Vert Cyber (Succès, disponibilité)
+$color-warning: #FF9900;   // Orange (Avertissements)
+
+// --- TYPOGRAPHIE ET COULEURS DE TEXTE ---
+$color-text: #111111;      // Noir très profond (Texte principal sur fond clair)
+$color-muted: #666666;     // Gris moyen (Descriptions, attributs secondaires)
+
+// --- ARRIÈRE-PLANS ET BORDURES (CLARTÉ ET MISE EN VALEUR) ---
+$bg-body: #f4f4f4;         // Gris très clair (Fond de la page pour détacher les cartes)
+$bg-white: #ffffff;        // Blanc pur (Cartes de produits)
+$bg-light: #e0e0e0;        // Gris clair (Survols, zones inactives)
+$border-color: #e5e5e5;    // Bordures subtiles et modernes
+
+// --- TAILLES DES POLICES (MOBILE-FIRST) ---
+$font-main: 'Oswald', 'Roboto Condensed', 'Helvetica Neue', sans-serif; // Typographie tech et condensée
+
+$font-size-xs: 0.75rem;
+$font-size-sm: 0.85rem;
+$font-size-md: 1rem;
+$font-size-lg: 1.2rem;
+$font-size-xl: 1.5rem;
+
+// --- ANGLE ET EFFETS D'OMBRE (MODERNE ET LÉGÈREMENT ADOUCI) ---
+$radius-lg: 8px;           // Courbes modernes pour les cartes de produits
+$radius-sm: 4px;           // Courbes subtiles pour les boutons et petits éléments
+
+// Ombres douces pour donner un aspect d'interface logicielle haut de gamme
+$shadow-sm: 0 2px 5px rgba(0, 0, 0, 0.08);
+$shadow-md: 0 5px 15px rgba(0, 0, 0, 0.12);
+$shadow-glow: 0 0 10px rgba(255, 230, 0, 0.4); // Lueur jaune pour les boutons actifs
+
+// --- TRANSITIONS ---
+$transition-fast: 0.2s ease-in-out;
+$transition-normal: 0.3s ease-in-out;
+
+// --- POINTS DE RUPTURE (BREAKPOINTS RESPONSIVE) ---
+$breakpoint-sm: 576px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 992px;
+$breakpoint-xl: 1200px;

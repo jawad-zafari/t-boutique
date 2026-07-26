@@ -1,0 +1,90 @@
+// --------------------------------------------------------
+// STYLES DE LA PAGE DE CONNEXION (LIÉ AUX VARIABLES LUXE)
+// --------------------------------------------------------
+
+.login-container {
+    width: 100%; max-width: 900px;
+    margin: 15px auto; padding: 10px; 
+    font-family: $font-main;
+    @media (min-width: $breakpoint-md) { margin: 40px auto; padding: 15px; }
+}
+
+.login-box {
+    display: grid; grid-template-columns: 1fr; 
+    background-color: $bg-white; border-radius: $radius-lg;
+    box-shadow: $shadow-md; border: 1px solid $border-color; overflow: hidden;
+    @media (min-width: $breakpoint-md) { grid-template-columns: 1fr 1fr; }
+}
+
+.login-info {
+    background-color: $bg-light; color: $color-text;
+    padding: 25px 15px; display: flex; flex-direction: column; justify-content: center;
+    border-bottom: 1px solid $border-color;
+    @media (min-width: $breakpoint-md) { padding: 40px 30px; border-bottom: none; border-right: 1px solid $border-color; }
+
+    .info-icon { font-size: 2.5rem; margin-bottom: 15px; text-align: center; color: $color-primary; text-shadow: $shadow-glow; @media (min-width: $breakpoint-md) { font-size: 3.5rem; } }
+    h2 { font-size: $font-size-md; margin-bottom: 20px; text-align: center; color: $color-text; @media (min-width: $breakpoint-md) { font-size: $font-size-xl; } }
+
+    .benefits-list {
+        list-style: none; padding: 0; margin: 0;
+        li { margin-bottom: 12px; font-size: $font-size-xs; display: flex; align-items: flex-start; gap: 10px; line-height: 1.3; color: $color-muted; @media (min-width: $breakpoint-md) { font-size: $font-size-sm; margin-bottom: 20px; gap: 15px; }
+            i { font-size: $font-size-sm; color: $color-primary; margin-top: 2px; @media (min-width: $breakpoint-md) { font-size: $font-size-md; } }
+        }
+    }
+}
+
+.login-form-section {
+    padding: 25px 15px; background-color: $bg-white;
+    @media (min-width: $breakpoint-md) { padding: 40px 30px; }
+
+    h3 { margin-top: 0; margin-bottom: 20px; font-size: $font-size-md; color: $color-text; border-bottom: 1px solid $border-color; padding-bottom: 8px; @media (min-width: $breakpoint-md) { font-size: $font-size-lg; } }
+
+    .form-group {
+        margin-bottom: 15px;
+        label { display: block; margin-bottom: 6px; font-weight: bold; color: $color-text; font-size: $font-size-xs; @media (min-width: $breakpoint-md) { font-size: $font-size-sm; } }
+        .form-control { width: 100%; padding: 10px; border: 1px solid $border-color; border-radius: $radius-sm; transition: all $transition-fast; font-size: $font-size-xs; background-color: $bg-body; color: $color-text; @media (min-width: $breakpoint-md) { padding: 12px 15px; font-size: $font-size-sm; }
+            &:focus { border-color: $color-primary; outline: none; box-shadow: $shadow-glow; }
+        }
+    }
+
+    .checkbox-group {
+        display: flex; align-items: center; gap: 8px; margin-bottom: 15px;
+        input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: $color-primary; }
+        label { margin-bottom: 0; font-weight: normal; font-size: $font-size-xs; color: $color-muted; cursor: pointer; @media (min-width: $breakpoint-md) { font-size: $font-size-sm; } }
+    }
+
+    .form-actions {
+        margin-top: 15px;
+        .btn-action { width: 100%; padding: 10px; font-size: $font-size-sm; display: flex; justify-content: center; align-items: center; gap: 8px; background-color: $color-primary; color: $bg-body; border: none; border-radius: $radius-sm; cursor: pointer; font-weight: bold; transition: all $transition-fast; @media (min-width: $breakpoint-md) { padding: 14px; font-size: $font-size-md; }
+            &:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: $shadow-glow; }
+        }
+    }
+
+    .register-redirect {
+        margin-top: 20px; text-align: center; font-size: $font-size-xs; color: $color-muted; @media (min-width: $breakpoint-md) { font-size: $font-size-sm; }
+        .register-link { color: $color-primary; font-weight: bold; text-decoration: none; transition: all $transition-fast; &:hover { text-shadow: $shadow-glow; } }
+    }
+}
+.alert-danger-modern {
+    display: none; /* Sera activé par le JS si besoin */
+    color: #d9534f;
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 1px solid #d9534f;
+    border-radius: 4px;
+    background-color: #fdf7f7;
+    font-weight: 500;
+}
+/* Si l'erreur vient du PHP (URL param), on l'affiche directement */
+div.alert-danger-modern:not(:empty), 
+div.alert-danger-modern[role="alert"]:not(#jsLoginErrorMessage) {
+    display: block;
+}
+/* Classes d'erreur pour les formulaires (SoC) */
+.input-error {
+    border-color: #d9534f !important;
+    box-shadow: 0 0 0 3px rgba(217, 83, 79, 0.1);
+}
+.show-error {
+    display: block !important;
+}

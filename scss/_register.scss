@@ -1,0 +1,307 @@
+// --------------------------------------------------------
+// STYLES DE LA PAGE D'INSCRIPTION (MOBILE-FIRST STRICT)
+// Conforme aux standards DWWM - Séparation stricte des styles
+// --------------------------------------------------------
+
+.register-container {
+    width: 100%;
+    max-width: 900px;
+    margin: 15px auto;
+    padding: 10px;
+    font-family: $font-main;
+
+    @media (min-width: 768px) {
+        margin: 40px auto;
+        padding: 15px;
+    }
+}
+
+.register-box {
+    display: grid;
+    grid-template-columns: 1fr;
+    background-color: $bg-white;
+    border-radius: $radius-lg;
+    box-shadow: $shadow-sm;
+    overflow: hidden;
+    border: 1px solid $border-color;
+
+    @media (min-width: 768px) {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* BLOC D'INFORMATION ET AVANTAGES */
+.register-info {
+    background-color: $color-secondary;
+    color: $bg-white;
+    padding: 25px 15px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    @media (min-width: 768px) {
+        padding: 40px 30px;
+    }
+
+    .info-icon {
+        font-size: 2.5rem;
+        margin-bottom: 15px;
+        text-align: center;
+        color: rgba(255, 255, 255, 0.9);
+
+        @media (min-width: 768px) {
+            font-size: 3.5rem;
+        }
+    }
+
+    h2 {
+        font-size: 1.1rem;
+        margin-bottom: 20px;
+        text-align: center;
+        color: $bg-white;
+
+        @media (min-width: 768px) {
+            font-size: 1.5rem;
+        }
+    }
+
+    .benefits-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+
+        li {
+            margin-bottom: 12px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            line-height: 1.4;
+
+            @media (min-width: 768px) {
+                font-size: 1rem;
+                margin-bottom: 20px;
+            }
+
+            i {
+                font-size: 0.9rem;
+                color: rgba(255, 255, 255, 0.8);
+                margin-top: 3px;
+            }
+        }
+    }
+}
+
+/* SECTION FORMULAIRE D'INSCRIPTION */
+.register-form-section {
+    padding: 25px 15px;
+    background-color: $bg-white;
+
+    @media (min-width: 768px) {
+        padding: 40px 30px;
+    }
+
+    h3 {
+        margin-top: 0;
+        margin-bottom: 20px;
+        font-size: 1.1rem;
+        color: $color-text;
+        border-bottom: 2px solid $border-color;
+        padding-bottom: 8px;
+
+        @media (min-width: 768px) {
+            font-size: 1.3rem;
+        }
+
+        i {
+            color: $color-primary;
+            margin-right: 5px;
+        }
+    }
+
+    /* MESSAGES D'ALERTE ET D'ERREUR (SoC) */
+    .alert-message {
+        padding: 12px 15px;
+        border-radius: $radius-sm;
+        margin-bottom: 20px;
+        font-size: 0.88rem;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        line-height: 1.4;
+
+        &.alert-danger {
+            background-color: #fdf2f2;
+            color: #d9534f;
+            border: 1px solid #f5c6cb;
+        }
+
+        .error-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: bold;
+        }
+
+        .error-list {
+            margin: 5px 0 0 20px;
+            padding: 0;
+            list-style-type: disc;
+
+            li {
+                margin-bottom: 4px;
+            }
+        }
+
+        &.is-hidden {
+            display: none !important;
+        }
+    }
+
+    /* GROUPES DE CHAMPS DE FORMULAIRE */
+    .form-group {
+        margin-bottom: 15px;
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: bold;
+            color: $color-text;
+            font-size: 0.85rem;
+
+            @media (min-width: 768px) {
+                font-size: 0.95rem;
+            }
+
+            i {
+                color: $color-muted;
+                margin-right: 4px;
+            }
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid $border-color;
+            border-radius: $radius-sm;
+            transition: border-color $transition-fast, box-shadow $transition-fast;
+            font-size: 0.9rem;
+            font-family: $font-main;
+
+            @media (min-width: 768px) {
+                padding: 12px 15px;
+                font-size: 1rem;
+            }
+
+            &:focus {
+                border-color: $color-primary;
+                box-shadow: 0 0 0 3px rgba(59, 91, 219, 0.15);
+                outline: none;
+            }
+
+            &.is-invalid {
+                border-color: #d9534f !important;
+                background-color: #fff8f8;
+            }
+        }
+    }
+
+    /* CASES À COCHER */
+    .checkbox-group {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 15px;
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin-top: 2px;
+            cursor: pointer;
+            accent-color: $color-primary;
+            flex-shrink: 0;
+        }
+
+        label {
+            margin-bottom: 0;
+            font-weight: normal;
+            font-size: 0.8rem;
+            color: $color-muted;
+            cursor: pointer;
+            line-height: 1.4;
+
+            @media (min-width: 768px) {
+                font-size: 0.9rem;
+            }
+        }
+    }
+
+    /* ACTIONS ET BOUTON DE SOUMISSION */
+    .form-actions {
+        margin-top: 20px;
+
+        .btn-action {
+            width: 100%;
+            padding: 12px;
+            font-size: 0.95rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            background-color: $color-primary;
+            color: $bg-white;
+            border: none;
+            border-radius: $radius-sm;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all $transition-fast;
+
+            @media (min-width: 768px) {
+                padding: 14px;
+                font-size: 1.1rem;
+            }
+
+            &:hover {
+                background-color: darken(#3b5bdb, 8%);
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(59, 91, 219, 0.3);
+            }
+        }
+    }
+
+    .terms-link {
+        color: $color-secondary;
+        text-decoration: none;
+        font-weight: bold;
+        transition: color $transition-fast;
+
+        &:hover {
+            text-decoration: underline;
+            color: $color-primary;
+        }
+    }
+
+    /* REDIRECT CONNEXION */
+    .login-redirect {
+        margin-top: 25px;
+        text-align: center;
+        font-size: 0.85rem;
+        color: $color-muted;
+
+        @media (min-width: 768px) {
+            font-size: 0.95rem;
+        }
+
+        .login-link {
+            color: $color-secondary;
+            font-weight: bold;
+            text-decoration: none;
+            transition: color $transition-fast;
+
+            &:hover {
+                text-decoration: underline;
+                color: $color-primary;
+            }
+        }
+    }
+}

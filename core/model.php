@@ -1,0 +1,407 @@
+<?php
+
+/**
+ * Classe Model (Modèle Principal)
+ * Adapté et sécurisé pour le standard Français (DWWM)
+ */
+class Model
+{
+    public static ?PDO $conn = null;
+    public $totalMenu = array();
+
+    public function __construct()
+    {
+        // SÉCURITÉ : Inclusion du fichier de configuration externe (ignoré par Git)
+        $envPath = __DIR__ . '/env.php';
+        if (file_exists($envPath)) {
+            require_once $envPath;
+        } else {
+            die("Erreur de sécurité : Le fichier core/env.php est introuvable. Veuillez le créer.");
+        }
+
+        // Récupération des constantes définies dans env.php
+        $servername = defined('DB_HOST') ? DB_HOST : 'localhost';
+        $username = defined('DB_USER') ? DB_USER : 'root';
+        $password = defined('DB_PASS') ? DB_PASS : '';
+        $dbname = defined('DB_NAME') ? DB_NAME : 'digi_mvc';
+        
+        $initCommand = defined('Pdo\Mysql::ATTR_INIT_COMMAND') ? \Pdo\Mysql::ATTR_INIT_COMMAND : \PDO::MYSQL_ATTR_INIT_COMMAND;
+        
+        // SÉCURITÉ : Désactivation des requêtes émulées (EMULATE_PREPARES)
+        // Cela force MySQL à préparer les requêtes nativement, bloquant les injections SQL avancées
+        $attr = array(
+            $initCommand => "SET NAMES utf8mb4",
+            PDO::ATTR_EMULATE_PREPARES => false 
+        );
+        
+        if (self::$conn === null) {
+            try {
+                self::$conn = new PDO('mysql:host=' . $servername . ';dbname=' . $dbname, $username, $password, $attr);
+                self::$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            } catch (PDOException $e) {
+                die("Erreur de connexion à la base de données. Vérifiez vos identifiants dans core/env.php");
+            }
+        }
+    }
+
+    public static function getoption()
+    {
+        $sql = "SELECT * FROM settings";
+        $stmt = self::$conn->prepare($sql);
+        $stmt->execute();
+        $optionsList = $stmt->fetchAll();
+        $options_new = array();
+        
+        foreach ($optionsList as $option) {
+            $setting = $option['setting_key'];
+            $value = $option['setting_value'];
+            $options_new[$setting] = $value;
+        }
+        return $options_new;
+    }
+
+    public function calculateDiscount($price, $discount)
+    {
+        $price_discount = ($discount * $price) / 100;
+        $price_total = $price - $price_discount;
+        return array($price_discount, $price_total);
+    }
+
+    public function calculateProductsPrices($products)
+    {
+        if (!is_array($products)) return array();
+        foreach ($products as $key => $product) {
+            $price = $product['price'] ?? 0;
+            $discount = $product['discount_percent'] ?? 0;
+            $prices = $this->calculateDiscount($price, $discount);
+            
+            // Injection des données calculées
+            $products[$key]['price_discount'] = $prices[0];
+            $products[$key]['price_total'] = $prices[1];
+        }
+        return $products;
+    }
+
+    public function doSelect($sql, $values = array(), $fetch = '', $fetchStyle = PDO::FETCH_ASSOC)
+    {
+        $stmt = self::$conn->prepare($sql);
+        foreach ($values as $key => $value) {
+            $stmt->bindValue($key + 1, $value);
+        }
+        $stmt->execute();
+        
+        if ($fetch == '') {
+            $result = $stmt->fetchAll($fetchStyle);
+        } else {
+            $result = $stmt->fetch($fetchStyle);
+        }
+        return $result;
+    }
+
+    public function doQuery($sql, $values = array())
+    {
+        $stmt = self::$conn->prepare($sql);
+        foreach ($values as $key => $value) {
+            $stmt->bindValue($key + 1, $value);
+        }
+        $stmt->execute();
+    }
+
+    /**
+     * Récupère le nombre total de favoris pour un utilisateur donné.
+     * Respecte le pattern MVC : La vue appelle cette méthode au lieu de faire une requête SQL directe.
+     * @param int $userId L'identifiant de l'utilisateur
+     * @return int Le nombre de favoris
+     */
+    public function getFavoriteCount($userId)
+    {
+        if (!$userId) {
+            return 0;
+        }
+        
+        $sql = "SELECT COUNT(*) as total FROM favorites WHERE user_id = ?";
+        // Le paramètre "1" dans doSelect signifie qu'on utilise fetch() et non fetchAll()
+        $result = $this->doSelect($sql, [$userId], 1);
+        
+        return isset($result['total']) ? (int)$result['total'] : 0;
+    }
+
+    public function create_thumbnail($file, $pathToSave, $w, $h = '', $crop = false)
+    {
+        $new_height = $h;
+        list($width, $height) = getimagesize($file);
+        $r = $width / $height;
+
+        if ($crop) {
+            if ($width > $height) {
+                $width = (int) round($width - ($width * abs($r - $w / $h)));
+            } else {
+                $height = (int) round($height - ($height * abs($r - $w / $h)));
+            }
+            $newwidth = (int) $w;
+            $newheight = (int) $h;
+        } else {
+            if ($w / $h > $r) {
+                $newwidth = (int) round($h * $r);
+                $newheight = (int) $h;
+            } else {
+                $newheight = (int) round($w / $r);
+                $newwidth = (int) $w;
+            }
+        }
+
+        $what = getimagesize($file);
+        
+        switch (strtolower($what['mime'])) {
+            case 'image/png': $src = imagecreatefrompng($file); break;
+            case 'image/jpeg': $src = imagecreatefromjpeg($file); break;
+            case 'image/gif': $src = imagecreatefromgif($file); break;
+            case 'image/webp': $src = imagecreatefromwebp($file); break;
+            default: return false;
+        }
+
+        if ($new_height != '') {
+            $newheight = (int) $new_height;
+        }
+
+        $dst = imagecreatetruecolor($newwidth, $newheight);
+        
+        if (strtolower($what['mime']) == 'image/png' || strtolower($what['mime']) == 'image/webp') {
+            imagealphablending($dst, false);
+            imagesavealpha($dst, true);
+            $transparent = imagecolorallocatealpha($dst, 255, 255, 255, 127);
+            imagefilledrectangle($dst, 0, 0, $newwidth, $newheight, $transparent);
+        }
+
+        imagecopyresampled($dst, $src, 0, 0, 0, 0, $newwidth, $newheight, (int) $width, (int) $height);
+
+        $ext = strtolower(pathinfo($pathToSave, PATHINFO_EXTENSION));
+        switch ($ext) {
+            case 'png': imagepng($dst, $pathToSave); break;
+            case 'webp': imagewebp($dst, $pathToSave, 90); break;
+            case 'gif': imagegif($dst, $pathToSave); break;
+            default: imagejpeg($dst, $pathToSave, 95);
+        }
+
+        unset($src);
+        unset($dst);
+
+        return true;
+    }
+
+    // SÉCURITÉ : Remplacement du @session_start par une vérification propre
+    public static function sessionInit() 
+    { 
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+    }
+
+    public static function sessionSet($name, $value) 
+    { 
+        $_SESSION[$name] = $value; 
+    }
+
+    public static function sessionGet($name) 
+    { 
+        return isset($_SESSION[$name]) ? $_SESSION[$name] : false; 
+    }
+
+    public static function getCartCookie()
+    {
+        if (isset($_COOKIE['cart'])) {
+            return $_COOKIE['cart'];
+        } else {
+            $expire = time() + 7 * 24 * 3600; 
+            $value = (string) time(); 
+            
+            // SÉCURITÉ : Application des options HttpOnly et SameSite pour protéger le panier
+            setcookie('cart', $value, [
+                'expires' => $expire,
+                'path' => '/',
+                'httponly' => true,
+                'samesite' => 'Lax'
+            ]);
+            
+            return $value;
+        }
+    }
+
+    public function getCart()
+    {
+        $sql = "SELECT c.quantity AS quantity, c.id AS cartRow, p.*, cl.title AS colorTitle, g.title AS garanteeTitle
+         FROM cart_items c 
+         LEFT JOIN products p ON c.product_id = p.id
+         LEFT JOIN colors cl ON c.color_id = cl.id
+         LEFT JOIN guarantees g ON c.guarantee_id = g.id
+         WHERE c.session_cookie = ?";
+         
+        $cookie = self::getCartCookie();
+        $params = array($cookie);
+        $result = $this->doSelect($sql, $params);
+        $discountTotalAll = 0;
+
+        foreach ($result as $key => $row) {
+            $discount = (($row['discount_percent'] ?? 0) * ($row['price'] ?? 0)) / 100;
+            $discountTotal = ($row['quantity'] ?? 1) * $discount;
+            $discountTotalAll = $discountTotalAll + $discountTotal;
+            $result[$key]['discountTotal'] = $discountTotal;
+        }
+
+        $priceTotalall = 0;
+        foreach ($result as $row) {
+            $price = $row['price'] ?? 0;
+            $quantity = $row['quantity'] ?? 1;
+            $priceTotal = $price * $quantity;
+            $priceTotalall = $priceTotalall + $priceTotal;
+        }
+
+        return array($result, $priceTotalall, $discountTotalAll);
+    }
+
+    public function calculatePostPrice($cityId)
+    {
+        $cartInfo = $this->getCart();
+        $cart = $cartInfo[0];
+        $priceTotal = $cartInfo[1];
+
+        $weightTotalAll = 0;
+        foreach ($cart as $row) {
+            $weight = $row['weight'] ?? 0;
+            $quantity = $row['quantity'] ?? 1;
+            $weightTotal = $weight * $quantity;
+            $weightTotalAll = $weightTotalAll + $weightTotal;
+        }
+
+        $payType = 1;
+        $helper = new helper('http://webservice1.link/ws/v1/rest/');
+
+        try {
+            $priceData1 = $helper->getPrices($cityId, $priceTotal, $weightTotalAll, $payType, 1);
+            $post_price_pishtaz = ($payType == 1) ? ($priceData1['posti'][1]['post'] ?? 0) : ($priceData1['naghdi'][1]['post'] ?? 0);
+        } catch (Exception $e) {
+            $post_price_pishtaz = 150; 
+        }
+
+        try {
+            $priceData2 = $helper->getPrices($cityId, $priceTotal, $weightTotalAll, $payType, 2);
+            $post_price_sefareshi = ($payType == 1) ? ($priceData2['posti'][2]['post'] ?? 0) : ($priceData2['naghdi'][2]['post'] ?? 0);
+        } catch (Exception $e) {
+            $post_price_sefareshi = 100; 
+        }
+
+        return array('pishtaz' => $post_price_pishtaz / 10, 'sefareshi' => $post_price_sefareshi / 10);
+    }
+
+    public static function jaliliDate($format = 'Y/m/d') { 
+        return date($format); 
+    }
+
+    public static function jaliliToMiladi($dateStr, $format = '/')
+    {
+        try {
+            $cleanDate = str_replace('/', '-', $dateStr);
+            $date = new DateTime($cleanDate);
+            return $date->format('Y-m-d');
+        } catch (Exception $e) {
+            return date('Y-m-d');
+        }
+    }
+
+    public static function MiladiTojalili($dateStr, $format = '/')
+    {
+        try {
+            $cleanDate = str_replace('/', '-', $dateStr);
+            $date = new DateTime($cleanDate);
+            return $date->format('d' . $format . 'm' . $format . 'Y'); 
+        } catch (Exception $e) {
+            return date('d/m/Y');
+        }
+    }
+
+    public function getMenu($parentId = 0)
+    {
+        $data = array(); 
+        $sql = "SELECT * FROM categories WHERE parent_id = ?";
+        $result = $this->doSelect($sql, array($parentId));
+        foreach ($result as $row) {
+            $children = $this->getMenu($row['id']);
+            if (is_array($children) && count($children) > 0) {
+                $row['children'] = $children;
+            }
+            $data[] = $row; 
+        }
+        return $data;
+    }
+
+    public static function getUserLevel()
+    {
+        self::sessionInit();
+        $userId = self::sessionGet('userId');
+        if (!$userId) return 0;
+
+        $sql = "SELECT * FROM users WHERE id = ?";
+        $model_instance = new Model();
+        $userInfo = $model_instance->doSelect($sql, array($userId), 1);
+        return $userInfo['role_id'] ?? 0;
+    }
+}
+
+class helper {
+    private $url;
+    private $api_key;
+    const METHOD_POST = 'post';
+    const METHOD_GET = 'get';
+    private $errors = array();
+
+    public function __construct($webserviceUrl) {
+        $this->url = $webserviceUrl;
+        $this->api_key = 'F4960daa89D73A33332382fE661E7a18';
+    }
+
+    public function getPrices($des_city, $price, $weight, $buy_type, $delivery_type) {
+        $params = array('des_city' => $des_city, 'price' => $price, 'weight' => $weight, 'buy_type' => $buy_type, 'send_type' => $delivery_type);
+        return $this->call('order/getPrices.json', $params);
+    }
+
+    private function call($url, $params, $methodType = helper::METHOD_POST) {
+        $this->errors = array();
+        if (stripos($url, 'http://') === false) $url = $this->url . $url;
+        $params['api'] = $this->api_key;
+        $data = http_build_query($params);
+        
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_POST, $methodType === helper::METHOD_POST);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        
+        $result = curl_exec($ch);
+        
+        if (class_exists('CurlHandle') && $ch instanceof CurlHandle) {
+            curl_close($ch);
+        } elseif (is_resource($ch)) {
+            curl_close($ch);
+        }
+        
+        if ($result === false) throw new FrotelResponseException('Erreur cURL lors de la requête API.');
+        
+        $result_decoded = json_decode($result, true);
+        if (json_last_error() == JSON_ERROR_NONE) return $this->parseResponse($result_decoded);
+        
+        throw new FrotelResponseException('Échec de la lecture des données JSON.');
+    }
+
+    private function parseResponse($response) {
+        if (!isset($response['code'], $response['message'], $response['result'])) throw new FrotelResponseException('Format de réponse API invalide.');
+        if ($response['code'] == 0) return $response['result'];
+        $this->errors[] = $response['message'];
+        throw new FrotelWebserviceException($response['message']);
+    }
+    
+    public function getErrors() { return $this->errors; }
+}
+
+class FrotelResponseException extends Exception {}
+class FrotelWebserviceException extends Exception {}
+?>

@@ -1,0 +1,44 @@
+// --------------------------------------------------------
+// FICHIER CENTRAL D'IMPORTATION (COMPILATION PRINCIPALE)
+// --------------------------------------------------------
+
+// 1. Configuration et variables (Doit toujours être en premier)
+@import 'variables';
+
+// 2. Base et réinitialisation globale
+@import 'base';
+
+// 3. Éléments et composants réutilisables
+@import 'components';
+
+// 4. Structure de mise en page (Layout global)
+@import 'layout';
+@import 'header';
+@import 'footer';
+
+// 5. Pages du site (Front-End - Côté Client)
+@import 'home';
+@import 'product';
+@import 'search';
+@import 'cart';
+@import 'order';
+@import 'payment';
+@import 'login';
+@import 'register';
+@import 'account';
+@import 'comment';
+@import 'facture';
+@import 'collection';
+
+// 6. Administration (Back-End - Côté Serveur)
+@import 'admin';
+@import 'admin_layout';
+@import 'admin_category';
+@import 'admin_statistics';
+@import 'admin_order';
+@import 'admin_comment';
+@import 'admin_login';
+@import 'admin_slider';
+@import 'admin_setting';
+@import 'admin_product';
+@import 'admin_user';
