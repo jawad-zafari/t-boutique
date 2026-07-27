@@ -1,8 +1,14 @@
 <?php
-require_once 'core/config.php';
-require_once 'core/app.php';
-require_once 'core/controller.php';
-require_once 'core/model.php';
-require_once 'core/payment.php';
 
-$app = new App();
+require ('core/app.php');
+require ('core/controller.php');
+require ('core/model.php');
+require ('core/config.php');
+require ('core/payment.php');
+
+
+
+new App;
+
+
+?>
