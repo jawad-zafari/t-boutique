@@ -1,70 +1,74 @@
 <?php
 
 /**
- * Controller Login
- * Gère l'authentification des utilisateurs avec vérification POST et CSRF.
- * Supporte la redirection intelligente (Intended URL).
+ * Contrôleur Login
+ * Gère l'authentification des utilisateurs.
+ * Utilise le typage strict et la protection CSRF centralisée.
  */
 class Login extends Controller
 {
     public function __construct()
     {
         parent::__construct();
-        Model::sessionInit(); // Initialisation sécurisée de la session
+        Model::sessionInit(); 
     }
 
-    public function index()
+    /**
+     * Affiche la page de connexion
+     */
+    public function index(): void
     {
-        // PROTECTION CSRF : Utilisation de la méthode globale unifiée
         $data = [
             'csrf_token' => $this->generateCsrfToken()
         ];
 
-        // Chargement de la vue du formulaire de connexion
         $this->view('login/login', $data);
     }
 
-    public function checkUser()
+    /**
+     * Traite les données du formulaire de connexion
+     */
+    public function checkUser(): void
     {
-        // SÉCURITÉ : Validation stricte de la méthode HTTP POST
+        // Bloquer les requêtes non-POST
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('HTTP/1.1 405 Method Not Allowed');
-            exit('Méthode non autorisée');
+            exit;
         }
 
-        // VÉRIFICATION CSRF : Utilisation de la méthode globale unifiée
+        // Vérification du jeton CSRF via la méthode du contrôleur parent
         $this->checkCsrfToken($_POST['csrf_token'] ?? '');
 
         $formData = $_POST;
         $isLoggedIn = $this->model->checkUser($formData);
         
         if ($isLoggedIn) {
-            // REDIRECTION INTELLIGENTE : Si un paramètre 'back_url' existe, on y retourne !
+            // Redirection intelligente après connexion
             $backUrl = isset($_POST['back_url']) ? trim($_POST['back_url']) : '';
             
             if (!empty($backUrl) && strpos($backUrl, 'http') === false) {
-                // SÉCURITÉ : On vérifie que le backUrl est bien un chemin local pour éviter l'Open Redirect
                 header('Location: ' . URL . $backUrl);
             } else {
-                // Redirection par défaut vers la page d'accueil ou le profil
                 header('Location: ' . URL . 'Index/index');
             }
         } else {
-            // Redirection avec un paramètre d'erreur et on conserve le lien de retour
             $backParam = isset($_POST['back_url']) ? '&back=' . urlencode($_POST['back_url']) : '';
             header('Location: ' . URL . 'Login/index?error=1' . $backParam);
         }
         exit;
     }
 
-    public function logout()
+    /**
+     * Déconnecte l'utilisateur et détruit la session
+     */
+    public function logout(): void
     {
         Model::sessionInit();
         
-        // SÉCURITÉ : Nettoyage complet de la session pour la déconnexion
+        // Vider toutes les variables de session
         $_SESSION = array();
         
-        // Destruction sécurisée du cookie de session
+        // Détruire le cookie de session de manière sécurisée
         if (ini_get("session.use_cookies")) {
             $params = session_get_cookie_params();
             setcookie(session_name(), '', time() - 42000,
@@ -74,8 +78,6 @@ class Login extends Controller
         }
         
         session_destroy();
-        
-        // Redirection propre après déconnexion
         header('Location: ' . URL . 'Index/index');
         exit;
     }

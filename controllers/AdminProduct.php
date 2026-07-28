@@ -2,7 +2,8 @@
 
 /**
  * Contrôleur AdminProduct
- * Gère toutes les actions liées aux produits, la galerie, les attributs et les critiques.
+ * Gère la section des produits dans le panneau d'administration.
+ * Intègre le typage strict (PHP 8) et la sécurité centralisée (CSRF, Rôles).
  */
 class AdminProduct extends Controller
 {
@@ -10,40 +11,42 @@ class AdminProduct extends Controller
     {
         parent::__construct();
         
-        // SÉCURITÉ : Vérification stricte des droits d'accès. (Seul l'administrateur a accès)
+        // SÉCURITÉ : Vérification stricte des droits d'accès (Seul l'admin a accès)
         Model::sessionInit();
         $level = Model::getUserLevel();
-        if ($level != 1) {
+        if ($level !== 1) {
             header('Location: ' . URL . 'AdminLogin/index');
             exit;
         }
 
-        // PROTECTION CSRF : Génération globale du jeton pour ce contrôleur
-        if (!Model::sessionGet('csrf_token')) {
-            Model::sessionSet('csrf_token', bin2hex(random_bytes(32)));
-        }
+        // PROTECTION CSRF : Génération du jeton via la méthode du contrôleur parent
+        $this->generateCsrfToken();
     }
 
-    public function index()
+    /**
+     * Affiche la liste des produits
+     */
+    public function index(): void
     {
         $data = [
             'product' => $this->model->getProduct(),
-            'csrf_token' => Model::sessionGet('csrf_token')
+            'csrf_token' => $_SESSION['csrf_token'] ?? ''
         ];
         $this->view('admin/admin_product/products', $data);
     }
 
-    public function addProduct($productId = 0)
+    /**
+     * Ajoute ou modifie un produit
+     * @param int $productId L'identifiant du produit (0 pour un nouveau)
+     */
+    public function addProduct(int $productId = 0): void
     {
-        // SÉCURITÉ : Vérification de la méthode POST et du jeton CSRF
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $token = $_POST['csrf_token'] ?? '';
-            if ($token !== Model::sessionGet('csrf_token')) {
-                die('Erreur de sécurité : Jeton CSRF invalide.');
-            }
+            // VÉRIFICATION CSRF CENTRALISÉE
+            $this->checkCsrfToken($_POST['csrf_token'] ?? '');
             
             $image = $_FILES['image'] ?? null;
-            $this->model->addProductAction($_POST, (int)$productId, $image);
+            $this->model->addProductAction($_POST, $productId, $image);
             
             header('Location: ' . URL . 'AdminProduct/index?success=product_saved');
             exit;
@@ -53,28 +56,27 @@ class AdminProduct extends Controller
             'category' => $this->model->getCategory(),
             'color' => $this->model->getColor(),
             'garantee' => $this->model->getGarantee(),
-            'productInfo' => $this->model->getProductInfo((int)$productId),
-            'csrf_token' => Model::sessionGet('csrf_token')
+            'productInfo' => $this->model->getProductInfo($productId),
+            'csrf_token' => $_SESSION['csrf_token'] ?? ''
         ];
         
         $this->view('admin/admin_product/add_product', $data);
     }
 
-    public function deleteProduct()
+    /**
+     * Supprime un ou plusieurs produits
+     */
+    public function deleteProduct(): void
     {
-        // SÉCURITÉ CRITIQUE : Bloquer les suppressions via méthode GET
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('HTTP/1.1 405 Method Not Allowed');
             exit('Méthode non autorisée');
         }
 
-        $token = $_POST['csrf_token'] ?? '';
-        if ($token !== Model::sessionGet('csrf_token')) {
-            die('Erreur de sécurité : Jeton CSRF invalide.');
-        }
+        $this->checkCsrfToken($_POST['csrf_token'] ?? '');
         
         $ids = $_POST['id'] ?? [];
-        if (!empty($ids)) {
+        if (!empty($ids) && is_array($ids)) {
             $this->model->deleteProduct($ids);
         }
         
@@ -86,46 +88,41 @@ class AdminProduct extends Controller
     // GESTION DE LA GALERIE D'IMAGES
     // ==========================================
 
-    public function gallery($productId)
+    public function gallery(int $productId): void
     {
         $data = [
-            'gallery' => $this->model->getGallery((int)$productId),
-            'productInfo' => $this->model->getProductInfo((int)$productId),
-            'csrf_token' => Model::sessionGet('csrf_token')
+            'gallery' => $this->model->getGallery($productId),
+            'productInfo' => $this->model->getProductInfo($productId),
+            'csrf_token' => $_SESSION['csrf_token'] ?? ''
         ];
         $this->view('admin/admin_product/gallery', $data);
     }
 
-    public function addGallery($productId)
+    public function addGallery(int $productId): void
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $token = $_POST['csrf_token'] ?? '';
-            if ($token !== Model::sessionGet('csrf_token')) {
-                die('Erreur de sécurité : Jeton CSRF invalide.');
-            }
-            $this->model->addGallery((int)$productId, $_FILES['images'] ?? null);
+            $this->checkCsrfToken($_POST['csrf_token'] ?? '');
+            $this->model->addGallery($productId, $_FILES['images'] ?? null);
         }
-        header('Location: ' . URL . 'AdminProduct/gallery/' . (int)$productId . '?success=image_added');
+        header('Location: ' . URL . 'AdminProduct/gallery/' . $productId . '?success=image_added');
         exit;
     }
 
-    public function deleteGallery($productId)
+    public function deleteGallery(int $productId): void
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('HTTP/1.1 405 Method Not Allowed');
             exit('Méthode non autorisée');
         }
 
-        $token = $_POST['csrf_token'] ?? '';
-        if ($token !== Model::sessionGet('csrf_token')) {
-            die('Erreur de sécurité : Jeton CSRF invalide.');
-        }
+        $this->checkCsrfToken($_POST['csrf_token'] ?? '');
         
         $ids = $_POST['id'] ?? [];
-        if (!empty($ids)) {
+        if (!empty($ids) && is_array($ids)) {
             $this->model->deleteGallery($ids);
         }
-        header('Location: ' . URL . 'AdminProduct/gallery/' . (int)$productId . '?success=image_deleted');
+        
+        header('Location: ' . URL . 'AdminProduct/gallery/' . $productId . '?success=image_deleted');
         exit;
     }
 
@@ -133,79 +130,71 @@ class AdminProduct extends Controller
     // GESTION DES ATTRIBUTS
     // ==========================================
 
-    public function attributes($productId)
+    public function attributes(int $productId): void
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $token = $_POST['csrf_token'] ?? '';
-            if ($token !== Model::sessionGet('csrf_token')) {
-                die('Erreur de sécurité : Jeton CSRF invalide.');
-            }
+            $this->checkCsrfToken($_POST['csrf_token'] ?? '');
             
-            $this->model->editAttribute($_POST, (int)$productId);
-            header('Location: ' . URL . 'AdminProduct/attributes/' . (int)$productId . '?success=1');
+            $this->model->editAttribute($_POST, $productId);
+            header('Location: ' . URL . 'AdminProduct/attributes/' . $productId . '?success=1');
             exit;
         }
 
         $data = [
-            'attr' => $this->model->getProductAttr((int)$productId),
-            'productInfo' => $this->model->getProductInfo((int)$productId),
-            'csrf_token' => Model::sessionGet('csrf_token')
+            'attr' => $this->model->getProductAttr($productId),
+            'productInfo' => $this->model->getProductInfo($productId),
+            'csrf_token' => $_SESSION['csrf_token'] ?? ''
         ];
         $this->view('admin/admin_product/attributes', $data);
     }
 
     // ==========================================
-    // GESTION DES CRITIQUES ET AVIS
+    // GESTION DES AVIS (REVIEWS)
     // ==========================================
 
-    public function reviews($productId)
+    public function reviews(int $productId): void
     {
         $data = [
-            'naghd' => $this->model->getReview((int)$productId),
-            'productInfo' => $this->model->getProductInfo((int)$productId),
-            'csrf_token' => Model::sessionGet('csrf_token')
+            'naghd' => $this->model->getReview($productId),
+            'productInfo' => $this->model->getProductInfo($productId),
+            'csrf_token' => $_SESSION['csrf_token'] ?? ''
         ];
         $this->view('admin/admin_product/reviews', $data);
     }
 
-    public function addReview($productId, $reviewId = 0)
+    public function addReview(int $productId, int $reviewId = 0): void
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $token = $_POST['csrf_token'] ?? '';
-            if ($token !== Model::sessionGet('csrf_token')) {
-                die('Erreur de sécurité : Jeton CSRF invalide.');
-            }
+            $this->checkCsrfToken($_POST['csrf_token'] ?? '');
             
-            $this->model->addReview($_POST, (int)$productId, (int)$reviewId);
-            header('Location: ' . URL . 'AdminProduct/reviews/' . (int)$productId);
+            $this->model->addReview($_POST, $productId, $reviewId);
+            header('Location: ' . URL . 'AdminProduct/reviews/' . $productId);
             exit;
         }
 
         $data = [
-            'productInfo' => $this->model->getProductInfo((int)$productId),
-            'naghdInfo' => $this->model->getReviewInfo((int)$reviewId),
-            'csrf_token' => Model::sessionGet('csrf_token')
+            'productInfo' => $this->model->getProductInfo($productId),
+            'naghdInfo' => $this->model->getReviewInfo($reviewId),
+            'csrf_token' => $_SESSION['csrf_token'] ?? ''
         ];
         $this->view('admin/admin_product/add_review', $data);
     }
 
-    public function deleteReview($productId)
+    public function deleteReview(int $productId): void
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('HTTP/1.1 405 Method Not Allowed');
             exit('Méthode non autorisée');
         }
 
-        $token = $_POST['csrf_token'] ?? '';
-        if ($token !== Model::sessionGet('csrf_token')) {
-            die('Erreur de sécurité : Jeton CSRF invalide.');
-        }
+        $this->checkCsrfToken($_POST['csrf_token'] ?? '');
         
         $ids = $_POST['id'] ?? [];
-        if (!empty($ids)) {
+        if (!empty($ids) && is_array($ids)) {
             $this->model->deleteReview($ids);
         }
-        header('Location: ' . URL . 'AdminProduct/reviews/' . (int)$productId);
+        
+        header('Location: ' . URL . 'AdminProduct/reviews/' . $productId);
         exit;
     }
 }

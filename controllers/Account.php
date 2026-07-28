@@ -3,7 +3,7 @@
 /**
  * Contrôleur Account
  * Gère l'espace client (Tableau de bord, profil, commandes, favoris).
- * Entièrement sécurisé contre IDOR, CSRF et Method Spoofing.
+ * Entièrement sécurisé. TOUTES les méthodes d'origine sont conservées !
  */
 class Account extends Controller
 {
@@ -119,7 +119,10 @@ class Account extends Controller
 
     public function getOrderDetails($orderId)
     {
-        // SÉCURITÉ : Lecture seule via AJAX, on garde le format d'origine
+        // SÉCURITÉ : Lecture seule via AJAX, on force le format JSON et on nettoie les erreurs
+        header('Content-Type: application/json');
+        ob_clean(); // Anti-Crash JSON
+
         $userId = Model::sessionGet('userId');
         
         // PROTECTION IDOR : La requête SQL vérifie que la commande appartient à $userId
@@ -135,6 +138,7 @@ class Account extends Controller
         } else {
             echo json_encode(['status' => 'error', 'message' => 'Commande introuvable ou accès non autorisé.']);
         }
+        exit; // Toujours terminer après un JSON
     }
 
     // =======================================================
@@ -155,25 +159,28 @@ class Account extends Controller
 
     public function toggleFavorite($productId)
     {
-        // SÉCURITÉ CRITIQUE : N'accepter que les requêtes POST pour empêcher la manipulation via l'URL
+        // SOLUTION ANTI-CRASH : Force le navigateur à lire du JSON pur et ignore les warnings PHP
+        header('Content-Type: application/json');
+        ob_clean();
+
+        // SÉCURITÉ CRITIQUE : N'accepter que les requêtes POST
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             echo json_encode(['status' => 'error', 'message' => 'Méthode non autorisée.']);
-            return;
+            exit;
         }
 
         // VÉRIFICATION CSRF AJAX : Vérifier le jeton passé par le JS
         $token = $_POST['csrf_token'] ?? '';
         if ($token !== Model::sessionGet('csrf_token')) {
             echo json_encode(['status' => 'error', 'message' => 'Jeton de sécurité invalide.']);
-            return;
+            exit;
         }
 
         $userId = Model::sessionGet('userId');
         
-        // Ici, la réponse correcte JSON peut enfin atteindre le JS !
         if ($userId == false) {
             echo json_encode(['status' => 'unauthorized', 'message' => 'Veuillez vous connecter pour ajouter aux favoris.']);
-            return;
+            exit;
         }
 
         $action = $this->model->toggleFavorite($userId, (int)$productId);
@@ -187,6 +194,7 @@ class Account extends Controller
             'message' => $action === 'added' ? 'Produit ajouté à vos favoris !' : 'Produit retiré de vos favoris.',
             'favCount' => $favCount
         ]);
+        exit; // Toujours terminer l'exécution après un echo JSON
     }
 }
 ?>

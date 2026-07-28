@@ -1,4 +1,13 @@
+# Fichiers d'environnement (Sécurité : Ne jamais uploader ces fichiers)
 core/env.php
+.env
 
+# Caches et fichiers de développement
 .sass-cache/
 *.css.map
+.DS_Store
+Thumbs.db
+
+# Dépendances (Pour une utilisation future avec Composer)
+vendor/
+node_modules/

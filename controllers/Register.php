@@ -2,67 +2,58 @@
 
 /**
  * Contrôleur Register
- * Gère l'inscription des utilisateurs avec validation stricte côté serveur.
- * Protection complète contre les failles CSRF et les données invalides.
+ * Gère l'inscription des utilisateurs.
+ * Architecture harmonisée avec la gestion CSRF globale.
  */
 class Register extends Controller 
 {
     public function __construct() 
     {
         parent::__construct();
-        Model::sessionInit(); // Initialisation des sessions pour gérer la sécurité
+        Model::sessionInit(); 
     }
     
-    public function index() 
+    /**
+     * Affiche le formulaire d'inscription
+     */
+    public function index(): void 
     {
-        // PROTECTION CSRF : Génération d'un jeton unique pour le formulaire
-        if (!Model::sessionGet('csrf_token')) {
-            Model::sessionSet('csrf_token', bin2hex(random_bytes(32)));
-        }
-        
         $data = [
-            'csrf_token' => Model::sessionGet('csrf_token')
+            'csrf_token' => $this->generateCsrfToken()
         ];
         
-        // Affichage de la vue
         $this->view('register/register', $data);
     }
 
-    public function save() 
+    /**
+     * Traite la sauvegarde d'un nouvel utilisateur
+     */
+    public function save(): void 
     {
-        // SÉCURITÉ : Bloquer les requêtes qui ne sont pas de type POST
+        // Validation stricte de la méthode HTTP
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('HTTP/1.1 405 Method Not Allowed');
-            exit('Méthode non autorisée');
+            exit;
         }
 
-        // VÉRIFICATION CSRF : Vérifier l'authenticité de la requête
-        $token = $_POST['csrf_token'] ?? '';
-        $sessionToken = Model::sessionGet('csrf_token');
-
-        if (!$token || $token !== $sessionToken) {
-            die('Erreur de sécurité : Jeton CSRF invalide ou expiré.');
-        }
-
-        // SÉCURITÉ : Validation stricte des données côté serveur (Ne jamais faire confiance au Front-end)
+        // Vérification CSRF globale (DRY Principle)
+        $this->checkCsrfToken($_POST['csrf_token'] ?? '');
+        
         $email = filter_var($_POST['email'] ?? '', FILTER_VALIDATE_EMAIL);
         $password = $_POST['password'] ?? '';
         $passwordConfirm = $_POST['password_confirm'] ?? '';
         
-        // Si les données sont invalides ou incomplètes, on redirige avec une erreur
+        // Validation côté serveur
         if (!$email || strlen($password) < 6 || $password !== $passwordConfirm) {
             header('Location: ' . URL . 'Register/index?error=validation');
             exit;
         }
 
-        // Le modèle tente d'enregistrer l'utilisateur
         $isRegistered = $this->model->insertUser($_POST);
         
         if ($isRegistered) {
-            // Succès : Redirection vers la page de connexion
             header('Location: ' . URL . 'Login/index?register=success');
         } else {
-            // Échec : L'adresse e-mail existe déjà
             header('Location: ' . URL . 'Register/index?error=exists');
         }
         exit;

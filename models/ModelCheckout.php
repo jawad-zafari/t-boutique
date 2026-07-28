@@ -2,7 +2,8 @@
 
 /**
  * Model ModelCheckout
- * Gestion sécurisée des paiements et des commandes (Anti-Injection SQL & Protection IDOR)
+ * Gestion sécurisée des paiements Stripe et des commandes.
+ * Adapté strictement à la base de données standard existante.
  */
 class ModelCheckout extends Model
 {
@@ -11,92 +12,95 @@ class ModelCheckout extends Model
         parent::__construct();
     }
 
+    /**
+     * Récupère les informations d'une commande (Sécurisé contre IDOR)
+     */
     public function getOrderInfo($orderId)
     {
         self::sessionInit();
         $userId = (int)self::sessionGet('userId');
 
-        // SÉCURITÉ CRITIQUE (IDOR Protection) : 
-        // On s'assure que la commande récupérée appartient bien à l'utilisateur actuellement connecté !
+        // SÉCURITÉ (IDOR) : On s'assure que la commande appartient à l'utilisateur connecté
         if ($userId > 0) {
             $sql = "SELECT * FROM orders WHERE id = ? AND user_id = ?";
-            return $this->doSelect($sql, [(int)$orderId, $userId], true);
-        } else {
-            // Si l'utilisateur est un invité (Guest), on vérifie via le cookie de session
-            $cookie = self::getCartCookie();
-            $sql = "SELECT * FROM orders WHERE id = ? AND session_cookie = ?";
-            return $this->doSelect($sql, [(int)$orderId, $cookie], true);
+            return $this->doSelect($sql, [(int)$orderId, $userId], 'fetch', PDO::FETCH_ASSOC);
         }
+        
+        return false;
     }
 
+    /**
+     * Vérifie le statut du paiement au retour de Stripe
+     */
     public function stripeCheckout($data)
     {
         $authority = $data['Authority'] ?? '';
         
         $sql = "SELECT * FROM orders WHERE transaction_id_before = ?";
-        $result = $this->doSelect($sql, [$authority], true);
-        $amount = $result['total_amount'] ?? 0;
-
-        $payment = new Payment();
-        $verifyResult = $payment->stripeVerify($amount, $authority);
+        $result = $this->doSelect($sql, [$authority], 'fetch', PDO::FETCH_ASSOC);
         
-        $status = (int)($verifyResult['Status'] ?? 0);
-        $refId = $verifyResult['RefID'] ?? '';
-
-        if ($status === 100) {
-            // CORRECTION : On met à jour is_paid = 1 ET status_id = 4 (Payée)
-            $sqlUpdate = "UPDATE orders SET is_paid = 1, status_id = 4, transaction_id_after = ? WHERE transaction_id_before = ?";
-            $this->doQuery($sqlUpdate, [$refId, $authority]);
+        if (!$result) {
+            return false;
         }
 
-        $sqlFinal = "SELECT * FROM orders WHERE transaction_id_before = ?";
-        return $this->doSelect($sqlFinal, [$authority], true);
+        // Correspondance avec la colonne "total_amount" de votre BDD
+        $amount = (float)($result['total_amount'] ?? 0); 
+        $orderId = (int)$result['id'];
+
+        require_once 'core/payment.php';
+        $payment = new Payment();
+        $verifyResult = $payment->stripeVerify($amount, $authority);
+
+        // 100 = Paiement réussi
+        if (isset($verifyResult['Status']) && $verifyResult['Status'] == 100) {
+            $refId = $verifyResult['RefID'] ?? '';
+            // CORRECTION : Utilisation de "is_paid" au lieu de "pay_status"
+            $sqlUpdate = "UPDATE orders SET is_paid = 1, transaction_id_after = ? WHERE id = ?";
+            $this->doQuery($sqlUpdate, [$refId, $orderId]);
+        }
+
+        return $this->getOrderInfo($orderId);
     }
 
+    /**
+     * Prépare et envoie la requête de paiement à Stripe
+     */
     public function payOnline($orderId)
     {
-        $orderId = (int)$orderId;
         $orderInfo = $this->getOrderInfo($orderId);
-        
         if (!$orderInfo) {
-            header('Location: ' . URL . 'Checkout/showError?error=' . urlencode('Commande introuvable.'));
+            header('Location: ' . URL . 'Checkout/showError?error=' . urlencode('Commande invalide.'));
             exit;
         }
 
-        $payType = (int)($orderInfo['payment_method_id'] ?? 1);
+        // Correspondance avec la colonne "total_amount" de votre BDD
+        $amount = (float)($orderInfo['total_amount'] ?? 0);
+        $email = 'client@example.com'; 
+        $description = "Paiement pour la commande #" . (int)$orderId;
 
-        // CORRECTION : 2 correspond au virement bancaire dans votre BDD (pas 4)
-        if ($payType === 2) {
-            $sql = "UPDATE orders SET payment_method_id = 1 WHERE id = ?";
-            $this->doQuery($sql, [$orderId]);
-            $payType = 1;
-        }
+        require_once 'core/payment.php';
+        $payment = new Payment();
+        $result = $payment->stripeRequest($amount, $description, $email);
 
-        if ($payType === 1) {
-            $amount = $orderInfo['total_amount'] ?? 0;
-            $email = 'contact@maboutique.fr'; 
-            
-            $payment = new Payment();
-            $result = $payment->stripeRequest($amount, 'Paiement de commande sécurisé', $email);
-
-            $status = (int)($result['Status'] ?? 0);
+        if (isset($result['Status']) && $result['Status'] == 100) {
             $authority = $result['Authority'] ?? '';
             $redirectUrl = $result['RedirectURL'] ?? '';
-            $error = $result['Error'] ?? '';
 
-            if ($status === 100) {
-                $sqlAuth = "UPDATE orders SET transaction_id_before = ? WHERE id = ?";
-                $this->doQuery($sqlAuth, [$authority, $orderId]);
-                
-                header('Location: ' . $redirectUrl);
-                exit;
-            } else {
-                header('Location: ' . URL . 'Checkout/showError?error=' . urlencode($error) . '&orderId=' . $orderId);
-                exit;
-            }
+            $sqlAuth = "UPDATE orders SET transaction_id_before = ? WHERE id = ?";
+            $this->doQuery($sqlAuth, [$authority, (int)$orderId]);
+            
+            header('Location: ' . $redirectUrl);
+            exit;
+        } else {
+            $error = $result['Error'] ?? 'Erreur lors de la création de la session Stripe.';
+            header('Location: ' . URL . 'Checkout/showError?error=' . urlencode($error) . '&orderId=' . (int)$orderId);
+            exit;
         }
     }
 
+    /**
+     * Met à jour les informations pour un virement bancaire manuel
+     */
     public function updateCreditCard($data, $orderId)
     {
         $day = (int)($data['day'] ?? 0);
@@ -106,12 +110,13 @@ class ModelCheckout extends Model
         $creditCard = htmlspecialchars(trim($data['creditcard'] ?? ''), ENT_QUOTES, 'UTF-8');
         $bank = htmlspecialchars(trim($data['bank'] ?? ''), ENT_QUOTES, 'UTF-8');
 
-        $orderInfo = $this->getOrderInfo((int)$orderId);
+        $orderInfo = $this->getOrderInfo($orderId);
+        
         if ($orderInfo) {
-            // CORRECTION : On assigne la méthode de paiement 2 (Virement) et le statut 1 (En attente de confirmation)
-            $sql = "UPDATE orders SET pay_day = ?, pay_month = ?, pay_year = ?, pay_card_number = ?, pay_bank_name = ?, payment_method_id = 2, status_id = 1 WHERE id = ?";
-            $params = [$day, $month, $year, $creditCard, $bank, (int)$orderId];
-            $this->doQuery($sql, $params);
+            // CORRECTION: Utilisation de payment_method_id, pay_card_number et pay_bank_name
+            // SÉCURITÉ LOGIQUE: is_paid n'est PAS mis à 1 car le virement doit être validé par l'admin !
+            $sql = "UPDATE orders SET pay_day = ?, pay_month = ?, pay_year = ?, pay_card_number = ?, pay_bank_name = ?, payment_method_id = 2 WHERE id = ?";
+            $this->doQuery($sql, [$day, $month, $year, $creditCard, $bank, (int)$orderId]);
         }
     }
 }

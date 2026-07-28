@@ -1,8 +1,8 @@
 <?php
 
 /**
- * Model ModelLogin
- * Gère la vérification des utilisateurs en respectant l'architecture MVC globale.
+ * Modèle ModelLogin
+ * Vérifie les informations d'identification avec typage strict.
  */
 class ModelLogin extends Model
 {
@@ -12,11 +12,12 @@ class ModelLogin extends Model
     }
 
     /**
-     * Vérifie les identifiants et initialise la session utilisateur de manière sécurisée
+     * Vérifie les accès de l'utilisateur
+     * @param array $form Les données soumises
+     * @return bool Vrai si la connexion réussit
      */
-    public function checkUser($form)
+    public function checkUser(array $form): bool
     {
-        // Nettoyage et assainissement de l'adresse e-mail
         $email = filter_var($form['email'] ?? '', FILTER_SANITIZE_EMAIL);
         $password = $form['password'] ?? '';
 
@@ -24,28 +25,24 @@ class ModelLogin extends Model
             return false;
         }
 
-        // SÉCURITÉ & ARCHITECTURE : Utilisation de doSelect() défini dans le modèle parent
         $sql = "SELECT id, password FROM users WHERE email = ?";
-        $result = $this->doSelect($sql, [$email]);
+        // Utilisation du paramètre 'fetch' pour récupérer un seul tableau associatif
+        $user = $this->doSelect($sql, [$email], 'fetch', PDO::FETCH_ASSOC);
 
-        // doSelect retourne un tableau de résultats. On récupère la première ligne.
-        $user = $result[0] ?? null;
-
-        // SÉCURITÉ CRITIQUE : Vérification du mot de passe crypté via password_verify
         if ($user && password_verify($password, $user['password'])) {
             
             Model::sessionInit();
             
-            // PRÉVENTION : Régénération de l'ID de session pour bloquer la fixation de session
+            // Prévention contre la fixation de session
             session_regenerate_id(true);
             
-            // Stockage sécurisé de l'identifiant utilisateur
             Model::sessionSet('userId', (int)$user['id']);
+            Model::sessionSet('loggedIn', true);
             
-            return true; 
+            return true;
         }
         
-        return false; 
+        return false;
     }
 }
 ?>

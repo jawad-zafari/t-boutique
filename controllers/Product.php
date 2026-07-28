@@ -21,11 +21,8 @@ class Product extends Controller
      */
     public function index($id, $activeTab = 'reviews')
     {
-        // PROTECTION CSRF : Génération du jeton sécurisé s'il n'existe pas
-        if (!Model::sessionGet('csrf_token')) {
-            Model::sessionSet('csrf_token', bin2hex(random_bytes(32)));
-        }
-        $csrf_token = Model::sessionGet('csrf_token');
+        // PROTECTION CSRF : Utilisation de la méthode de base du contrôleur
+        $csrf_token = $this->generateCsrfToken();
 
         // Sécurisation : on force le type entier (int) pour éviter les injections
         $productId = (int)$id;
@@ -57,7 +54,7 @@ class Product extends Controller
         $questions = $qaData[0] ?? [];
         $answers = $qaData[1] ?? [];
 
-        // Préparation des données pour la vue (Synchronisation parfaite avec les fichiers Vue)
+        // Préparation des données pour la vue
         $data = [
             'productInfo'    => $productInfo,
             'exclusives'     => $exclusives,
@@ -85,6 +82,7 @@ class Product extends Controller
     {
         // SÉCURITÉ : Définir le type de réponse en JSON
         header('Content-Type: application/json; charset=utf-8');
+        ob_clean(); // ANTI-CRASH : Nettoie les espaces ou erreurs avant d'envoyer le JSON
 
         // SÉCURITÉ : Vérifier que la requête utilise la méthode POST
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -93,14 +91,8 @@ class Product extends Controller
             exit;
         }
 
-        // VÉRIFICATION CSRF : Bloquer les requêtes intersites malveillantes
-        $token = $_POST['csrf_token'] ?? '';
-        $sessionToken = Model::sessionGet('csrf_token');
-        if (!$token || $token !== $sessionToken) {
-            http_response_code(403);
-            echo json_encode(['status' => 'error', 'message' => 'Action non autorisée (Jeton CSRF invalide).']);
-            exit;
-        }
+        // VÉRIFICATION CSRF (DRY Principle : On utilise la fonction du contrôleur parent)
+        $this->checkCsrfToken($_POST['csrf_token'] ?? '');
 
         // Récupération sécurisée des options du produit
         $colorId = isset($_POST['colorId']) ? (int)$_POST['colorId'] : 0;
@@ -121,6 +113,7 @@ class Product extends Controller
     {
         // SÉCURITÉ : Définir le type de réponse
         header('Content-Type: application/json; charset=utf-8');
+        ob_clean(); // ANTI-CRASH
 
         // SÉCURITÉ : Validation de la méthode POST
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -137,20 +130,15 @@ class Product extends Controller
             exit;
         }
 
-        // VÉRIFICATION CSRF : Empêcher les soumissions automatisées (Bots)
-        $token = $_POST['csrf_token'] ?? '';
-        $sessionToken = Model::sessionGet('csrf_token');
-        if (!$token || $token !== $sessionToken) {
-            http_response_code(403);
-            echo json_encode(['status' => 'error', 'message' => 'Action non autorisée (Jeton CSRF invalide).']);
-            exit;
-        }
+        // VÉRIFICATION CSRF
+        $this->checkCsrfToken($_POST['csrf_token'] ?? '');
 
         $questionText = $_POST['question'] ?? '';
         
         // Validation : La question ne doit pas être vide
         if (!empty(trim($questionText))) {
-            $this->model->addQuestion((int)$productId, $questionText);
+            // ARCHITECTURE MVC : Le contrôleur passe l'ID utilisateur au modèle
+            $this->model->addQuestion((int)$productId, $userId, $questionText);
             echo json_encode(['status' => 'success', 'message' => 'Votre question a été soumise avec succès. Elle sera visible après validation.']);
         } else {
             http_response_code(400);

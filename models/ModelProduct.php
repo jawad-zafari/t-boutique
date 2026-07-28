@@ -188,21 +188,18 @@ class ModelProduct extends Model
 
     /**
      * Enregistre une nouvelle question dans la base de données.
+     * Le paramètre $userId est passé par le contrôleur (Règle MVC).
      */
-    public function addQuestion($productId, $questionText)
+    public function addQuestion($productId, $userId, $questionText)
     {
-        self::sessionInit();
-        $userId = (int)self::sessionGet('userId'); 
-        
-        // SÉCURITÉ MINEURE : Bloquer l'insertion si l'ID utilisateur est invalide
         if ($userId <= 0) {
             return;
         }
 
         $createdAt = date('Y-m-d H:i:s');
         
-        // SÉCURITÉ ANTI-XSS : Nettoyage strict des balises HTML
-        $safeContent = strip_tags(trim($questionText));
+        // SÉCURITÉ ANTI-XSS : Nettoyage strict (htmlspecialchars est préférable à strip_tags pour le DWWM)
+        $safeContent = htmlspecialchars(trim($questionText), ENT_QUOTES, 'UTF-8');
         
         $sql = "INSERT INTO questions (content, product_id, user_id, parent_id, is_approved, created_at) VALUES (?, ?, ?, 0, 0, ?)";
         $this->doQuery($sql, [$safeContent, (int)$productId, $userId, $createdAt]);

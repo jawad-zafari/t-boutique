@@ -1,33 +1,14 @@
 <?php
-// SÉCURITÉ : Initialisation sécurisée de la session
-Model::sessionInit();
-$baseModel = new Model();
-$userId = Model::sessionGet('userId');
-$userLevel = 0;
+// ARCHITECTURE DWWM STRICTE : Vue pure sans logique métier (MVC).
+// Les variables sont définies par le contrôleur et transmises à cette vue.
 
-if ($userId != false) {
-    $userLevel = Model::getUserLevel();
-}
-
-// SÉCURITÉ & ARCHITECTURE MVC : 
-// On n'écrit jamais de requête SQL directe (SELECT) dans une Vue.
-// On fait appel à la méthode du Modèle pour récupérer les données.
-$menuList = $baseModel->getMenu(0);
-$cartData = $baseModel->getCart();
-$cartItems = $cartData[0] ?? [];
-$cartCount = 0;
-
-foreach ($cartItems as $item) {
-    $cartCount += (int)($item['quantity'] ?? $item['tedad'] ?? 1); 
-}
-
-$favCount = 0;
-if ($userId != false) {
-    $favCount = $baseModel->getFavoriteCount($userId);
-}
-
-// Récupération du jeton CSRF global
-$csrfToken = Model::sessionGet('csrf_token') ?: '';
+$userId    = $userId ?? false;
+$userLevel = $userLevel ?? 0;
+$menuList  = $menuList ?? [];
+$cartItems = $cartItems ?? [];
+$cartCount = $cartCount ?? 0;
+$favCount  = $favCount ?? 0;
+$csrfToken = $csrf_token ?? '';
 ?>
 <!DOCTYPE html>
 <html lang="fr" dir="ltr">

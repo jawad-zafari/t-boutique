@@ -99,6 +99,12 @@ document.addEventListener("DOMContentLoaded", function() {
                     method: 'POST',
                     body: params
                 });
+
+                // ANTI-CRASH : Vérifier si la réponse du serveur n'est pas une erreur 404/500
+                if (!response.ok) {
+                    throw new Error(`Erreur HTTP: ${response.status}`);
+                }
+
                 const result = await response.json();
 
                 if (result.status === 'unauthorized') {
@@ -133,10 +139,13 @@ document.addEventListener("DOMContentLoaded", function() {
                         const count = parseInt(result.favCount || 0);
                         favBadge.innerText = count;
                         if (count > 0) {
+                            // On retire la classe is-hidden si elle existe
+                            favBadge.classList.remove('is-hidden');
                             favBadge.style.display = 'inline-flex';
                             favBadge.style.transform = 'scale(1.4)';
                             setTimeout(() => { favBadge.style.transform = 'scale(1)'; }, 250);
                         } else {
+                            favBadge.classList.add('is-hidden');
                             favBadge.style.display = 'none';
                         }
                     }
