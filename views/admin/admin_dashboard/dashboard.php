@@ -47,6 +47,4 @@
 
 <script src="https://code.highcharts.com/highcharts.js" defer></script>
 <script src="https://code.highcharts.com/modules/exporting.js" defer></script>
-<script src="https://code.highcharts.com/modules/accessibility.js" defer></script>
-
 <script src="<?= URL ?>public/assets/js/admin_dashboard.js" defer></script>

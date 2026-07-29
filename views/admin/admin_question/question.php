@@ -24,13 +24,13 @@
             <table class="admin-table" aria-label="Liste des questions des utilisateurs">
                 <thead>
                     <tr>
-                        <th scope="col" class="text-center col-check">N°</th>
-                        <th scope="col" style="width: 120px;">Date</th>
-                        <th scope="col">Question Utilisateur</th>
-                        <th scope="col">Réponse Admin</th>
-                        <th scope="col" class="text-center" style="width: 130px;">Statut</th>
-                        <th scope="col" class="text-center col-check">
-                            <input type="checkbox" id="selectAllCheckboxes" class="admin-checkbox" aria-label="Tout sélectionner">
+                        <th scope="col" class="text-center col-id">N°</th>
+                        <th scope="col">Date</th>
+                        <th scope="col">Question de l'utilisateur</th>
+                        <th scope="col">Réponse de l'administrateur</th>
+                        <th scope="col" class="text-center">Statut</th>
+                        <th scope="col" class="text-center col-checkbox">
+                            <input type="checkbox" id="selectAllCheckboxes" class="admin-checkbox" aria-label="Sélectionner tout">
                         </th>
                     </tr>
                 </thead>
@@ -47,11 +47,11 @@
                         <td><?= htmlspecialchars($row['created_at'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
                         
                         <td>
-                            <textarea name="question_<?= $qId ?>" class="textarea-comment" aria-label="Modifier la question <?= $i ?>"><?= htmlspecialchars($row['content'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
+                            <textarea name="question_<?= $qId ?>" class="form-control textarea-small" rows="2" aria-label="Question <?= $i ?>"><?= htmlspecialchars($row['content'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
                         </td>
                         
                         <td>
-                            <textarea name="answer_<?= $qId ?>" class="textarea-comment" placeholder="Écrire une réponse..." aria-label="Réponse de l'admin pour la question <?= $i ?>"><?= htmlspecialchars($row['admin_answer'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
+                            <textarea name="answer_<?= $qId ?>" class="form-control textarea-small" rows="2" placeholder="Saisir la réponse..." aria-label="Réponse de l'admin pour la question <?= $i ?>"><?= htmlspecialchars($row['admin_answer'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
                         </td>
 
                         <td class="text-center">

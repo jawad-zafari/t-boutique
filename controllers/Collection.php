@@ -3,13 +3,14 @@
 /**
  * Controller Collection
  * Gère l'affichage des listes de produits avec sécurité, filtres et protection CSRF.
+ * Standard DWWM : Sécurisation des paramètres GET (Whitelisting).
  */
 class Collection extends Controller
 {
     public function __construct()
     {
         parent::__construct();
-        // SÉCURITÉ : Initialisation de la session pour générer le jeton CSRF
+        // SÉCURITÉ : Initialisation de la session pour la gestion du panier et CSRF
         Model::sessionInit(); 
     }
 
@@ -21,7 +22,7 @@ class Collection extends Controller
      */
     public function index($type = 'latest', $param1 = 1, $param2 = 1)
     {
-        // SÉCURITÉ : Validation stricte du type de collection (Whitelisting)
+        // SÉCURITÉ (Whitelisting) : Validation stricte du type de collection
         $allowedTypes = ['latest', 'special', 'exclusive', 'mostviewed', 'category'];
         if (!in_array($type, $allowedTypes)) {
             $type = 'latest'; // Fallback sécurisé si l'URL est manipulée
@@ -30,7 +31,7 @@ class Collection extends Controller
         // 1. Récupération sécurisée des paramètres GET (Filtres)
         $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 20;
         
-        // SÉCURITÉ : Limiter les choix possibles pour éviter une surcharge du serveur (DDoS)
+        // SÉCURITÉ : Limiter les choix possibles pour éviter une surcharge du serveur (Anti-DDoS basique)
         if (!in_array($limit, [20, 40, 60])) {
             $limit = 20; 
         }
@@ -82,7 +83,7 @@ class Collection extends Controller
             'categoryId'    => $categoryId,
             'categoryTitle' => $categoryTitle,
             'filters'       => $filters,
-            // SÉCURITÉ CRITIQUE : Génération du jeton pour les boutons "Ajouter au panier" et "Favoris"
+            // SÉCURITÉ CRITIQUE : Génération du jeton unifié pour les boutons "Ajouter au panier" et "Favoris"
             'csrf_token'    => $this->generateCsrfToken() 
         ];
 

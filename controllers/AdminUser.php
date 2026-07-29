@@ -3,6 +3,7 @@
 /**
  * Contrôleur AdminUser
  * Gère la liste des utilisateurs et leurs rôles (Niveaux d'accès).
+ * Sécurisé par accès de Niveau 1 et jetons CSRF unifiés.
  */
 class AdminUser extends Controller
 {
@@ -17,11 +18,6 @@ class AdminUser extends Controller
             header('Location: ' . URL . 'AdminLogin/index');
             exit;
         }
-
-        // PROTECTION CSRF : Génération globale du jeton pour ce contrôleur
-        if (!Model::sessionGet('csrf_token')) {
-            Model::sessionSet('csrf_token', bin2hex(random_bytes(32)));
-        }
     }
 
     /**
@@ -33,7 +29,8 @@ class AdminUser extends Controller
         
         $data = [
             'users' => $users,
-            'csrf_token' => Model::sessionGet('csrf_token')
+            // RÈGLE MVC : Appel de la méthode globale unifiée pour générer le jeton
+            'csrf_token' => $this->generateCsrfToken()
         ];
         
         $this->view('admin/admin_user/users', $data);
@@ -44,17 +41,13 @@ class AdminUser extends Controller
      */
     public function changeLevel1()
     {
-        // SÉCURITÉ CRITIQUE : Bloquer les requêtes GET (Method Spoofing)
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('HTTP/1.1 405 Method Not Allowed');
             exit('Méthode non autorisée');
         }
 
-        // VÉRIFICATION CSRF : Bloquer les requêtes forgées
-        $token = $_POST['csrf_token'] ?? '';
-        if ($token !== Model::sessionGet('csrf_token')) {
-            die('Erreur de sécurité : Jeton CSRF invalide.');
-        }
+        // VÉRIFICATION CSRF : Centralisée
+        $this->checkCsrfToken($_POST['csrf_token'] ?? '');
             
         $ids = $_POST['id'] ?? [];
         if (!empty($ids)) {
@@ -64,7 +57,7 @@ class AdminUser extends Controller
         header('Location: ' . URL . 'AdminUser/index');
         exit;
     }
-    
+
     /**
      * Modifie le rôle des utilisateurs en Employé (Niveau 2)
      */
@@ -75,10 +68,7 @@ class AdminUser extends Controller
             exit('Méthode non autorisée');
         }
 
-        $token = $_POST['csrf_token'] ?? '';
-        if ($token !== Model::sessionGet('csrf_token')) {
-            die('Erreur de sécurité : Jeton CSRF invalide.');
-        }
+        $this->checkCsrfToken($_POST['csrf_token'] ?? '');
             
         $ids = $_POST['id'] ?? [];
         if (!empty($ids)) {
@@ -99,10 +89,7 @@ class AdminUser extends Controller
             exit('Méthode non autorisée');
         }
 
-        $token = $_POST['csrf_token'] ?? '';
-        if ($token !== Model::sessionGet('csrf_token')) {
-            die('Erreur de sécurité : Jeton CSRF invalide.');
-        }
+        $this->checkCsrfToken($_POST['csrf_token'] ?? '');
             
         $ids = $_POST['id'] ?? [];
         if (!empty($ids)) {
@@ -123,11 +110,8 @@ class AdminUser extends Controller
             exit('Méthode non autorisée');
         }
 
-        $token = $_POST['csrf_token'] ?? '';
-        if ($token !== Model::sessionGet('csrf_token')) {
-            die('Erreur de sécurité : Jeton CSRF invalide.');
-        }
-            
+        $this->checkCsrfToken($_POST['csrf_token'] ?? '');
+
         $ids = $_POST['id'] ?? [];
         if (!empty($ids)) {
             $this->model->delete($ids);

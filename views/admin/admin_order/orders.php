@@ -6,7 +6,7 @@
         </div>
     </header>
 
-    <form id="formOrdersSelection" method="post">
+    <form id="formOrdersSelection" method="post" action="<?= URL ?>AdminOrder/bulkUpdateStatus">
         
         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($data['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
 
@@ -19,55 +19,54 @@
                         <option value="<?= (int)$status['id'] ?>"><?= htmlspecialchars($status['title'], ENT_QUOTES, 'UTF-8'); ?></option>
                     <?php endforeach; endif; ?>
                 </select>
-                <button type="submit" formaction="<?= URL ?>AdminOrder/bulkUpdateStatus" id="btnBulkUpdateStatus" class="btn-admin-primary" aria-label="Appliquer le nouveau statut aux commandes sélectionnées">
-                    <i class="fa-solid fa-check" aria-hidden="true"></i> Appliquer
+                <button type="submit" id="btnBulkUpdateStatus" class="btn-admin-primary" aria-label="Appliquer le statut aux commandes sélectionnées">
+                    <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i> Mettre à jour
                 </button>
             </div>
-            
-            <button type="submit" formaction="<?= URL ?>AdminOrder/delete" id="btnDeleteOrders" class="btn-admin-danger" aria-label="Supprimer les commandes sélectionnées">
-                <i class="fa-solid fa-trash" aria-hidden="true"></i> Supprimer la sélection
+
+            <button type="button" formaction="<?= URL ?>AdminOrder/delete" id="btnDeleteSelectedOrders" class="btn-admin-danger" aria-label="Supprimer les commandes sélectionnées">
+                <i class="fa-solid fa-trash-can" aria-hidden="true"></i> Supprimer la sélection
             </button>
         </div>
 
         <div class="admin-table-wrapper">
-            <table class="admin-table" aria-label="Liste des commandes clients">
+            <table class="admin-table" aria-label="Liste des commandes reçues">
                 <thead>
                     <tr>
-                        <th scope="col" class="col-w-80">Réf</th>
-                        <th scope="col">Date</th>
-                        <th scope="col">Destinataire</th>
+                        <th scope="col" class="col-id">N°</th>
+                        <th scope="col">Date de commande</th>
+                        <th scope="col">Référence Transaction</th>
                         <th scope="col">Montant Total</th>
                         <th scope="col" class="text-center">Paiement</th>
-                        <th scope="col" class="text-center">Statut Commande</th>
+                        <th scope="col" class="text-center">Statut</th>
                         <th scope="col">Ville</th>
-                        <th scope="col" class="text-center col-w-80">Détails</th>
-                        <th scope="col" class="text-center col-w-80">
-                            <input type="checkbox" id="selectAllCheckboxes" class="admin-checkbox" aria-label="Tout sélectionner">
+                        <th scope="col" class="text-center col-action">Détails</th>
+                        <th scope="col" class="text-center col-checkbox">
+                            <input type="checkbox" id="selectAllCheckboxes" class="admin-checkbox" aria-label="Sélectionner toutes les commandes">
                         </th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if(!empty($data['orders'])): foreach ($data['orders'] as $row): 
-                        $statusId = $row['status_id'] ?? 1;
-                        $badgeClass = 'badge-default';
-                        if ($statusId == 1) $badgeClass = 'badge-warning'; 
-                        if ($statusId == 2) $badgeClass = 'badge-primary'; 
-                        if ($statusId == 3) $badgeClass = 'badge-success'; 
-                        if ($statusId == 4) $badgeClass = 'badge-danger';  
-                        
-                        $isPaid = $row['is_paid'] ?? 0;
-                        $orderId = (int)$row['id'];
+                    <?php 
+                    $orders = $data['orders'] ?? [];
+                    if (!empty($orders)): 
+                        foreach ($orders as $row): 
+                            $orderId = (int)($row['id'] ?? 0);
+                            $isPaid = isset($row['is_paid']) && $row['is_paid'] == 1;
+                            $badgeClass = $isPaid ? 'badge-success' : 'badge-warning';
                     ?>
                     <tr>
-                        <td><strong>#<?= $orderId; ?></strong></td>
-                        <td><?= htmlspecialchars($row['created_date'] ?? $row['tarikh'] ?? 'N/A', ENT_QUOTES, 'UTF-8'); ?></td>
-                        <td><?= htmlspecialchars($row['last_name'] ?? $row['family'] ?? 'Client', ENT_QUOTES, 'UTF-8'); ?></td>
-                        <td><strong><?= number_format($row['total_price'] ?? $row['amount'] ?? 0, 0, ',', ' '); ?> €</strong></td>
+                        <td class="col-id"><strong>#<?= $orderId; ?></strong></td>
+                        <td><?= htmlspecialchars($row['created_date'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
+                        <td><code><?= htmlspecialchars($row['transaction_id'] ?? '-', ENT_QUOTES, 'UTF-8'); ?></code></td>
+                        <td><strong><?= number_format($row['total_amount'] ?? 0, 2, ',', ' '); ?> €</strong></td>
                         
                         <td class="text-center">
-                            <span class="badge-payment <?= $isPaid == 1 ? 'paid' : 'unpaid' ?>">
-                                <?= $isPaid == 1 ? 'Payé' : 'En attente' ?>
-                            </span>
+                            <?php if ($isPaid): ?>
+                                <span class="status-badge status-paid"><i class="fa-solid fa-check" aria-hidden="true"></i> Payée</span>
+                            <?php else: ?>
+                                <span class="status-badge status-pending"><i class="fa-solid fa-clock" aria-hidden="true"></i> En attente</span>
+                            <?php endif; ?>
                         </td>
 
                         <td class="text-center">

@@ -3,6 +3,7 @@
 /**
  * Modèle ModelAdminSetting
  * Gère la lecture et la sauvegarde de la configuration du site.
+ * Sécurisé contre les injections SQL et les failles XSS.
  */
 class ModelAdminSetting extends Model
 {
@@ -35,13 +36,13 @@ class ModelAdminSetting extends Model
 
         foreach ($data as $settingKey => $value) {
             
-            // SÉCURITÉ : Ne pas enregistrer le jeton CSRF
+            // SÉCURITÉ : Ne pas enregistrer le jeton CSRF dans la base de données
             if ($settingKey === 'csrf_token') {
                 continue;
             }
 
             // SÉCURITÉ CRITIQUE : Nettoyage contre les failles Stored XSS avec strip_tags.
-            // On remplace htmlspecialchars pour éviter le double échappement lors des futures éditions.
+            // On utilise strip_tags pour éviter le double échappement lors des futures éditions.
             $cleanValue = strip_tags(trim((string)$value));
             $cleanKey = strip_tags(trim((string)$settingKey));
             

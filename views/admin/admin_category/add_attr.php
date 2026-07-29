@@ -22,14 +22,14 @@ $isEdit = !empty($editInfo['title']);
     </header>
 
     <div class="admin-form-box">
-        <form action="<?= URL ?>AdminCategory/addAttribute/<?= (int)($data['categoryInfo']['id'] ?? 0) ?>/<?= (int)($data['parentId'] ?? 0) ?>/<?= (int)($editInfo['id'] ?? 0) ?>" method="post" id="formAttributeManage">
+        <form action="<?= URL ?>AdminCategory/addAttribute/<?= (int)($data['categoryInfo']['id'] ?? 0) ?>/<?= (int)($data['parentId'] ?? 0) ?>/<?= (int)($data['edit'] ?? 0) ?>" method="post" id="formAttributeManage">
             
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($data['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
-            
+
             <div class="form-group">
                 <label for="attributeTitle">Titre de l'attribut * :</label>
-                <input type="text" id="attributeTitle" name="title" class="form-control" 
-                       value="<?= $isEdit ? htmlspecialchars($editInfo['title'], ENT_QUOTES, 'UTF-8') : '' ?>" required aria-required="true">
+                <input id="attributeTitle" type="text" name="title" class="form-control" 
+                       value="<?= $isEdit ? htmlspecialchars($editInfo['title'] ?? '', ENT_QUOTES, 'UTF-8') : '' ?>" required aria-required="true">
             </div>
 
             <div class="form-group">

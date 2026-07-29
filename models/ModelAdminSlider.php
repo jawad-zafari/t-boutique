@@ -25,12 +25,12 @@ class ModelAdminSlider extends Model
 
     public function addSlider($data, $files)
     {
-        // SÉCURITÉ CRITIQUE : Nettoyage des entrées avec strip_tags pour bloquer les failles Stored XSS
-        $title = strip_tags(trim($data['title'] ?? ''));
+        // SÉCURITÉ CRITIQUE : Nettoyage des entrées avec htmlspecialchars pour bloquer les failles Stored XSS
+        $title = htmlspecialchars(trim($data['title'] ?? ''), ENT_QUOTES, 'UTF-8');
         $link = filter_var(trim($data['link'] ?? '#'), FILTER_SANITIZE_URL);
-        $description = strip_tags(trim($data['description'] ?? ''));
-        $button_text = strip_tags(trim(!empty($data['button_text']) ? $data['button_text'] : 'Découvrir'));
-        $text_color = strip_tags(trim(!empty($data['text_color']) ? $data['text_color'] : '#ffffff'));
+        $description = htmlspecialchars(trim($data['description'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $button_text = htmlspecialchars(trim(!empty($data['button_text']) ? $data['button_text'] : 'Découvrir'), ENT_QUOTES, 'UTF-8');
+        $text_color = htmlspecialchars(trim(!empty($data['text_color']) ? $data['text_color'] : '#ffffff'), ENT_QUOTES, 'UTF-8');
         
         $file = $files['image'] ?? null;
         $target = '';
@@ -73,12 +73,12 @@ class ModelAdminSlider extends Model
 
     public function updateSlider($id, $data, $files)
     {
-        // SÉCURITÉ CRITIQUE : Nettoyage avec strip_tags
-        $title = strip_tags(trim($data['title'] ?? ''));
+        // SÉCURITÉ CRITIQUE : Nettoyage avec htmlspecialchars
+        $title = htmlspecialchars(trim($data['title'] ?? ''), ENT_QUOTES, 'UTF-8');
         $link = filter_var(trim($data['link'] ?? '#'), FILTER_SANITIZE_URL);
-        $description = strip_tags(trim($data['description'] ?? ''));
-        $button_text = strip_tags(trim(!empty($data['button_text']) ? $data['button_text'] : 'Découvrir'));
-        $text_color = strip_tags(trim(!empty($data['text_color']) ? $data['text_color'] : '#ffffff'));
+        $description = htmlspecialchars(trim($data['description'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $button_text = htmlspecialchars(trim(!empty($data['button_text']) ? $data['button_text'] : 'Découvrir'), ENT_QUOTES, 'UTF-8');
+        $text_color = htmlspecialchars(trim(!empty($data['text_color']) ? $data['text_color'] : '#ffffff'), ENT_QUOTES, 'UTF-8');
 
         $sliderInfo = $this->getSliderById((int)$id);
         $imagePath = $sliderInfo['image_path'] ?? '';
@@ -139,8 +139,10 @@ class ModelAdminSlider extends Model
                 }
             }
             
-            $idsString = implode(',', $safeIds);
-            $this->doQuery("DELETE FROM sliders WHERE id IN (" . $idsString . ")");
+            // SÉCURITÉ CRITIQUE (Standard DWWM) : Utilisation de placeholders dynamiques pour la clause IN()
+            $placeholders = rtrim(str_repeat('?,', count($safeIds)), ',');
+            $sql = "DELETE FROM sliders WHERE id IN ($placeholders)";
+            $this->doQuery($sql, $safeIds);
         }
     }
 }

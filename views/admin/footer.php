@@ -7,10 +7,11 @@
     
     <?php if (!empty($activeMenu)): ?>
         <?php 
-            // SÉCURITÉ : Assainissement du nom de fichier pour éviter les attaques de type Path Traversal
+            // SÉCURITÉ CRITIQUE : Assainissement strict du nom de fichier pour empêcher les attaques de type Path Traversal
             $safeMenu = basename($activeMenu);
             $scriptPath = 'public/assets/js/admin_' . $safeMenu . '.js';
             
+            // Ingestion dynamique du script JS uniquement s'il existe physiquement sur le serveur
             if (file_exists($scriptPath)): 
         ?>
             <script src="<?= URL ?><?= htmlspecialchars($scriptPath, ENT_QUOTES, 'UTF-8') ?>" defer></script>

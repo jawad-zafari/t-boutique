@@ -24,16 +24,15 @@
         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($data['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
 
         <div class="admin-table-wrapper">
-            <table class="admin-table" aria-label="Liste complète des utilisateurs">
+            <table class="admin-table" aria-label="Liste des utilisateurs enregistrés">
                 <thead>
                     <tr>
-                        <th scope="col" style="width: 50px;" class="text-center">N°</th>
-                        <th scope="col" style="width: 140px;">Date d'inscription</th>
-                        <th scope="col">Nom et Prénom</th>
-                        <th scope="col" style="width: 150px;">Téléphone (Mobile)</th>
-                        <th scope="col" style="width: 160px;" class="text-center">Rôle (Niveau)</th>
-                        <th scope="col" style="width: 60px;" class="text-center">
-                            <input type="checkbox" id="selectAllCheckboxes" class="admin-checkbox" aria-label="Tout sélectionner">
+                        <th scope="col" class="text-center col-id">N°</th>
+                        <th scope="col">Nom & Prénom / Identifiant</th>
+                        <th scope="col">Téléphone Mobile</th>
+                        <th scope="col" class="text-center">Rôle actuel</th>
+                        <th scope="col" class="text-center col-checkbox">
+                            <input type="checkbox" id="selectAllCheckboxes" class="admin-checkbox" aria-label="Sélectionner tous les utilisateurs">
                         </th>
                     </tr>
                 </thead>
@@ -43,12 +42,11 @@
                     $users = $data['users'] ?? [];
                     if (!empty($users)): 
                         foreach ($users as $row): 
-                            // Récupération sécurisée du niveau de l'utilisateur (Par défaut : 3)
-                            $roleId = (int)($row['level'] ?? 3); 
+                            $roleId = (int)($row['role_id'] ?? 3);
                     ?>
                     <tr>
                         <td class="text-center font-weight-bold"><?= $i ?></td>
-                        <td><?= htmlspecialchars($row['tarikh'] ?? $row['created_at'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
+                        
                         <td><strong><?= htmlspecialchars($row['family'] ?? 'Inconnu', ENT_QUOTES, 'UTF-8'); ?></strong></td>
                         
                         <td><span dir="ltr"><?= htmlspecialchars($row['mobile'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></td>
@@ -69,7 +67,7 @@
                     else: 
                     ?>
                     <tr>
-                        <td colspan="6" class="text-empty-table text-center">Aucun utilisateur trouvé dans la base de données.</td>
+                        <td colspan="5" class="text-empty-table text-center">Aucun utilisateur trouvé dans la base de données.</td>
                     </tr>
                     <?php endif; ?>
                 </tbody>

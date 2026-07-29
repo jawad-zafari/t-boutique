@@ -3,6 +3,7 @@
 /**
  * Modèle ModelAdminDashboard
  * Récupère et calcule les statistiques de ventes pour le graphique.
+ * Code protégé contre les erreurs (Anti-Crash) en cas de BDD vide.
  */
 class ModelAdminDashboard extends Model
 {
@@ -21,9 +22,10 @@ class ModelAdminDashboard extends Model
     // Calculer les statistiques des commandes des 7 derniers jours
     public function getStat()
     {
-        // FIX CRITIQUE : Utilisation du format standard SQL (Y-m-d) au lieu de (Y/m/d)
+        // STANDARD DWWM : Utilisation du format standard SQL (Y-m-d)
         $todayDate = date('Y-m-d');
         $time = time();
+        
         // 6 jours en arrière + aujourd'hui = 7 jours
         $lastWeekTime = $time - (6 * 24 * 3600); 
         $lastWeekDate = date('Y-m-d', $lastWeekTime);
@@ -37,17 +39,21 @@ class ModelAdminDashboard extends Model
             $orderStat[$date] = 0;
         }
 
-        // Compter les commandes
-        foreach ($orders as $row) {
-            // La date en BDD est au format "YYYY-MM-DD HH:II:SS"
-            $fullDate = $row['created_date'] ?? '';
-            
-            // FIX CRITIQUE : On extrait uniquement la partie "YYYY-MM-DD" (les 10 premiers caractères)
-            $orderDate = substr($fullDate, 0, 10);
+        // Compter les commandes (avec vérification Anti-Crash)
+        if (!empty($orders)) {
+            foreach ($orders as $row) {
+                // La date en BDD est au format "YYYY-MM-DD HH:II:SS"
+                $fullDate = $row['created_date'] ?? '';
+                
+                if (!empty($fullDate)) {
+                    // On extrait uniquement la partie "YYYY-MM-DD" (les 10 premiers caractères)
+                    $orderDate = substr($fullDate, 0, 10);
 
-            // Si la date correspond à un jour de notre semaine, on incrémente
-            if (isset($orderStat[$orderDate])) {
-                $orderStat[$orderDate]++;
+                    // Si la date correspond à un jour de notre semaine, on incrémente
+                    if (isset($orderStat[$orderDate])) {
+                        $orderStat[$orderDate]++;
+                    }
+                }
             }
         }
 

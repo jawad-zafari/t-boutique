@@ -3,6 +3,7 @@
 /**
  * Contrôleur AdminQuestion
  * Gère la modération des questions/réponses avec une sécurité stricte (POST & CSRF).
+ * Code standardisé et simplifié pour le niveau Junior.
  */
 class AdminQuestion extends Controller
 {
@@ -17,11 +18,6 @@ class AdminQuestion extends Controller
             header('Location: ' . URL . 'AdminLogin/index');
             exit;
         }
-
-        // PROTECTION CSRF : Génération globale du jeton
-        if (!Model::sessionGet('csrf_token')) {
-            Model::sessionSet('csrf_token', bin2hex(random_bytes(32)));
-        }
     }
 
     public function index()
@@ -30,7 +26,8 @@ class AdminQuestion extends Controller
         
         $data = [
             'questions' => $questions,
-            'csrf_token' => Model::sessionGet('csrf_token')
+            // RÈGLE MVC : Appel de la méthode globale de génération de jeton
+            'csrf_token' => $this->generateCsrfToken() 
         ];
         
         $this->view('admin/admin_question/question', $data);
@@ -44,11 +41,8 @@ class AdminQuestion extends Controller
             exit('Méthode non autorisée');
         }
 
-        // VÉRIFICATION CSRF
-        $token = $_POST['csrf_token'] ?? '';
-        if ($token !== Model::sessionGet('csrf_token')) {
-            die('Erreur de sécurité : Jeton CSRF invalide.');
-        }
+        // VÉRIFICATION CSRF : Unifiée (Remplace le "die" bloquant)
+        $this->checkCsrfToken($_POST['csrf_token'] ?? '');
 
         $this->model->confirm($_POST);
         
@@ -58,17 +52,12 @@ class AdminQuestion extends Controller
 
     public function unconfirm()
     {
-        // SÉCURITÉ CRITIQUE : Bloquer tout accès direct via GET
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('HTTP/1.1 405 Method Not Allowed');
             exit('Méthode non autorisée');
         }
 
-        // VÉRIFICATION CSRF
-        $token = $_POST['csrf_token'] ?? '';
-        if ($token !== Model::sessionGet('csrf_token')) {
-            die('Erreur de sécurité : Jeton CSRF invalide.');
-        }
+        $this->checkCsrfToken($_POST['csrf_token'] ?? '');
 
         $ids = $_POST['id'] ?? [];
         if (!empty($ids)) {
@@ -81,17 +70,12 @@ class AdminQuestion extends Controller
 
     public function delete()
     {
-        // SÉCURITÉ CRITIQUE : Bloquer tout accès direct via GET
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('HTTP/1.1 405 Method Not Allowed');
             exit('Méthode non autorisée');
         }
 
-        // VÉRIFICATION CSRF
-        $token = $_POST['csrf_token'] ?? '';
-        if ($token !== Model::sessionGet('csrf_token')) {
-            die('Erreur de sécurité : Jeton CSRF invalide.');
-        }
+        $this->checkCsrfToken($_POST['csrf_token'] ?? '');
 
         $ids = $_POST['id'] ?? [];
         if (!empty($ids)) {

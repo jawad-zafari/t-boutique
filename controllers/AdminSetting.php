@@ -2,7 +2,8 @@
 
 /**
  * Contrôleur AdminSetting
- * Gère la configuration globale du site (Sécurisé par accès Niveau 1 et CSRF).
+ * Gère la configuration globale du site.
+ * Code standardisé et simplifié pour le niveau Junior (Règles DWWM).
  */
 class AdminSetting extends Controller
 {
@@ -17,11 +18,6 @@ class AdminSetting extends Controller
             header('Location: ' . URL . 'AdminLogin/index');
             exit;
         }
-
-        // PROTECTION CSRF : Génération globale du jeton
-        if (!Model::sessionGet('csrf_token')) {
-            Model::sessionSet('csrf_token', bin2hex(random_bytes(32)));
-        }
     }
 
     /**
@@ -33,7 +29,8 @@ class AdminSetting extends Controller
         
         $data = [
             'option' => $settings,
-            'csrf_token' => Model::sessionGet('csrf_token')
+            // RÈGLE MVC : Appel de la méthode globale unifiée pour générer le jeton
+            'csrf_token' => $this->generateCsrfToken()
         ];
 
         $this->view('admin/admin_setting/settings', $data);
@@ -50,11 +47,8 @@ class AdminSetting extends Controller
             exit('Méthode non autorisée');
         }
             
-        // VÉRIFICATION CSRF : Bloquer les attaques de falsification de requêtes
-        $token = $_POST['csrf_token'] ?? '';
-        if ($token !== Model::sessionGet('csrf_token')) {
-            die('Erreur de sécurité : Jeton CSRF invalide.');
-        }
+        // VÉRIFICATION CSRF : Unifiée (Remplace le "die" bloquant)
+        $this->checkCsrfToken($_POST['csrf_token'] ?? '');
         
         // Gestion spécifique de la case à cocher (checkbox)
         if (!isset($_POST['maintenance_mode'])) {

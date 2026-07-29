@@ -1,6 +1,6 @@
 /**
- * Gestion du processus de paiement et de l'interface utilisateur moderne
- * Vanilla JS - Architecture sécurisée (Soumission POST avec CSRF & Direction intelligente)
+ * Logique JavaScript pour le processus de checkout et de paiement
+ * Vanilla JS - Architecture sécurisée (Routage dynamique, Validation Regex Anti-Injection)
  */
 document.addEventListener("DOMContentLoaded", () => {
     
@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /**
- * Système de Toast pour remplacer les alert() natifs bloquants
+ * Système de Notification Toast (Substitut aux alert() natifs)
  */
 function showPaymentToast(message, type = 'danger') {
     let toast = document.getElementById('paymentToastNotification');
@@ -32,67 +32,47 @@ function showPaymentToast(message, type = 'danger') {
     }
 
     toast.style.backgroundColor = (type === 'danger') ? '#e03131' : '#2b8a3e';
-    toast.innerHTML = '';
-    
-    const icon = document.createElement('i');
-    icon.className = (type === 'danger') ? 'fa-solid fa-triangle-exclamation' : 'fa-solid fa-circle-check';
-    icon.style.marginRight = '10px';
-    
-    const textNode = document.createTextNode(message);
-
-    toast.appendChild(icon);
-    toast.appendChild(textNode);
-
+    toast.textContent = message; // Anti-XSS : Utilisation stricte de textContent
     toast.style.opacity = '1';
-    toast.style.display = 'block';
 
     setTimeout(() => {
         toast.style.opacity = '0';
-        setTimeout(() => { toast.style.display = 'none'; }, 300);
-    }, 4000);
+    }, 3500);
 }
 
-/**
- * Configure les écouteurs pour la sélection de paiement et la redirection
- */
 function initializeModernCheckout() {
-    
-    const btnConfirmPayment = document.getElementById('btnConfirmPayment');
-    const paymentOptions = document.querySelectorAll('input[name="payment_choice"]');
     const paymentForm = document.getElementById('paymentMethodsForm');
-    
-    // 1. Gestion visuelle de la sélection des cartes de paiement
-    paymentOptions.forEach(option => {
-        option.addEventListener('change', function() {
-            document.querySelectorAll('.payment-method-option').forEach(label => {
-                label.classList.remove('active');
+    const btnConfirm = document.getElementById('btnConfirmPayment');
+    const paymentMethodsContainer = document.getElementById('paymentMethodsContainer');
+
+    // 1. Sélection visuelle de la méthode de paiement
+    if (paymentMethodsContainer) {
+        const options = paymentMethodsContainer.querySelectorAll('.payment-method-option');
+        options.forEach(option => {
+            option.addEventListener('click', () => {
+                options.forEach(opt => opt.classList.remove('active'));
+                option.classList.add('active');
+                const radio = option.querySelector('input[type="radio"]');
+                if (radio) radio.checked = true;
             });
-            
-            if (this.checked) {
-                this.closest('.payment-method-option').classList.add('active');
-            }
         });
-    });
+    }
 
-    // 2. Action finale du bouton "Confirmer et Payer"
-    if (btnConfirmPayment) {
-        btnConfirmPayment.addEventListener('click', (e) => {
+    // 2. Soumission du formulaire de paiement
+    if (btnConfirm) {
+        btnConfirm.addEventListener('click', (e) => {
             e.preventDefault();
-
-            const selectedPayment = document.querySelector('input[name="payment_choice"]:checked');
+            const selectedRadio = document.querySelector('input[name="payment_choice"]:checked');
             
-            if (selectedPayment) {
-                const paymentType = selectedPayment.value;
-                const targetUrl = selectedPayment.getAttribute('data-url');
+            if (selectedRadio) {
+                const targetUrl = selectedRadio.getAttribute('data-url');
+                const val = selectedRadio.value;
 
-                btnConfirmPayment.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Traitement en cours...';
-                btnConfirmPayment.disabled = true;
-                
-                if (paymentType === 'transfer') {
-                    // Redirection vers le formulaire de saisie des détails du virement
+                if (val === 'transfer') {
+                    // Redirection vers le formulaire de virement bancaire
                     window.location.href = targetUrl;
                 } else if (paymentForm) {
-                    // Soumission sécurisée en POST pour la passerelle Stripe
+                    // Soumission sécurisée en POST avec le jeton CSRF
                     paymentForm.setAttribute('action', targetUrl);
                     paymentForm.submit();
                 }
@@ -102,7 +82,7 @@ function initializeModernCheckout() {
         });
     }
 
-    // 3. Validation de sécurité pour le formulaire de transfert bancaire
+    // 3. Validation سمت کلاینت برای شماره کارت واریز آنلاین/کارت به کارت
     const formBankTransfer = document.querySelector('form[action*="Checkout/bankTransfer"]');
     if (formBankTransfer) {
         formBankTransfer.addEventListener('submit', (e) => {
@@ -110,6 +90,7 @@ function initializeModernCheckout() {
             if (creditCardInput) {
                 const cardValue = creditCardInput.value.replace(/\s+/g, '');
                 
+                // Regex : N'accepter QUE des chiffres
                 if (!/^\d+$/.test(cardValue)) {
                     e.preventDefault(); 
                     showPaymentToast("Le numéro de carte ou de compte ne doit contenir que des chiffres.");

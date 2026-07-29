@@ -3,6 +3,7 @@
 /**
  * Contrôleur AdminOrder
  * Gère les commandes des clients avec une sécurité stricte (Vérification POST & CSRF).
+ * Standards DWWM respectés.
  */
 class AdminOrder extends Controller
 {
@@ -18,11 +19,6 @@ class AdminOrder extends Controller
             header('Location: ' . URL . 'AdminLogin/index');
             exit;
         }
-
-        // PROTECTION CSRF : Génération globale du jeton
-        if (!Model::sessionGet('csrf_token')) {
-            Model::sessionSet('csrf_token', bin2hex(random_bytes(32)));
-        }
     }
 
     public function index()
@@ -33,7 +29,7 @@ class AdminOrder extends Controller
         $data = [
             'orders' => $orders,
             'statuses' => $statuses,
-            'csrf_token' => Model::sessionGet('csrf_token')
+            'csrf_token' => $this->generateCsrfToken() // Utilisation de la méthode globale unifiée
         ];
         
         $this->view('admin/admin_order/orders', $data);
@@ -47,11 +43,8 @@ class AdminOrder extends Controller
             exit('Méthode non autorisée');
         }
 
-        // VÉRIFICATION CSRF : Bloquer les requêtes malveillantes
-        $token = $_POST['csrf_token'] ?? '';
-        if ($token !== Model::sessionGet('csrf_token')) {
-            die('Erreur de sécurité : Jeton CSRF invalide.');
-        }
+        // VÉRIFICATION CSRF UNIFIÉE : Remplace le "die" bloquant
+        $this->checkCsrfToken($_POST['csrf_token'] ?? '');
 
         if (isset($_POST['id']) && !empty($_POST['bulk_status_id'])) {
             $this->model->bulkUpdateStatus($_POST['id'], $_POST['bulk_status_id']);
@@ -69,7 +62,7 @@ class AdminOrder extends Controller
         $data = [
             'orderInfo' => $orderInfo,
             'order_status' => $orderStatuses,
-            'csrf_token' => Model::sessionGet('csrf_token')
+            'csrf_token' => $this->generateCsrfToken()
         ];
         
         $this->view('admin/admin_order/detail', $data);
@@ -83,11 +76,8 @@ class AdminOrder extends Controller
             exit('Méthode non autorisée');
         }
 
-        // VÉRIFICATION CSRF
-        $token = $_POST['csrf_token'] ?? '';
-        if ($token !== Model::sessionGet('csrf_token')) {
-            die('Erreur de sécurité : Jeton CSRF invalide.');
-        }
+        // VÉRIFICATION CSRF UNIFIÉE
+        $this->checkCsrfToken($_POST['csrf_token'] ?? '');
 
         $this->model->editOrder((int)$orderId, $_POST);
         
@@ -113,10 +103,8 @@ class AdminOrder extends Controller
             exit('Méthode non autorisée');
         }
 
-        $token = $_POST['csrf_token'] ?? '';
-        if ($token !== Model::sessionGet('csrf_token')) {
-            die('Erreur de sécurité : Jeton CSRF invalide.');
-        }
+        // VÉRIFICATION CSRF UNIFIÉE
+        $this->checkCsrfToken($_POST['csrf_token'] ?? '');
 
         if (!empty($_POST['id'])) {
             $this->model->delete($_POST);

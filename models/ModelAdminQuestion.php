@@ -33,21 +33,21 @@ class ModelAdminQuestion extends Model
         foreach ($data['id'] as $id) {
             $safeId = (int)$id;
             
-            // SÉCURITÉ CRITIQUE : Utilisation de strip_tags au lieu de htmlspecialchars 
-            // pour empêcher le XSS stocké et éviter le double échappement lors de l'édition
-            $questionText = strip_tags(trim($data['question_' . $safeId] ?? ''));
-            $answerText = strip_tags(trim($data['answer_' . $safeId] ?? ''));
+            // SÉCURITÉ CRITIQUE : Utilisation de htmlspecialchars pour une protection robuste contre le XSS stocké
+            $questionText = htmlspecialchars(trim($data['question_' . $safeId] ?? ''), ENT_QUOTES, 'UTF-8');
+            $answerText = htmlspecialchars(trim($data['answer_' . $safeId] ?? ''), ENT_QUOTES, 'UTF-8');
 
-            // Mettre à jour la question de l'utilisateur
+            // 1. Mettre à jour la question de l'utilisateur
             $this->doQuery("UPDATE questions SET content = ?, is_approved = 1 WHERE id = ?", [$questionText, $safeId]);
 
-            // Si l'administrateur a rédigé une réponse
-            if ($answerText !== '') {
-                $existing = $this->doSelect("SELECT id FROM questions WHERE parent_id = ?", [$safeId], true);
-                
-                if ($existing) {
+            // 2. Gérer la réponse de l'administrateur
+            if (!empty($answerText)) {
+                $sqlCheck = "SELECT id FROM questions WHERE parent_id = ?";
+                $exists = $this->doSelect($sqlCheck, [$safeId]);
+
+                if (!empty($exists)) {
                     // Mettre à jour la réponse existante
-                    $this->doQuery("UPDATE questions SET content = ?, is_approved = 1 WHERE id = ?", [$answerText, (int)$existing['id']]);
+                    $this->doQuery("UPDATE questions SET content = ?, is_approved = 1 WHERE id = ?", [$answerText, $exists[0]['id']]);
                 } else {
                     // Insérer une nouvelle réponse
                     $qInfo = $this->doSelect("SELECT product_id FROM questions WHERE id = ?", [$safeId], true);
@@ -67,7 +67,7 @@ class ModelAdminQuestion extends Model
     {
         if (empty($ids)) return;
         
-        // SÉCURITÉ CRITIQUE : Protection de la clause IN() avec intval
+        // SÉCURITÉ CRITIQUE : Protection de la clause IN() avec intval pour bloquer l'injection SQL
         $safeIds = array_map('intval', $ids);
         $idsString = implode(',', $safeIds);
         

@@ -3,6 +3,7 @@
 /**
  * Contrôleur AdminDashboard
  * Gère l'affichage du tableau de bord de l'administration.
+ * Respecte l'architecture MVC et le contrôle d'accès (RBAC).
  */
 class AdminDashboard extends Controller
 {

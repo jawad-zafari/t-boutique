@@ -27,21 +27,24 @@ $pId = (int)($productInfo['id'] ?? 0);
 
     <div class="admin-form-box form-box-wide mx-auto mb-25">
         <form action="<?= URL ?>AdminProduct/addGallery/<?= $pId ?>" method="post" enctype="multipart/form-data" id="formAddGallery">
+            
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($data['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
             
-            <div class="gallery-upload-zone">
-                <div class="form-group flex-grow-1 m-0">
-                    <label for="galleryImages">Sélectionnez une ou plusieurs images (JPG, PNG, WEBP) :</label>
-                    <input type="file" id="galleryImages" name="images[]" multiple class="form-control" accept="image/jpeg, image/png, image/webp" required aria-required="true">
-                </div>
-                <button type="submit" class="btn-admin-success align-self-end" aria-label="Uploader les images">
-                    <i class="fa-solid fa-upload" aria-hidden="true"></i> Uploader
+            <div class="form-group">
+                <label for="galleryImages">Ajouter de nouvelles images (Sélection multiple possible) :</label>
+                <input type="file" id="galleryImages" name="images[]" class="form-control" multiple accept="image/jpeg, image/png, image/webp" required>
+            </div>
+            
+            <div class="flex-end-container mt-15">
+                <button type="submit" class="btn-admin-submit" aria-label="Uploader les images">
+                    <i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i> Uploader les images
                 </button>
             </div>
         </form>
     </div>
 
     <form action="<?= URL ?>AdminProduct/deleteGallery/<?= $pId ?>" method="post" id="formGallerySelection">
+        
         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($data['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
         
         <?php if(!empty($gallery)): ?>

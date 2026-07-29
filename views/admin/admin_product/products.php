@@ -27,37 +27,33 @@
         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($data['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
 
         <div class="admin-table-wrapper">
-            <table class="admin-table" aria-label="Liste complète des produits">
+            <table class="admin-table" aria-label="Liste complète des produits de la boutique">
                 <thead>
                     <tr>
-                        <th scope="col" class="text-center col-img">Image</th>
-                        <th scope="col">Titre du Produit</th>
-                        <th scope="col" class="text-center">Prix (TTC)</th>
-                        <th scope="col" class="text-center">Réduction</th>
-                        <th scope="col" class="text-center col-action">Éditer</th>
+                        <th scope="col" class="col-id">ID</th>
+                        <th scope="col" class="col-img text-center">Image</th>
+                        <th scope="col">Titre du produit</th>
+                        <th scope="col">Prix</th>
+                        <th scope="col" class="text-center col-action">Modifier</th>
                         <th scope="col" class="text-center col-action">Galerie</th>
                         <th scope="col" class="text-center col-action">Avis</th>
                         <th scope="col" class="text-center col-action">Attributs</th>
-                        <th scope="col" class="text-center col-check">
-                            <input type="checkbox" id="selectAllCheckboxes" class="admin-checkbox" aria-label="Sélectionner tous les produits">
+                        <th scope="col" class="text-center col-checkbox">
+                            <input type="checkbox" id="selectAllCheckboxes" class="admin-checkbox" aria-label="Sélectionner tout">
                         </th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if(!empty($products)): foreach ($products as $row): $pId = (int)$row['id']; ?>
+                    <?php if(!empty($products)): foreach ($products as $row): 
+                        $pId = (int)$row['id'];
+                    ?>
                     <tr>
-                        <td class="text-center">
-                            <img src="<?= htmlspecialchars($row['thumb_url'] ?? 'https://placehold.co/50x50?text=Img', ENT_QUOTES, 'UTF-8'); ?>" alt="Produit" class="table-thumb-product admin-list-thumbnail" onerror="this.src='https://placehold.co/50x50/f1f3f5/3b5bdb?text=Img'">
+                        <td class="col-id"><strong><?= $pId; ?></strong></td>
+                        <td class="col-img text-center">
+                            <img src="<?= htmlspecialchars($row['thumb_url'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" alt="Image produit" class="table-img-preview" onerror="this.src='https://placehold.co/50x50/f1f3f5/3b5bdb?text=Img'">
                         </td>
                         <td><strong><?= htmlspecialchars($row['title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></strong></td>
-                        <td class="text-center"><?= number_format($row['price'] ?? 0, 0, ',', ' '); ?> €</td>
-                        <td class="text-center">
-                            <?php if(!empty($row['discount_percent'])): ?>
-                                <span class="badge-danger" style="background:#fff5f5; color:#e03131; padding:3px 8px; border-radius:12px; font-size:0.75rem; border:1px solid #ffe3e3;">-<?= (int)$row['discount_percent'] ?>%</span>
-                            <?php else: ?>
-                                -
-                            <?php endif; ?>
-                        </td>
+                        <td><?= number_format($row['price'] ?? 0, 0, ',', ' '); ?> €</td>
                         
                         <td class="text-center">
                             <a href="<?= URL ?>AdminProduct/addProduct/<?= $pId; ?>" class="action-icon icon-edit" title="Modifier le produit" aria-label="Modifier">
@@ -65,7 +61,7 @@
                             </a>
                         </td>
                         <td class="text-center">
-                            <a href="<?= URL ?>AdminProduct/gallery/<?= $pId; ?>" class="action-icon icon-warning" title="Galerie d'images" aria-label="Galerie">
+                            <a href="<?= URL ?>AdminProduct/gallery/<?= $pId; ?>" class="action-icon icon-warning" title="Gérer la galerie d'images" aria-label="Galerie">
                                 <i class="fa-solid fa-images" aria-hidden="true"></i>
                             </a>
                         </td>

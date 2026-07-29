@@ -2,18 +2,27 @@
 
 /**
  * Contrôleur AdminLogin
- * Gère l'authentification sécurisée des administrateurs et employés au panneau de contrôle.
+ * Gère l'authentification sécurisée des administrateurs et employés.
+ * Protection CSRF, gestion de session et redirections intelligentes.
  */
 class AdminLogin extends Controller
 {
     public function __construct()
     {
         parent::__construct();
+        Model::sessionInit();
     }
 
     public function index()
     {
-        // PROTECTION CSRF : Génération du jeton pour le formulaire de connexion administrateur
+        // Si l'utilisateur est déjà connecté en tant qu'admin ou employé, redirection vers le dashboard
+        $userLevel = Model::getUserLevel();
+        if ($userLevel == 1 || $userLevel == 2) {
+            header('Location: ' . URL . 'AdminDashboard/index');
+            exit;
+        }
+
+        // PROTECTION CSRF : Génération du jeton pour le formulaire de connexion
         $data = [
             'csrf_token' => $this->generateCsrfToken()
         ];
@@ -30,7 +39,7 @@ class AdminLogin extends Controller
             exit('Méthode non autorisée');
         }
 
-        // VÉRIFICATION CSRF : Bloquer les requêtes malveillantes externes (Cross-Site Request Forgery)
+        // VÉRIFICATION CSRF : Bloquer les requêtes malveillantes externes
         $this->checkCsrfToken($_POST['csrf_token'] ?? '');
 
         // Le modèle vérifie les identifiants et renvoie vrai ou faux
@@ -63,8 +72,7 @@ class AdminLogin extends Controller
             );
         }
         session_destroy();
-        
-        // Redirection vers la page de connexion de l'administration
+
         header('Location: ' . URL . 'AdminLogin/index');
         exit;
     }

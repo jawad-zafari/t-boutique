@@ -2,7 +2,7 @@
 
 /**
  * Modèle ModelAdminOrder
- * Gère les requêtes BDD liées aux commandes en garantissant la protection contre l'injection SQL.
+ * Gère les requêtes BDD liées aux commandes en garantissant la protection contre l'injection SQL et XSS.
  */
 class ModelAdminOrder extends Model
 {
@@ -45,13 +45,12 @@ class ModelAdminOrder extends Model
 
     public function editOrder($orderId, $data)
     {
-        // SÉCURITÉ CRITIQUE : Remplacement de htmlspecialchars par strip_tags 
-        // pour prévenir les failles Stored XSS tout en évitant le double échappement.
-        $address = strip_tags(trim($data['address'] ?? ''));
-        $postalCode = strip_tags(trim($data['postal_code'] ?? ''));
-        $phone = strip_tags(trim($data['phone'] ?? ''));
-        $trackingCode = strip_tags(trim($data['tracking_code'] ?? ''));
-        $adminNote = strip_tags(trim($data['admin_note'] ?? ''));
+        // SÉCURITÉ CRITIQUE : Utilisation de htmlspecialchars pour une protection robuste contre le Stored XSS
+        $address = htmlspecialchars(trim($data['address'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $postalCode = htmlspecialchars(trim($data['postal_code'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $phone = htmlspecialchars(trim($data['phone'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $trackingCode = htmlspecialchars(trim($data['tracking_code'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $adminNote = htmlspecialchars(trim($data['admin_note'] ?? ''), ENT_QUOTES, 'UTF-8');
         
         // Typage strict pour les valeurs numériques
         $payStatus = (int)($data['pay_status'] ?? 0);

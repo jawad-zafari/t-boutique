@@ -2,7 +2,8 @@
 
 /**
  * Controller AddComment
- * Gestion de l'ajout des commentaires et avis (Sécurisé avec CSRF unifié et validation HTTP)
+ * Gestion de l'ajout des commentaires et avis.
+ * Règle MVC respectée : Le contrôleur gère la session et la passe au modèle.
  */
 class AddComment extends Controller
 {
@@ -23,12 +24,14 @@ class AddComment extends Controller
 
     public function index($productId)
     {
-        // PROTECTION CSRF : Utilisation de la méthode globale du Controller de base
+        $userId = Model::sessionGet('userId');
+
+        // PROTECTION CSRF ET MVC : On passe le userId au modèle pour récupérer les infos
         $data = [
             'params'      => $this->model->getParam((int)$productId),
             'productInfo' => $this->model->productInfo((int)$productId),
-            'commentInfo' => $this->model->commentInfo((int)$productId),
-            'csrf_token'  => $this->generateCsrfToken() // Méthode unifiée et propre
+            'commentInfo' => $this->model->commentInfo((int)$productId, $userId),
+            'csrf_token'  => $this->generateCsrfToken()
         ];
         
         $this->view('comment/add_comment', $data);
@@ -42,11 +45,14 @@ class AddComment extends Controller
             exit('Méthode non autorisée. Veuillez utiliser le formulaire.');
         }
 
-        // VÉRIFICATION CSRF : Utilisation de la méthode globale de vérification
+        // VÉRIFICATION CSRF
         $this->checkCsrfToken($_POST['csrf_token'] ?? '');
 
+        // ARCHITECTURE MVC : Le contrôleur lit la session et l'envoie au modèle
+        $userId = Model::sessionGet('userId');
+
         // Sauvegarder le commentaire dans la base de données
-        $this->model->saveComment($_POST, (int)$productId);
+        $this->model->saveComment($_POST, (int)$productId, $userId);
         
         // Redirection vers la page du produit après la soumission (PRG Pattern)
         header('Location: ' . URL . 'Product/index/' . (int)$productId);

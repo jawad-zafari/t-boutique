@@ -1,4 +1,5 @@
 <?php
+// SÉCURITÉ CRITIQUE : Prévention du Reflected XSS
 $errorMessage = $data['Error'] ?? 'Une erreur inattendue s\'est produite.';
 $orderId = (int)($data['orderId'] ?? 0);
 ?>

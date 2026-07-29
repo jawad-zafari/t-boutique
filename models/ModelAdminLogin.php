@@ -23,7 +23,6 @@ class ModelAdminLogin extends Model
         }
 
         // SÉCURITÉ : On récupère l'utilisateur par son e-mail uniquement
-        // OPTIMISATION : Le 3e paramètre 'true' force doSelect à renvoyer une seule ligne (Single Row)
         $sql = "SELECT id, password, role_id FROM users WHERE email = ?";
         $user = $this->doSelect($sql, [$email], true);
 
@@ -39,14 +38,15 @@ class ModelAdminLogin extends Model
                 // PRÉVENTION : Régénération de l'ID de session pour empêcher l'attaque "Session Fixation"
                 session_regenerate_id(true);
                 
-                // Stockage sécurisé de l'ID utilisateur dans la session
+                // Stockage sécurisé dans la session
                 Model::sessionSet('userId', (int)$user['id']);
+                Model::sessionSet('userLevel', (int)$user['role_id']);
                 
-                return true; // Connexion autorisée
+                return true;
             }
         }
-        
-        return false; // Identifiants invalides ou accès refusé
+
+        return false;
     }
 }
 ?>

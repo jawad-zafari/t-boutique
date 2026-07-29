@@ -1,8 +1,9 @@
 <?php
 
 /**
- * Controller Cart
- * Sécurisé selon les standards DWWM (Validation des méthodes HTTP et protection CSRF)
+ * Contrôleur Cart (Panier)
+ * Gère les actions du panier d'achats via des requêtes AJAX sécurisées (POST & CSRF).
+ * Standard DWWM : Séparation des responsabilités et sécurité des flux.
  */
 class Cart extends Controller
 {
@@ -16,7 +17,7 @@ class Cart extends Controller
     {
         $cartData = $this->model->getCartData();
         
-        // PROTECTION CSRF : Génération du jeton pour la page du panier
+        // PROTECTION CSRF : Génération du jeton pour sécuriser les actions du panier
         $data = [
             'cartItems' => $cartData[0] ?? [],
             'priceTotalAll' => $cartData[1] ?? 0,
@@ -26,23 +27,26 @@ class Cart extends Controller
         $this->view('cart/cart', $data);
     }
 
-    // SÉCURITÉ : Vérification de la méthode POST et du jeton CSRF
+    // SÉCURITÉ : Suppression d'un article (Validation POST + CSRF)
     public function deleteCart($cartRowId)
     {
+        // Bloquer les requêtes GET pour éviter les suppressions accidentelles ou malveillantes
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('HTTP/1.1 405 Method Not Allowed');
             exit(json_encode(['status' => 'error', 'message' => 'Méthode non autorisée.']));
         }
 
-        // Vérification du jeton pour empêcher la suppression malveillante
+        // Vérification du jeton CSRF unifiée
         $this->checkCsrfToken($_POST['csrf_token'] ?? '');
 
         $this->model->deleteCartItem((int)$cartRowId);
+        
+        // Renvoie les nouvelles données du panier au format JSON pour la mise à jour asynchrone (AJAX)
         $cartData = $this->model->getCartData();
         echo json_encode($cartData);
     }
 
-    // SÉCURITÉ : Vérification de la méthode POST et du jeton CSRF
+    // SÉCURITÉ : Mise à jour de la quantité (Validation POST + CSRF)
     public function updateCart()
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -50,15 +54,15 @@ class Cart extends Controller
             exit(json_encode(['status' => 'error', 'message' => 'Méthode non autorisée.']));
         }
 
-        // Vérification du jeton pour empêcher la modification malveillante des quantités
         $this->checkCsrfToken($_POST['csrf_token'] ?? '');
 
         $this->model->updateCartItem($_POST);
+        
         $cartData = $this->model->getCartData();
         echo json_encode($cartData);
     }
 
-    // SÉCURITÉ : Vérification de la méthode POST et du jeton CSRF
+    // SÉCURITÉ : Ajout d'un article au panier (Validation POST + CSRF)
     public function addToCart($productId)
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -66,7 +70,6 @@ class Cart extends Controller
             exit(json_encode(['status' => 'error', 'message' => 'Méthode non autorisée.']));
         }
 
-        // Vérification du jeton pour empêcher l'ajout forcé de produits
         $this->checkCsrfToken($_POST['csrf_token'] ?? '');
 
         $quantity = $_POST['quantity'] ?? 1;

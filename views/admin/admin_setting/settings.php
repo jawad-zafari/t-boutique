@@ -1,5 +1,5 @@
 <?php
-// En Architecture MVC, les données proviennent du contrôleur
+// RÈGLE MVC : Les données sont préparées par le contrôleur et transmises via $data
 $option = $data['option'] ?? [];
 ?>
 <div class="admin-container">

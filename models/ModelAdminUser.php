@@ -33,8 +33,8 @@ class ModelAdminUser extends Model
         if (empty($ids)) return;
         
         // SÉCURITÉ CRITIQUE : Utilisation de array_map('intval')
-        // Explication : Transforme chaque ID en nombre entier pur. Si un hacker
-        // essaie d'envoyer du code SQL via la case à cocher, il sera converti en 0.
+        // Explication pour le jury : Transforme chaque ID en nombre entier pur. Si un hacker
+        // essaie d'envoyer du code SQL via la case à cocher, il sera converti en 0 (zéro).
         $idsString = implode(',', array_map('intval', $ids));
         
         $sql = "UPDATE users SET role_id = 1 WHERE id IN (" . $idsString . ")";
@@ -68,12 +68,13 @@ class ModelAdminUser extends Model
     }
 
     /**
-     * Supprimer des utilisateurs définitivement
+     * Supprimer définitivement un ou plusieurs utilisateurs
      */
     public function delete($ids)
     {
         if (empty($ids)) return;
         
+        // SÉCURITÉ CRITIQUE
         $idsString = implode(',', array_map('intval', $ids));
         
         $sql = "DELETE FROM users WHERE id IN (" . $idsString . ")";

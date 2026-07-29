@@ -36,17 +36,14 @@
                         <div class="form-group m-0">
                             <label for="startYear" class="sr-only">Année de début</label>
                             <select id="startYear" name="year1" class="form-control" aria-label="Sélectionner l'année de début">
-                                <?php 
-                                $currentYear = date('Y');
-                                for ($i = 2020; $i <= $currentYear; $i++): 
-                                ?>
+                                <?php for ($i = 2020; $i <= $data['currentYear']; $i++): ?>
                                     <option value="<?= $i ?>"><?= $i ?></option>
                                 <?php endfor; ?>
                             </select>
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="filter-section">
                     <h4><i class="fa-solid fa-calendar-check" aria-hidden="true"></i> Date de fin</h4>
                     <div class="date-selectors-grid">
@@ -69,7 +66,7 @@
                         <div class="form-group m-0">
                             <label for="endYear" class="sr-only">Année de fin</label>
                             <select id="endYear" name="year2" class="form-control" aria-label="Sélectionner l'année de fin">
-                                <?php for ($i = 2020; $i <= $currentYear; $i++): ?>
+                                <?php for ($i = 2020; $i <= $data['currentYear']; $i++): ?>
                                     <option value="<?= $i ?>"><?= $i ?></option>
                                 <?php endfor; ?>
                             </select>

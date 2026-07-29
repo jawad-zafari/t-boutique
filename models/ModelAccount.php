@@ -3,7 +3,7 @@
 /**
  * Modèle ModelAccount
  * Gère les données de l'espace client.
- * L'architecture est sécurisée par des requêtes préparées (PDO) contre les injections SQL.
+ * Requêtes sécurisées via PDO.
  */
 class ModelAccount extends Model
 {
@@ -21,16 +21,17 @@ class ModelAccount extends Model
 
     public function updateProfile($data, $userId)
     {
-        // SÉCURITÉ : Nettoyage strict des entrées utilisateur (Protection contre Stored XSS)
-        $username = htmlspecialchars($data['username'] ?? '', ENT_QUOTES, 'UTF-8');
+        // RÈGLE MVC : PDO sécurise contre les injections SQL (Prepared Statements).
+        // L'échappement XSS (htmlspecialchars) se fait uniquement dans la vue pour éviter le double encodage.
+        $username = trim($data['username'] ?? '');
         $email = filter_var($data['email'] ?? '', FILTER_SANITIZE_EMAIL);
-        $lastName = htmlspecialchars($data['last_name'] ?? '', ENT_QUOTES, 'UTF-8');
-        $mobile = htmlspecialchars($data['mobile'] ?? '', ENT_QUOTES, 'UTF-8');
-        $phone = htmlspecialchars($data['phone'] ?? '', ENT_QUOTES, 'UTF-8');
-        $address = htmlspecialchars($data['address'] ?? '', ENT_QUOTES, 'UTF-8');
-        $city = htmlspecialchars($data['city'] ?? '', ENT_QUOTES, 'UTF-8');
-        $postalCode = htmlspecialchars($data['postal_code'] ?? '', ENT_QUOTES, 'UTF-8');
-        $gender = (int) ($data['gender'] ?? 1); // Typage strict
+        $lastName = trim($data['last_name'] ?? '');
+        $mobile = trim($data['mobile'] ?? '');
+        $phone = trim($data['phone'] ?? '');
+        $address = trim($data['address'] ?? '');
+        $city = trim($data['city'] ?? '');
+        $postalCode = trim($data['postal_code'] ?? '');
+        $gender = (int) ($data['gender'] ?? 1); 
         $newsletter = isset($data['newsletter']) ? 1 : 0;
 
         $sql = "UPDATE users SET username = ?, email = ?, last_name = ?, mobile = ?, phone = ?, address = ?, city = ?, postal_code = ?, gender = ?, newsletter = ? WHERE id = ?";
@@ -39,13 +40,12 @@ class ModelAccount extends Model
 
     public function checkOldPassword($userId, $oldPassword)
     {
-        // SÉCURITÉ CRITIQUE : Récupérer d'abord le hachage, puis le vérifier avec password_verify
         $sql = "SELECT password FROM users WHERE id = ?";
         $result = $this->doSelect($sql, [(int)$userId]);
         
         if (!empty($result)) {
             $hashedPassword = $result[0]['password'];
-            return password_verify($oldPassword, $hashedPassword); // Comparaison sécurisée
+            return password_verify($oldPassword, $hashedPassword);
         }
         
         return false;
@@ -53,7 +53,6 @@ class ModelAccount extends Model
 
     public function updatePassword($userId, $newPassword)
     {
-        // SÉCURITÉ CRITIQUE : Hachage du nouveau mot de passe (Bcrypt) avant la sauvegarde
         $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
         
         $sql = "UPDATE users SET password = ? WHERE id = ?";
@@ -72,19 +71,13 @@ class ModelAccount extends Model
         return $this->doSelect($sql, [(int)$userId]);
     }
 
-    // PROTECTION IDOR (Insecure Direct Object Reference)
-    // Explication : On oblige la base de données à vérifier que l'Order ID 
-    // appartient bien au User ID connecté. Un hacker ne peut donc pas voir les commandes des autres.
     public function getOrderById($orderId, $userId)
     {
+        // PROTECTION IDOR : Vérification stricte du user_id
         $sql = "SELECT * FROM orders WHERE id = ? AND user_id = ?";
         $result = $this->doSelect($sql, [(int)$orderId, (int)$userId], true);
         return $result;
     }
-
-    // =======================================================
-    // GESTION DES FAVORIS (WISH LIST)
-    // =======================================================
 
     public function toggleFavorite($userId, $productId)
     {
@@ -111,7 +104,6 @@ class ModelAccount extends Model
                 ORDER BY f.id DESC";
         $products = $this->doSelect($sql, [(int)$userId]);
         
-        // Si vous avez une fonction calculateProductsPrices dans le Model de base, on l'utilise
         if (method_exists($this, 'calculateProductsPrices')) {
             return $this->calculateProductsPrices($products);
         }

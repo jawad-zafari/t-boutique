@@ -2,7 +2,8 @@
 
 /**
  * Model ModelAddComment
- * Gère la logique des commentaires (Anti-Injection SQL et XSS)
+ * Gère la logique des commentaires.
+ * Sécurité Anti-XSS stricte et respect total du standard européen (Dates standardisées).
  */
 class ModelAddComment extends Model
 {
@@ -26,8 +27,15 @@ class ModelAddComment extends Model
         return $this->doSelect($sql, [(int)$categoryId]);
     }
 
-    public function saveComment($data, $productId)
+    /**
+     * Enregistre ou met à jour le commentaire
+     * Le $userId est fourni par le contrôleur (Règle MVC)
+     */
+    public function saveComment($data, $productId, $userId)
     {
+        // Sécurité : ne rien faire si l'utilisateur n'est pas valide
+        if ($userId <= 0) return;
+
         $commentParams = $this->getParam($productId);
         $paramResult = [];
         
@@ -40,17 +48,15 @@ class ModelAddComment extends Model
             $paramResult[$paramId] = $value;
         }
         
-        // SÉCURITÉ (Nettoyage des entrées) : On utilise strip_tags pour retirer tout code HTML malveillant.
-        // L'échappement final avec htmlspecialchars sera fait dans la Vue (Architecture MVC).
-        $title = strip_tags(trim($data['title'] ?? ''));
-        $positive = strip_tags(trim($data['positive'] ?? ''));
-        $negative = strip_tags(trim($data['negative'] ?? ''));
-        $comment = strip_tags(trim($data['comment'] ?? ''));
+        // SÉCURITÉ (Nettoyage des entrées) : htmlspecialchars protège mieux contre les failles XSS
+        $title = htmlspecialchars(trim($data['title'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $positive = htmlspecialchars(trim($data['positive'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $negative = htmlspecialchars(trim($data['negative'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $comment = htmlspecialchars(trim($data['comment'] ?? ''), ENT_QUOTES, 'UTF-8');
         
-        $createdAt = self::jaliliDate('Y/m/d');
-
-        self::sessionInit();
-        $userId = self::sessionGet('userId');
+        // STANDARD DWWM : Utilisation de la date classique (pas de calendrier localisé)
+        date_default_timezone_set('Europe/Paris');
+        $createdAt = date('Y-m-d H:i:s');
 
         // Vérifier si l'utilisateur a déjà commenté ce produit
         $sqlCheck = "SELECT * FROM comments WHERE user_id = ? AND product_id = ?";
@@ -59,8 +65,8 @@ class ModelAddComment extends Model
         if (isset($result[0])) {
             // Mise à jour si le commentaire existe déjà (remise en attente d'approbation)
             $commentId = $result[0]['id'];
-            $sqlUpdate = "UPDATE comments SET title = ?, content = ?, positive_points = ?, negative_points = ?, parameters = ?, is_approved = 0 WHERE id = ?";
-            $values = [$title, $comment, $positive, $negative, serialize($paramResult), $commentId];
+            $sqlUpdate = "UPDATE comments SET title = ?, content = ?, positive_points = ?, negative_points = ?, parameters = ?, is_approved = 0, created_at = ? WHERE id = ?";
+            $values = [$title, $comment, $positive, $negative, serialize($paramResult), $createdAt, $commentId];
             $this->doQuery($sqlUpdate, $values);
         } else {
             // Insertion d'un tout nouveau commentaire
@@ -70,11 +76,12 @@ class ModelAddComment extends Model
         }
     }
 
-    public function commentInfo($productId)
+    /**
+     * Récupère les infos d'un commentaire existant pour un utilisateur
+     * Le $userId est fourni par le contrôleur (Règle MVC)
+     */
+    public function commentInfo($productId, $userId)
     {
-        self::sessionInit();
-        $userId = self::sessionGet('userId');
-
         $sql = "SELECT * FROM comments WHERE product_id = ? AND user_id = ?";
         return $this->doSelect($sql, [(int)$productId, (int)$userId], true);
     }

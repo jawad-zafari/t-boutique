@@ -18,11 +18,6 @@ class AdminNews extends Controller
             header('Location: ' . URL . 'AdminLogin/index');
             exit; 
         }
-
-        // PROTECTION CSRF : Génération globale du jeton
-        if (!Model::sessionGet('csrf_token')) {
-            Model::sessionSet('csrf_token', bin2hex(random_bytes(32)));
-        }
     }
 
     public function index()
@@ -32,7 +27,7 @@ class AdminNews extends Controller
         $data = [
             'news' => $news, 
             'activeMenu' => 'news',
-            'csrf_token' => Model::sessionGet('csrf_token')
+            'csrf_token' => $this->generateCsrfToken() // Utilisation de la méthode globale unifiée
         ];
         
         $this->view('admin/admin_news/news', $data);
@@ -42,7 +37,7 @@ class AdminNews extends Controller
     {
         $data = [
             'activeMenu' => 'news',
-            'csrf_token' => Model::sessionGet('csrf_token')
+            'csrf_token' => $this->generateCsrfToken()
         ];
         $this->view('admin/admin_news/add', $data);
     }
@@ -55,11 +50,8 @@ class AdminNews extends Controller
             exit('Méthode non autorisée');
         }
 
-        // SÉCURITÉ : Vérification du jeton CSRF
-        $token = $_POST['csrf_token'] ?? '';
-        if ($token !== Model::sessionGet('csrf_token')) {
-            die('Erreur de sécurité : Jeton CSRF invalide.');
-        }
+        // SÉCURITÉ : Vérification du jeton CSRF unifiée
+        $this->checkCsrfToken($_POST['csrf_token'] ?? '');
 
         $this->model->addNews($_POST, $_FILES);
         
@@ -74,7 +66,7 @@ class AdminNews extends Controller
         $data = [
             'newsInfo' => $newsInfo, 
             'activeMenu' => 'news',
-            'csrf_token' => Model::sessionGet('csrf_token')
+            'csrf_token' => $this->generateCsrfToken()
         ];
         
         $this->view('admin/admin_news/edit', $data);
@@ -89,10 +81,7 @@ class AdminNews extends Controller
         }
 
         // SÉCURITÉ : Vérification du jeton CSRF
-        $token = $_POST['csrf_token'] ?? '';
-        if ($token !== Model::sessionGet('csrf_token')) {
-            die('Erreur de sécurité : Jeton CSRF invalide.');
-        }
+        $this->checkCsrfToken($_POST['csrf_token'] ?? '');
 
         $this->model->editNews((int)$id, $_POST, $_FILES);
         
@@ -108,10 +97,8 @@ class AdminNews extends Controller
             exit('Méthode non autorisée');
         }
 
-        $token = $_POST['csrf_token'] ?? '';
-        if ($token !== Model::sessionGet('csrf_token')) {
-            die('Erreur de sécurité : Jeton CSRF invalide.');
-        }
+        // SÉCURITÉ : Vérification du jeton CSRF
+        $this->checkCsrfToken($_POST['csrf_token'] ?? '');
 
         $this->model->deleteNews((int)$id);
         

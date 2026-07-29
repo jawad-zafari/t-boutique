@@ -18,12 +18,12 @@ $orderId = (int)($orderInfo['id'] ?? 0);
             <div class="form-grid">
                 <div class="form-group">
                     <label for="creditcard">Numéro de carte / Compte :</label>
-                    <input id="creditcard" name="creditcard" type="text" class="form-control" dir="ltr" aria-required="true" required>
+                    <input id="creditcard" name="creditcard" type="text" class="form-control" dir="ltr" aria-required="true" required placeholder="Ex: 1234567890123456">
                 </div>
 
                 <div class="form-group">
                     <label for="bank">Banque émettrice :</label>
-                    <input id="bank" name="bank" type="text" class="form-control" aria-required="true" required>
+                    <input id="bank" name="bank" type="text" class="form-control" aria-required="true" required placeholder="Ex: BNP Paribas">
                 </div>
             </div>
 
@@ -63,3 +63,5 @@ $orderId = (int)($orderInfo['id'] ?? 0);
 
     </form>
 </div>
+
+<script src="<?= URL ?>public/assets/js/checkout.js" defer></script>

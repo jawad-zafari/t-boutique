@@ -3,6 +3,7 @@
 /**
  * Contrôleur AdminComment
  * Gère la modération des commentaires de manière strictement sécurisée (POST & CSRF).
+ * Règle MVC et Standard DWWM respectés.
  */
 class AdminComment extends Controller
 {
@@ -17,18 +18,13 @@ class AdminComment extends Controller
             header('Location: ' . URL . 'AdminLogin/index');
             exit;
         }
-
-        // PROTECTION CSRF : Génération globale du jeton pour ce contrôleur
-        if (!Model::sessionGet('csrf_token')) {
-            Model::sessionSet('csrf_token', bin2hex(random_bytes(32)));
-        }
     }
 
     public function index()
     {
         $data = [
             'comment' => $this->model->getComment(),
-            'csrf_token' => Model::sessionGet('csrf_token')
+            'csrf_token' => $this->generateCsrfToken() // Génération unifiée du token
         ];
         
         $this->view('admin/admin_comment/comment', $data);
@@ -39,14 +35,11 @@ class AdminComment extends Controller
         // SÉCURITÉ : La modification DOIT être une requête POST
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('HTTP/1.1 405 Method Not Allowed');
-            exit('Méthode non autorisée');
+            exit;
         }
 
-        // VÉRIFICATION CSRF
-        $token = $_POST['csrf_token'] ?? '';
-        if ($token !== Model::sessionGet('csrf_token')) {
-            die('Erreur de sécurité : Jeton CSRF invalide.');
-        }
+        // VÉRIFICATION CSRF UNIFIÉE (Remplace le "die" bloquant)
+        $this->checkCsrfToken($_POST['csrf_token'] ?? '');
 
         $this->model->confirm($_POST);
         
@@ -56,17 +49,12 @@ class AdminComment extends Controller
 
     public function unconfirm()
     {
-        // SÉCURITÉ : La modification DOIT être une requête POST
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('HTTP/1.1 405 Method Not Allowed');
-            exit('Méthode non autorisée');
+            exit;
         }
 
-        // VÉRIFICATION CSRF
-        $token = $_POST['csrf_token'] ?? '';
-        if ($token !== Model::sessionGet('csrf_token')) {
-            die('Erreur de sécurité : Jeton CSRF invalide.');
-        }
+        $this->checkCsrfToken($_POST['csrf_token'] ?? '');
 
         $ids = $_POST['id'] ?? [];
         if (!empty($ids)) {
@@ -79,17 +67,12 @@ class AdminComment extends Controller
 
     public function delete()
     {
-        // SÉCURITÉ : La suppression DOIT être une requête POST
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('HTTP/1.1 405 Method Not Allowed');
-            exit('Méthode non autorisée');
+            exit;
         }
 
-        // VÉRIFICATION CSRF
-        $token = $_POST['csrf_token'] ?? '';
-        if ($token !== Model::sessionGet('csrf_token')) {
-            die('Erreur de sécurité : Jeton CSRF invalide.');
-        }
+        $this->checkCsrfToken($_POST['csrf_token'] ?? '');
 
         $ids = $_POST['id'] ?? [];
         if (!empty($ids)) {

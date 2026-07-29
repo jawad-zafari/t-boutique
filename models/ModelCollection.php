@@ -3,7 +3,7 @@
 /**
  * Model ModelCollection
  * Gère les requêtes dynamiques pour les collections.
- * Architecture hautement sécurisée contre les injections SQL (Casting, PDO, Whitelisting).
+ * Architecture sécurisée : PDO, Typage strict (Casting), Liste blanche (Whitelisting).
  */
 class ModelCollection extends Model
 {
@@ -26,6 +26,7 @@ class ModelCollection extends Model
 
         // ÉTAPE 1 : Condition de base selon le type de collection
         if ($type === 'category') {
+            // Utilisation de requêtes préparées (?) pour éviter les injections SQL
             $whereClauses[] = "(category_id = ? OR secondary_category_id = ?)";
             $params[] = (int)$categoryId;
             $params[] = (int)$categoryId;
@@ -79,10 +80,11 @@ class ModelCollection extends Model
             $total = (int)$resultCount[0]['total']; 
         }
 
-        // SÉCURITÉ : Forçage des variables limit et offset en entiers pour bloquer toute injection
+        // SÉCURITÉ : Forçage des variables limit et offset en entiers (Integer Casting) pour bloquer toute injection
         $safeLimit = (int)$limit;
         $safeOffset = (int)$offset;
 
+        // Concaténation de variables sûres (Whitelisting et Casting)
         $sqlData = "SELECT * FROM products $whereSql ORDER BY $orderCol $orderDir LIMIT $safeLimit OFFSET $safeOffset";
         $products = $this->doSelect($sqlData, $params);
 

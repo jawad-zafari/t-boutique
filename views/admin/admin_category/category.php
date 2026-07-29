@@ -24,12 +24,12 @@
                 <i class="fa-solid fa-plus" aria-hidden="true"></i> Ajouter
             </a>
             <button type="button" id="btnDeleteCategory" class="btn-admin-danger" aria-label="Supprimer les catégories sélectionnées">
-                <i class="fa-solid fa-trash" aria-hidden="true"></i> Supprimer
+                <i class="fa-solid fa-trash-can" aria-hidden="true"></i> Supprimer
             </button>
         </div>
     </header>
 
-    <form id="formCategorySelection" action="<?= URL ?>AdminCategory/deleteCategory/<?= (int)($data['categoryInfo']['id'] ?? 0) ?>" method="post">
+    <form action="<?= URL ?>AdminCategory/deleteCategory/<?= (int)($data['categoryInfo']['id'] ?? 0) ?>" method="post" id="formActionAdmin">
         
         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($data['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
 
@@ -37,31 +37,31 @@
             <table class="admin-table" aria-label="Liste des catégories">
                 <thead>
                     <tr>
-                        <th scope="col" style="width: 60px;" class="text-center">ID</th>
+                        <th scope="col" class="col-id">N°</th>
                         <th scope="col">Titre de la catégorie</th>
-                        <th scope="col" style="width: 150px;" class="text-center">Sous-catégories</th>
-                        <th scope="col" style="width: 150px;" class="text-center">Attributs</th>
-                        <th scope="col" style="width: 100px;" class="text-center">Modifier</th>
-                        <th scope="col" style="width: 60px;" class="text-center">
+                        <th scope="col" class="text-center col-action">Sous-catégories</th>
+                        <th scope="col" class="text-center col-action">Attributs</th>
+                        <th scope="col" class="text-center col-action">Modifier</th>
+                        <th scope="col" class="text-center col-checkbox">
                             <input type="checkbox" id="selectAllCheckboxes" class="admin-checkbox" aria-label="Sélectionner toutes les lignes">
                         </th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php 
-                    $category = $data['category'] ?? [];
-                    if (!empty($category)): foreach ($category as $row): 
+                    $categories = $data['category'] ?? [];
+                    if(!empty($categories)): 
+                        foreach ($categories as $row): 
                     ?>
                     <tr>
-                        <td class="text-center font-weight-bold"><?= (int)$row['id']; ?></td>
-                        <td>
-                            <a href="<?= URL ?>AdminCategory/showChildren/<?= (int)$row['id']; ?>" class="table-main-link" style="color: inherit; text-decoration: none; font-weight: bold;">
-                                <?= htmlspecialchars($row['title'], ENT_QUOTES, 'UTF-8'); ?>
-                            </a>
-                        </td>
+                        <td class="col-id"><strong><?= (int)$row['id']; ?></strong></td>
                         
+                        <td>
+                            <strong class="category-title-text"><?= htmlspecialchars($row['title'], ENT_QUOTES, 'UTF-8'); ?></strong>
+                        </td>
+
                         <td class="text-center">
-                            <a href="<?= URL ?>AdminCategory/showChildren/<?= (int)$row['id']; ?>" class="action-icon icon-sitemap" title="Voir les sous-catégories" aria-label="Voir les sous-catégories">
+                            <a href="<?= URL ?>AdminCategory/showChildren/<?= (int)$row['id']; ?>" class="action-icon icon-children" title="Voir les sous-catégories" aria-label="Voir les sous-catégories">
                                 <i class="fa-solid fa-sitemap" aria-hidden="true"></i>
                             </a>
                         </td>

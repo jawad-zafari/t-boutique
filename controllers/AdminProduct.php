@@ -18,9 +18,6 @@ class AdminProduct extends Controller
             header('Location: ' . URL . 'AdminLogin/index');
             exit;
         }
-
-        // PROTECTION CSRF : Génération du jeton via la méthode du contrôleur parent
-        $this->generateCsrfToken();
     }
 
     /**
@@ -30,7 +27,7 @@ class AdminProduct extends Controller
     {
         $data = [
             'product' => $this->model->getProduct(),
-            'csrf_token' => $_SESSION['csrf_token'] ?? ''
+            'csrf_token' => $this->generateCsrfToken() // RÈGLE MVC : Encapsulation (Pas d'appel direct à $_SESSION)
         ];
         $this->view('admin/admin_product/products', $data);
     }
@@ -57,7 +54,7 @@ class AdminProduct extends Controller
             'color' => $this->model->getColor(),
             'garantee' => $this->model->getGarantee(),
             'productInfo' => $this->model->getProductInfo($productId),
-            'csrf_token' => $_SESSION['csrf_token'] ?? ''
+            'csrf_token' => $this->generateCsrfToken()
         ];
         
         $this->view('admin/admin_product/add_product', $data);
@@ -68,6 +65,7 @@ class AdminProduct extends Controller
      */
     public function deleteProduct(): void
     {
+        // SÉCURITÉ CRITIQUE : Bloquer tout accès direct via GET
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('HTTP/1.1 405 Method Not Allowed');
             exit('Méthode non autorisée');
@@ -93,7 +91,7 @@ class AdminProduct extends Controller
         $data = [
             'gallery' => $this->model->getGallery($productId),
             'productInfo' => $this->model->getProductInfo($productId),
-            'csrf_token' => $_SESSION['csrf_token'] ?? ''
+            'csrf_token' => $this->generateCsrfToken()
         ];
         $this->view('admin/admin_product/gallery', $data);
     }
@@ -143,7 +141,7 @@ class AdminProduct extends Controller
         $data = [
             'attr' => $this->model->getProductAttr($productId),
             'productInfo' => $this->model->getProductInfo($productId),
-            'csrf_token' => $_SESSION['csrf_token'] ?? ''
+            'csrf_token' => $this->generateCsrfToken()
         ];
         $this->view('admin/admin_product/attributes', $data);
     }
@@ -157,7 +155,7 @@ class AdminProduct extends Controller
         $data = [
             'naghd' => $this->model->getReview($productId),
             'productInfo' => $this->model->getProductInfo($productId),
-            'csrf_token' => $_SESSION['csrf_token'] ?? ''
+            'csrf_token' => $this->generateCsrfToken()
         ];
         $this->view('admin/admin_product/reviews', $data);
     }
@@ -175,7 +173,7 @@ class AdminProduct extends Controller
         $data = [
             'productInfo' => $this->model->getProductInfo($productId),
             'naghdInfo' => $this->model->getReviewInfo($reviewId),
-            'csrf_token' => $_SESSION['csrf_token'] ?? ''
+            'csrf_token' => $this->generateCsrfToken()
         ];
         $this->view('admin/admin_product/add_review', $data);
     }

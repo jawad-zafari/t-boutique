@@ -2,7 +2,8 @@
 
 /**
  * Modèle ModelAdminComment
- * Gère les requêtes SQL liées à la modération des commentaires (Anti-XSS et Anti-Injection).
+ * Gère les requêtes SQL liées à la modération des commentaires.
+ * Sécurité renforcée (Anti-XSS avec htmlspecialchars et Anti-Injection).
  */
 class ModelAdminComment extends Model
 {
@@ -26,12 +27,11 @@ class ModelAdminComment extends Model
         foreach ($data['id'] as $id) {
             $sql = "UPDATE comments SET title = ?, positive_points = ?, negative_points = ?, content = ? WHERE id = ?";
             
-            // SÉCURITÉ CRITIQUE : Utilisation de strip_tags au lieu de htmlspecialchars pour la BDD
-            // Cela empêche le XSS stocké tout en évitant le double-échappement lors de l'édition
-            $title = strip_tags(trim($data['title_' . $id] ?? ''));
-            $positive = strip_tags(trim($data['positive_points_' . $id] ?? ''));
-            $negative = strip_tags(trim($data['negative_points_' . $id] ?? ''));
-            $content = strip_tags(trim($data['content_' . $id] ?? ''));
+            // SÉCURITÉ CRITIQUE : Utilisation de htmlspecialchars pour bloquer le XSS stocké
+            $title = htmlspecialchars(trim($data['title_' . $id] ?? ''), ENT_QUOTES, 'UTF-8');
+            $positive = htmlspecialchars(trim($data['positive_points_' . $id] ?? ''), ENT_QUOTES, 'UTF-8');
+            $negative = htmlspecialchars(trim($data['negative_points_' . $id] ?? ''), ENT_QUOTES, 'UTF-8');
+            $content = htmlspecialchars(trim($data['content_' . $id] ?? ''), ENT_QUOTES, 'UTF-8');
 
             $params = [$title, $positive, $negative, $content, (int)$id];
             $this->doQuery($sql, $params);
@@ -41,8 +41,10 @@ class ModelAdminComment extends Model
         $safeIds = array_map('intval', $data['id']);
         $idsString = implode(',', $safeIds);
         
-        $sqlApprove = "UPDATE comments SET is_approved = 1 WHERE id IN (" . $idsString . ")";
-        $this->doQuery($sqlApprove);
+        if(!empty($idsString)) {
+            $sqlApprove = "UPDATE comments SET is_approved = 1 WHERE id IN (" . $idsString . ")";
+            $this->doQuery($sqlApprove);
+        }
     }
 
     // Désapprouver ou masquer les commentaires sélectionnés
@@ -53,8 +55,10 @@ class ModelAdminComment extends Model
         $safeIds = array_map('intval', $ids);
         $idsString = implode(',', $safeIds);
         
-        $sql = "UPDATE comments SET is_approved = 0 WHERE id IN (" . $idsString . ")";
-        $this->doQuery($sql);
+        if(!empty($idsString)) {
+            $sql = "UPDATE comments SET is_approved = 0 WHERE id IN (" . $idsString . ")";
+            $this->doQuery($sql);
+        }
     }
 
     // Supprimer définitivement les commentaires de la base de données
@@ -65,8 +69,10 @@ class ModelAdminComment extends Model
         $safeIds = array_map('intval', $ids);
         $idsString = implode(',', $safeIds);
         
-        $sql = "DELETE FROM comments WHERE id IN (" . $idsString . ")";
-        $this->doQuery($sql);
+        if(!empty($idsString)) {
+            $sql = "DELETE FROM comments WHERE id IN (" . $idsString . ")";
+            $this->doQuery($sql);
+        }
     }
 }
 ?>

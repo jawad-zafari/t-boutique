@@ -2,7 +2,8 @@
 
 /**
  * Model ModelAdminCategory
- * Nettoyage des données (Sanitization avec strip_tags) pour éviter les failles XSS stockées.
+ * Nettoyage des données (Sanitization avec htmlspecialchars) pour éviter les failles XSS stockées.
+ * Requêtes préparées avec PDO (Protection SQL Injection).
  */
 class ModelAdminCategory extends Model
 {
@@ -53,59 +54,56 @@ class ModelAdminCategory extends Model
         return $this->doSelect($sql, [(int)$categoryId], true);
     }
 
-    public function addCategory($data, $editId)
+    public function addCategory($data, $parentId, $editId)
     {
-        // SÉCURITÉ : Utilisation de strip_tags au lieu de htmlspecialchars pour la BDD
-        $title = strip_tags(trim($data['title'] ?? ''));
-        $parentId = (int)($data['parent'] ?? 0);
-        $editId = (int)$editId;
+        // SÉCURITÉ : Échappement des caractères spéciaux (Standard XSS)
+        $title = htmlspecialchars(trim($data['title'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $parent = (int)($data['parent'] ?? $parentId);
 
         if (empty($title)) return;
 
-        if ($editId == 0) {
-            $sql = "INSERT INTO categories (title, parent_id) VALUES (?, ?)";
-            $this->doQuery($sql, [$title, $parentId]);
-        } else {
+        if ($editId > 0) {
             $sql = "UPDATE categories SET title = ?, parent_id = ? WHERE id = ?";
-            $this->doQuery($sql, [$title, $parentId, $editId]);
+            $this->doQuery($sql, [$title, $parent, (int)$editId]);
+        } else {
+            $sql = "INSERT INTO categories (title, parent_id) VALUES (?, ?)";
+            $this->doQuery($sql, [$title, $parent]);
         }
     }
 
-    public function getChildsIds($categoryId)
+    public function getChildrenIds($categoryId)
     {
-        $sql = "SELECT * FROM categories WHERE parent_id = ?";
+        $sql = "SELECT id FROM categories WHERE parent_id = ?";
         $children = $this->doSelect($sql, [(int)$categoryId]);
         
         foreach ($children as $child) {
-            $this->allChildrenIds[] = (int)$child['id'];
-            $this->getChildsIds((int)$child['id']);
+            $this->allChildrenIds[] = $child['id'];
+            $this->getChildrenIds($child['id']); // Récursivité sécurisée
         }
     }
 
     public function deleteCategory($ids)
     {
-        if (empty($ids) || !is_array($ids)) return;
-
-        // Assainissement des IDs
-        $safeIds = array_map('intval', $ids);
-
-        foreach ($safeIds as $id) {
+        $idsToVerify = array_map('intval', $ids);
+        
+        foreach ($idsToVerify as $id) {
             $this->allChildrenIds[] = $id;
-            $this->getChildsIds($id);
+            $this->getChildrenIds($id);
         }
-
-        $allIds = array_unique($this->allChildrenIds);
-        if (empty($allIds)) return;
-
-        $idsString = implode(',', $allIds);
-        $sql = "DELETE FROM categories WHERE id IN (" . $idsString . ")";
-        $this->doQuery($sql);
-    }
-
-    public function getAttr($categoryId, $attrId)
-    {
-        $sql = "SELECT * FROM attributes WHERE category_id = ? AND parent_id = ?";
-        return $this->doSelect($sql, [(int)$categoryId, (int)$attrId]);
+        
+        $this->allChildrenIds = array_unique($this->allChildrenIds);
+        
+        if (!empty($this->allChildrenIds)) {
+            $idsString = implode(',', $this->allChildrenIds);
+            
+            // Suppression des catégories
+            $sql = "DELETE FROM categories WHERE id IN ($idsString)";
+            $this->doQuery($sql);
+            
+            // SÉCURITÉ : Nettoyage des attributs et valeurs orphelins
+            $sqlAttr = "DELETE FROM attributes WHERE category_id IN ($idsString)";
+            $this->doQuery($sqlAttr);
+        }
     }
 
     public function attrInfo($attrId)
@@ -114,34 +112,40 @@ class ModelAdminCategory extends Model
         return $this->doSelect($sql, [(int)$attrId], true);
     }
 
+    public function getAttr($categoryId, $parentId)
+    {
+        $sql = "SELECT * FROM attributes WHERE category_id = ? AND parent_id = ? ORDER BY id DESC";
+        return $this->doSelect($sql, [(int)$categoryId, (int)$parentId]);
+    }
+
     public function addAttribute($data, $categoryId, $editId)
     {
-        // SÉCURITÉ : Anti-XSS stocké
-        $title = strip_tags(trim($data['title'] ?? ''));
+        $title = htmlspecialchars(trim($data['title'] ?? ''), ENT_QUOTES, 'UTF-8');
         $parentId = (int)($data['parent'] ?? 0);
-        $categoryId = (int)$categoryId;
-        $editId = (int)$editId;
-
+        
         if (empty($title)) return;
 
-        if ($editId == 0) {
-            $sql = "INSERT INTO attributes (title, parent_id, category_id) VALUES (?, ?, ?)";
-            $this->doQuery($sql, [$title, $parentId, $categoryId]);
-        } else {
+        if ($editId > 0) {
             $sql = "UPDATE attributes SET title = ?, parent_id = ? WHERE id = ?";
-            $this->doQuery($sql, [$title, $parentId, $editId]);
+            $this->doQuery($sql, [$title, $parentId, (int)$editId]);
+        } else {
+            $sql = "INSERT INTO attributes (title, category_id, parent_id) VALUES (?, ?, ?)";
+            $this->doQuery($sql, [$title, (int)$categoryId, $parentId]);
         }
     }
 
     public function deleteAttr($ids)
     {
-        if (empty($ids) || !is_array($ids)) return;
-
-        $safeIds = array_map('intval', $ids);
-        $idsString = implode(',', $safeIds);
+        $idsString = implode(',', array_map('intval', $ids));
         
-        $sql = "DELETE FROM attributes WHERE id IN (" . $idsString . ")";
-        $this->doQuery($sql);
+        if (!empty($idsString)) {
+            $sql = "DELETE FROM attributes WHERE id IN ($idsString) OR parent_id IN ($idsString)";
+            $this->doQuery($sql);
+            
+            // Nettoyage des valeurs orphelines
+            $sqlVal = "DELETE FROM attribute_values WHERE attribute_id IN ($idsString)";
+            $this->doQuery($sqlVal);
+        }
     }
 
     public function getAttrVal($attrId)
@@ -154,10 +158,10 @@ class ModelAdminCategory extends Model
     {
         $safeAttrId = (int)$attrId;
 
-        // 1. Insérer les nouvelles valeurs (SÉCURITÉ : strip_tags)
+        // 1. Insérer les nouvelles valeurs (SÉCURITÉ : htmlspecialchars au lieu de strip_tags)
         $attrValNew = array_filter($data['attrvalnew'] ?? []);
         foreach ($attrValNew as $val) {
-            $safeVal = strip_tags(trim($val));
+            $safeVal = htmlspecialchars(trim($val), ENT_QUOTES, 'UTF-8');
             if (!empty($safeVal)) {
                 $sql = "INSERT INTO attribute_values (attribute_id, value) VALUES (?, ?)";
                 $this->doQuery($sql, [$safeAttrId, $safeVal]);
@@ -171,12 +175,13 @@ class ModelAdminCategory extends Model
                 $valId = (int)$keyParts[1];
 
                 if (trim($val) != '') {
-                    $safeVal = strip_tags(trim($val));
+                    $safeVal = htmlspecialchars(trim($val), ENT_QUOTES, 'UTF-8');
                     $sql = "UPDATE attribute_values SET value = ? WHERE id = ?";
                     $this->doQuery($sql, [$safeVal, $valId]);
                 } else {
-                    $sql = "DELETE FROM attribute_values WHERE id = ?";
-                    $this->doQuery($sql, [$valId]);
+                    // Si l'input est vidé, on supprime la valeur de la DB
+                    $sqlDelete = "DELETE FROM attribute_values WHERE id = ?";
+                    $this->doQuery($sqlDelete, [$valId]);
                 }
             }
         }

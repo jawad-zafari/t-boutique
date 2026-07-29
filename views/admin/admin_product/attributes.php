@@ -28,23 +28,24 @@ $pId = (int)($productInfo['id'] ?? 0);
     <form action="<?= URL ?>AdminProduct/attributes/<?= $pId ?>" method="post" id="formProductAttributes">
         
         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($data['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
-        
-        <div class="admin-form-box form-box-wide mx-auto">
-            
+
+        <div class="admin-form-box">
             <div class="attr-grid-layout">
                 
                 <?php if(!empty($attr)): foreach ($attr as $row): ?>
                     <div class="attr-group-card">
-                        <label class="attr-title" for="attr_<?= (int)$row['id'] ?>"><?= htmlspecialchars($row['title'], ENT_QUOTES, 'UTF-8'); ?> :</label>
+                        <label for="attr_<?= (int)$row['id'] ?>" class="attr-title"><?= htmlspecialchars($row['title'], ENT_QUOTES, 'UTF-8') ?></label>
                         
-                        <select id="attr_<?= (int)$row['id'] ?>" name="x<?= (int)$row['id'] ?>" class="form-control" aria-label="Sélectionner la valeur pour <?= htmlspecialchars($row['title'], ENT_QUOTES, 'UTF-8'); ?>">
-                            <option value="">-- Non spécifié --</option>
+                        <select id="attr_<?= (int)$row['id'] ?>" name="x<?= (int)$row['id'] ?>" class="form-control">
+                            <option value="">-- Sélectionner une valeur --</option>
                             <?php 
                             $possibleValues = $row['possible_values'] ?? [];
+                            $selectedValueId = $row['selected_val'] ?? null;
                             foreach ($possibleValues as $val): 
+                                $selected = ($selectedValueId == $val['id']) ? 'selected' : '';
                             ?>
-                                <option value="<?= (int)$val['id']; ?>" <?= ($val['id'] == ($row['selected_val'] ?? 0)) ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($val['value'], ENT_QUOTES, 'UTF-8'); ?>
+                                <option value="<?= (int)$val['id'] ?>" <?= $selected ?>>
+                                    <?= htmlspecialchars($val['value'], ENT_QUOTES, 'UTF-8') ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>

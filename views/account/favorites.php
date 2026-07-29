@@ -9,12 +9,12 @@
         <a href="<?= URL ?>Index/index" class="link-home">
             <i class="fa-solid fa-house" aria-hidden="true"></i> Accueil
         </a>
-        <i class="fa-solid fa-angle-right divider-icon" html-hidden="true"></i>
+        <i class="fa-solid fa-angle-right divider-icon" aria-hidden="true"></i>
         
         <a href="<?= URL ?>Account/index" class="link-home">
             <i class="fa-solid fa-user" aria-hidden="true"></i> Mon Compte
         </a>
-        <i class="fa-solid fa-angle-right divider-icon" html-hidden="true"></i>
+        <i class="fa-solid fa-angle-right divider-icon" aria-hidden="true"></i>
         
         <span class="current-page-title">Mes Favoris</span>
     </div>

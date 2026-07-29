@@ -18,7 +18,7 @@ function initAdminSidebar() {
     // ACCESSIBILITÉ : Indiquer aux lecteurs d'écran quel élément est contrôlé par ce bouton
     toggleBtn.setAttribute('aria-controls', 'adminSidebar');
 
-    // 1. Lire l'état depuis le localStorage pour que la sidebar reste ouverte/fermée en changeant de page
+    // 1. Lire l'état depuis le localStorage pour que la sidebar reste cohérente
     const savedState = localStorage.getItem("adminSidebarState");
     
     if (savedState === "open") {
@@ -34,61 +34,32 @@ function initAdminSidebar() {
         sidebar.classList.remove("open");
         sidebar.setAttribute('aria-hidden', 'true');
         toggleBtn.setAttribute('aria-expanded', 'false');
-        if (overlay) overlay.classList.remove("active");
     }
 
-    // 2. Fonction de basculement manuel (Toggle) 
-    function toggleSidebar(e) {
-        if (e) {
-            e.preventDefault();
-            e.stopPropagation(); 
-        }
+    // 2. Événement du bouton (Toggle)
+    toggleBtn.addEventListener('click', () => {
+        const isOpen = sidebar.classList.toggle("open");
         
-        sidebar.classList.toggle("open");
-        const isOpen = sidebar.classList.contains("open");
-        
-        // Mise à jour de l'accessibilité en temps réel
-        sidebar.setAttribute('aria-hidden', !isOpen);
-        toggleBtn.setAttribute('aria-expanded', isOpen);
-        
-        // Sauvegarde du choix de l'utilisateur dans le navigateur
         if (isOpen) {
             localStorage.setItem("adminSidebarState", "open");
+            sidebar.setAttribute('aria-hidden', 'false');
+            toggleBtn.setAttribute('aria-expanded', 'true');
+            if (window.innerWidth < 992 && overlay) {
+                overlay.classList.add("active");
+            }
         } else {
             localStorage.setItem("adminSidebarState", "closed");
-        }
-        
-        // Gestion de l'overlay pour mobile
-        if (window.innerWidth < 992 && overlay) {
-            if (isOpen) {
-                overlay.classList.add("active");
-            } else {
+            sidebar.setAttribute('aria-hidden', 'true');
+            toggleBtn.setAttribute('aria-expanded', 'false');
+            if (overlay) {
                 overlay.classList.remove("active");
-            }
-        }
-    }
-
-    toggleBtn.addEventListener("click", toggleSidebar);
-    
-    // 3. Fermeture automatique si l'utilisateur clique en dehors de la sidebar (Click-Outside)
-    document.addEventListener("click", function(event) {
-        if (sidebar.classList.contains("open")) {
-            if (!sidebar.contains(event.target) && !toggleBtn.contains(event.target)) {
-                sidebar.classList.remove("open");
-                
-                sidebar.setAttribute('aria-hidden', 'true');
-                toggleBtn.setAttribute('aria-expanded', 'false');
-                localStorage.setItem("adminSidebarState", "closed");
-                
-                if (overlay) overlay.classList.remove("active");
             }
         }
     });
 
-    // Fermeture si l'utilisateur clique sur l'overlay noir (sur Mobile)
+    // 3. Fermer la sidebar en cliquant sur l'overlay (Mobile)
     if (overlay) {
-        overlay.addEventListener("click", function(e) {
-            e.stopPropagation();
+        overlay.addEventListener("click", () => {
             sidebar.classList.remove("open");
             sidebar.setAttribute('aria-hidden', 'true');
             toggleBtn.setAttribute('aria-expanded', 'false');
@@ -112,12 +83,10 @@ function initAdminSidebar() {
                 localStorage.setItem("adminSidebarState", "closed");
                 if (overlay) overlay.classList.remove("active");
                 
-                // Attendre la fin de l'animation CSS (400ms) avant de charger la nouvelle page
+                // Attendre la fin de l'animation CSS (300ms) avant de charger la nouvelle page
                 setTimeout(() => {
                     window.location.href = this.href;
-                }, 400); 
-            } else {
-                localStorage.setItem("adminSidebarState", "closed");
+                }, 300); 
             }
         });
     });

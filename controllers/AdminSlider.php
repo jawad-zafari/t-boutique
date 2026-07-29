@@ -3,6 +3,7 @@
 /**
  * Contrôleur AdminSlider
  * Gère le diaporama de la page d'accueil (Sécurisé par accès Niveau 1 et CSRF).
+ * Architecture unifiée pour le niveau Junior DWWM.
  */
 class AdminSlider extends Controller
 {
@@ -17,11 +18,6 @@ class AdminSlider extends Controller
             header('Location: ' . URL . 'AdminLogin/index');
             exit;
         }
-
-        // PROTECTION CSRF : Génération globale du jeton
-        if (!Model::sessionGet('csrf_token')) {
-            Model::sessionSet('csrf_token', bin2hex(random_bytes(32)));
-        }
     }
 
     /**
@@ -34,7 +30,8 @@ class AdminSlider extends Controller
         $data = [
             'slider' => $sliders,
             'editSlider' => null,
-            'csrf_token' => Model::sessionGet('csrf_token')
+            // RÈGLE MVC : Appel de la méthode globale unifiée pour générer le jeton
+            'csrf_token' => $this->generateCsrfToken()
         ];
         
         $this->view('admin/admin_slider/slider', $data);
@@ -51,11 +48,8 @@ class AdminSlider extends Controller
             exit('Méthode non autorisée');
         }
 
-        // VÉRIFICATION CSRF
-        $token = $_POST['csrf_token'] ?? '';
-        if ($token !== Model::sessionGet('csrf_token')) {
-            die('Erreur de sécurité : Jeton CSRF invalide.');
-        }
+        // VÉRIFICATION CSRF : Unifiée (Remplace le "die" bloquant)
+        $this->checkCsrfToken($_POST['csrf_token'] ?? '');
 
         $result = $this->model->addSlider($_POST, $_FILES);
         if ($result) {
@@ -82,7 +76,7 @@ class AdminSlider extends Controller
         $data = [
             'slider' => $sliders,
             'editSlider' => $editSlider,
-            'csrf_token' => Model::sessionGet('csrf_token')
+            'csrf_token' => $this->generateCsrfToken()
         ];
 
         $this->view('admin/admin_slider/slider', $data);
@@ -99,11 +93,8 @@ class AdminSlider extends Controller
             exit('Méthode non autorisée');
         }
 
-        // VÉRIFICATION CSRF
-        $token = $_POST['csrf_token'] ?? '';
-        if ($token !== Model::sessionGet('csrf_token')) {
-            die('Erreur de sécurité : Jeton CSRF invalide.');
-        }
+        // VÉRIFICATION CSRF : Unifiée
+        $this->checkCsrfToken($_POST['csrf_token'] ?? '');
             
         $result = $this->model->updateSlider((int)$id, $_POST, $_FILES);
         if ($result) {
@@ -125,11 +116,8 @@ class AdminSlider extends Controller
             exit('Méthode non autorisée');
         }
 
-        // VÉRIFICATION CSRF
-        $token = $_POST['csrf_token'] ?? '';
-        if ($token !== Model::sessionGet('csrf_token')) {
-            die('Erreur de sécurité : Jeton CSRF invalide.');
-        }
+        // VÉRIFICATION CSRF : Unifiée
+        $this->checkCsrfToken($_POST['csrf_token'] ?? '');
             
         $this->model->delete($_POST);
         header('Location: ' . URL . 'AdminSlider/index?success=delete');

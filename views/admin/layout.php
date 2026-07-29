@@ -36,57 +36,46 @@ require 'views/header.php';
                             <span class="nav-text">Tableau de bord</span>
                         </a>
                     </li>
-
-                    <?php if ($level == 1): ?>
+                    
                     <li class="<?= ($activeMenu === 'category') ? 'active' : '' ?>">
-                        <a href="<?= URL ?>AdminCategory/index" title="Catégories & Marques">
+                        <a href="<?= URL ?>AdminCategory/index" title="Catégories">
                             <i class="fa-solid fa-folder-tree" aria-hidden="true"></i> 
-                            <span class="nav-text">Catégories & Marques</span>
+                            <span class="nav-text">Catégories</span>
                         </a>
                     </li>
-                    <?php endif; ?>
-
+                    
                     <li class="<?= ($activeMenu === 'product') ? 'active' : '' ?>">
                         <a href="<?= URL ?>AdminProduct/index" title="Produits">
                             <i class="fa-solid fa-box-open" aria-hidden="true"></i> 
                             <span class="nav-text">Produits</span>
                         </a>
                     </li>
-
+                    
                     <li class="<?= ($activeMenu === 'order') ? 'active' : '' ?>">
                         <a href="<?= URL ?>AdminOrder/index" title="Commandes">
-                            <i class="fa-solid fa-cart-shopping" aria-hidden="true"></i> 
+                            <i class="fa-solid fa-shopping-cart" aria-hidden="true"></i> 
                             <span class="nav-text">Commandes</span>
                         </a>
                     </li>
 
-                    <?php if ($level == 1): ?>
-                    <li class="<?= ($activeMenu === 'stat') ? 'active' : '' ?>">
-                        <a href="<?= URL ?>AdminStat/index" title="Statistiques">
-                            <i class="fa-solid fa-chart-line" aria-hidden="true"></i> 
-                            <span class="nav-text">Statistiques</span>
-                        </a>
-                    </li>
-                    <?php endif; ?>
-
-                    <li class="<?= ($activeMenu === 'news') ? 'active' : '' ?>">
-                        <a href="<?= URL ?>AdminNews/index" title="Actualités">
-                            <i class="fa-solid fa-newspaper" aria-hidden="true"></i> 
-                            <span class="nav-text">Actualités</span>
-                        </a>
-                    </li>
-
                     <li class="<?= ($activeMenu === 'comment') ? 'active' : '' ?>">
-                        <a href="<?= URL ?>AdminComment/index" title="Critiques & Avis">
+                        <a href="<?= URL ?>AdminComment/index" title="Commentaires">
                             <i class="fa-solid fa-comments" aria-hidden="true"></i> 
-                            <span class="nav-text">Critiques & Avis</span>
+                            <span class="nav-text">Commentaires</span>
                         </a>
                     </li>
 
                     <li class="<?= ($activeMenu === 'question') ? 'active' : '' ?>">
                         <a href="<?= URL ?>AdminQuestion/index" title="Questions & Réponses">
                             <i class="fa-solid fa-circle-question" aria-hidden="true"></i> 
-                            <span class="nav-text">Questions & Réponses</span>
+                            <span class="nav-text">Questions / Réponses</span>
+                        </a>
+                    </li>
+
+                    <li class="<?= ($activeMenu === 'news') ? 'active' : '' ?>">
+                        <a href="<?= URL ?>AdminNews/index" title="Actualités">
+                            <i class="fa-solid fa-newspaper" aria-hidden="true"></i> 
+                            <span class="nav-text">Actualités</span>
                         </a>
                     </li>
 
@@ -97,17 +86,26 @@ require 'views/header.php';
                         </a>
                     </li>
 
+                    <li class="<?= ($activeMenu === 'stat') ? 'active' : '' ?>">
+                        <a href="<?= URL ?>AdminStat/index" title="Rapports & Stats">
+                            <i class="fa-solid fa-chart-line" aria-hidden="true"></i> 
+                            <span class="nav-text">Statistiques</span>
+                        </a>
+                    </li>
+                    
+                    <?php if ($level == 1): ?>
                     <li class="<?= ($activeMenu === 'user') ? 'active' : '' ?>">
                         <a href="<?= URL ?>AdminUser/index" title="Utilisateurs">
                             <i class="fa-solid fa-users" aria-hidden="true"></i> 
                             <span class="nav-text">Utilisateurs</span>
                         </a>
                     </li>
+                    <?php endif; ?>
                     
                     <li class="<?= ($activeMenu === 'setting') ? 'active' : '' ?>">
-                        <a href="<?= URL ?>AdminSetting/index" title="Paramètres & TV">
+                        <a href="<?= URL ?>AdminSetting/index" title="Paramètres">
                             <i class="fa-solid fa-gears" aria-hidden="true"></i> 
-                            <span class="nav-text">Paramètres & TV</span>
+                            <span class="nav-text">Paramètres</span>
                         </a>
                     </li>
                 </ul>
@@ -116,7 +114,7 @@ require 'views/header.php';
             <div class="sidebar-footer">
                 <a href="<?= URL ?>Index/index" class="btn-footer btn-home" title="Retour à l'accueil du site">
                     <i class="fa-solid fa-house" aria-hidden="true"></i> 
-                    <span class="nav-text">Retour à l'accueil</span>
+                    <span class="nav-text">Retour au site</span>
                 </a>
                 <a href="<?= URL ?>AdminLogin/logout" class="btn-footer btn-logout" title="Déconnexion de la session d'administration">
                     <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> 

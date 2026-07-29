@@ -23,7 +23,7 @@ $isEdit = !empty($data['edit']) && $data['edit'] > 0;
             
             <div class="form-group">
                 <label for="categoryTitle">Titre de la catégorie * :</label>
-                <input type="text" id="categoryTitle" name="title" class="form-control" 
+                <input id="categoryTitle" type="text" name="title" class="form-control" 
                        value="<?= $isEdit ? htmlspecialchars($categoryInfo['title'] ?? '', ENT_QUOTES, 'UTF-8') : '' ?>" required aria-required="true">
             </div>
 

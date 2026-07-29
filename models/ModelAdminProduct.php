@@ -3,7 +3,7 @@
 /**
  * Modèle ModelAdminProduct
  * Gère les opérations de base de données pour les produits.
- * Sécurité optimisée : Typage strict, Anti-XSS et requêtes préparées avec placeholders.
+ * Sécurité optimisée : Typage strict, Anti-XSS (htmlspecialchars) et requêtes préparées avec placeholders.
  */
 class ModelAdminProduct extends Model
 {
@@ -63,8 +63,10 @@ class ModelAdminProduct extends Model
 
     public function addProductAction(array $data, int $productId, ?array $file): void
     {
-        // SÉCURITÉ CRITIQUE : Assainissement contre le Stored XSS
-        $title = strip_tags(trim($data['title'] ?? ''));
+        // SÉCURITÉ CRITIQUE : Utilisation de htmlspecialchars pour le titre (Anti-XSS Stocké)
+        $title = htmlspecialchars(trim($data['title'] ?? ''), ENT_QUOTES, 'UTF-8');
+        
+        // Autorisation de tags spécifiques pour l'éditeur WYSIWYG
         $description = strip_tags(trim($data['description'] ?? ''), '<b><i><strong><em><u><ul><li><ol><p><br>');
         
         $categoryId = (int)($data['categoryId'] ?? 0);
@@ -263,7 +265,10 @@ class ModelAdminProduct extends Model
 
     public function addReview(array $data, int $productId, int $reviewId): void
     {
-        $title = strip_tags(trim($data['title'] ?? ''));
+        // SÉCURITÉ CRITIQUE : Protection Anti-XSS stricte pour le titre
+        $title = htmlspecialchars(trim($data['title'] ?? ''), ENT_QUOTES, 'UTF-8');
+        
+        // Autorisation de balises HTML pour la description via un éditeur riche
         $description = strip_tags(trim($data['description'] ?? ''), '<b><i><strong><em><u><ul><li><ol><p><br>');
 
         if (empty($title)) return;

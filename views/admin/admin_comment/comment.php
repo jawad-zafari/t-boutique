@@ -46,7 +46,7 @@
                     ?>
                     <tr>
                         <td class="text-center font-weight-bold"><?= $i ?></td>
-                        <td><?= htmlspecialchars($row['tarikh'] ?? $row['created_at'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
+                        <td><?= htmlspecialchars($row['created_at'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
                         
                         <td>
                             <input type="text" name="title_<?= (int)$row['id'] ?>" value="<?= htmlspecialchars($row['title'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" class="input-comment-small" aria-label="Modifier le titre du commentaire <?= $i ?>">

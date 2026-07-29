@@ -3,6 +3,7 @@
 /**
  * Contrôleur AdminStat
  * Gère la génération des rapports et statistiques des commandes.
+ * Respecte l'architecture MVC et la sécurité centralisée (CSRF).
  */
 class AdminStat extends Controller
 {
@@ -10,17 +11,12 @@ class AdminStat extends Controller
     {
         parent::__construct();
         
-        // SÉCURITÉ : Vérification stricte des droits d'accès
+        // SÉCURITÉ : Vérification stricte des droits d'accès (Admin uniquement)
         Model::sessionInit();
         $level = Model::getUserLevel();
         if ($level != 1) {
             header('Location: ' . URL . 'AdminLogin/index');
             exit;
-        }
-
-        // PROTECTION CSRF : Génération globale du jeton
-        if (!Model::sessionGet('csrf_token')) {
-            Model::sessionSet('csrf_token', bin2hex(random_bytes(32)));
         }
     }
 
@@ -33,7 +29,8 @@ class AdminStat extends Controller
         
         $data = [
             'currentYear' => $currentYear,
-            'csrf_token' => Model::sessionGet('csrf_token')
+            // RÈGLE MVC : Appel de la méthode globale unifiée pour générer le jeton
+            'csrf_token' => $this->generateCsrfToken()
         ];
         
         $this->view('admin/admin_statistics/reports', $data);
@@ -50,18 +47,15 @@ class AdminStat extends Controller
             exit('Méthode non autorisée. Veuillez utiliser le formulaire.');
         }
             
-        // VÉRIFICATION CSRF : Bloquer les requêtes automatisées malveillantes
-        $token = $_POST['csrf_token'] ?? '';
-        if ($token !== Model::sessionGet('csrf_token')) {
-            die('Erreur de sécurité : Jeton CSRF invalide.');
-        }
+        // VÉRIFICATION CSRF : Centralisée et non bloquante (Remplace le "die")
+        $this->checkCsrfToken($_POST['csrf_token'] ?? '');
         
         // Demander au modèle de calculer les données
         $statistics = $this->model->order($_POST);
         
         $data = [
             'stat' => $statistics,
-            'csrf_token' => Model::sessionGet('csrf_token')
+            'csrf_token' => $this->generateCsrfToken()
         ];
         
         $this->view('admin/admin_statistics/results', $data);

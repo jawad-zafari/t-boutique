@@ -50,7 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 plotLines: [{
                     value: 0,
                     width: 1,
-                    color: '#dc2626' // Couleur rouge (danger) pour l'axe de base
+                    color: '#dc2626'
                 }],
                 allowDecimals: false // Empêche l'affichage des décimales (ex: "0.5 commande")
             },

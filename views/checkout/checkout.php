@@ -2,7 +2,7 @@
 // Récupération sécurisée des données de la commande
 $orderInfo = $data['orderInfo'] ?? [];
 
-// Protection contre l'injection d'objets PHP via unserialize
+// SÉCURITÉ CRITIQUE : Protection contre l'injection d'objets PHP via unserialize
 $basketProducts = !empty($orderInfo['cart_data']) ? unserialize($orderInfo['cart_data'], ['allowed_classes' => false]) : [];
 
 $creationTimestamp = $orderInfo['created_timestamp'] ?? 0;
@@ -215,4 +215,4 @@ $totalPayable = (float)($orderInfo['total_amount'] ?? $orderInfo['amount'] ?? ($
     </div>
 </div>
 
-<script src="<?= URL ?>public/assets/js/payment.js" defer></script>
+<script src="<?= URL ?>public/assets/js/checkout.js" defer></script>

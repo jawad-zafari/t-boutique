@@ -24,17 +24,17 @@ $pId = (int)($productInfo['id'] ?? 0);
         </div>
     </header>
 
-    <form id="formReviews" action="<?= URL ?>AdminProduct/deleteReview/<?= $pId ?>" method="post">
+    <form action="<?= URL ?>AdminProduct/deleteReview/<?= $pId ?>" method="post" id="formReviewsSelection">
         
         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($data['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
 
         <div class="admin-table-wrapper">
-            <table class="admin-table" aria-label="Liste des critiques">
+            <table class="admin-table" aria-label="Liste des critiques du produit">
                 <thead>
                     <tr>
                         <th scope="col">Titre de la critique</th>
-                        <th scope="col" class="text-center col-action">Éditer</th>
-                        <th scope="col" class="text-center col-check">
+                        <th scope="col" class="text-center col-action">Modifier</th>
+                        <th scope="col" class="text-center col-checkbox">
                             <input type="checkbox" id="selectAllCheckboxes" class="admin-checkbox" aria-label="Sélectionner tout">
                         </th>
                     </tr>

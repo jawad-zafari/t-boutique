@@ -3,7 +3,7 @@
 /**
  * Contrôleur Account
  * Gère l'espace client (Tableau de bord, profil, commandes, favoris).
- * Entièrement sécurisé. TOUTES les méthodes d'origine sont conservées !
+ * Entièrement sécurisé. Règle MVC respectée (calculs dans le contrôleur).
  */
 class Account extends Controller
 {
@@ -13,14 +13,12 @@ class Account extends Controller
         Model::sessionInit();
         $userId = Model::sessionGet('userId');
 
-        // Analyse de l'URL pour identifier la méthode appelée
         $url = isset($_GET['url']) ? explode('/', filter_var(rtrim($_GET['url'], '/'), FILTER_SANITIZE_URL)) : [];
         $methodName = $url[1] ?? 'index';
 
-        // Liste des méthodes AJAX qui gèrent elles-mêmes leur erreur d'authentification (JSON)
         $ajaxExceptions = ['toggleFavorite'];
 
-        // SÉCURITÉ : Vérification stricte de l'authentification (sauf pour les requêtes AJAX spécifiques)
+        // SÉCURITÉ : Vérification de l'authentification
         if ($userId == false && !in_array($methodName, $ajaxExceptions)) {
             header('Location: ' . URL . 'Login/index');
             exit;
@@ -33,10 +31,22 @@ class Account extends Controller
         $userInfo = $this->model->getUserInfo($userId);
         $orders = $this->model->getOrders($userId);
         
-        // PROTECTION CSRF : Génération du jeton pour tous les formulaires du tableau de bord
+        // ARCHITECTURE MVC : On fait les calculs ici (Contrôleur) et non dans la Vue (HTML)
+        $totalOrdersCount = count($orders);
+        $totalSpent = 0;
+        foreach($orders as $o) {
+            if(isset($o['is_paid']) && $o['is_paid'] == 1) {
+                $totalSpent += ($o['total_amount'] ?? 0);
+            }
+        }
+        $latestOrder = $orders[0] ?? null;
+
         $data = [
             'userInfo' => $userInfo,
             'orders' => $orders,
+            'totalOrdersCount' => $totalOrdersCount,
+            'totalSpent' => $totalSpent,
+            'latestOrder' => $latestOrder,
             'csrf_token' => $this->generateCsrfToken()
         ];
         
@@ -45,13 +55,11 @@ class Account extends Controller
 
     public function saveProfile()
     {
-        // SÉCURITÉ CRITIQUE : N'accepter que les requêtes POST
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('HTTP/1.1 405 Method Not Allowed');
             exit;
         }
 
-        // VÉRIFICATION CSRF : Empêcher les mises à jour de profil non autorisées
         $token = $_POST['csrf_token'] ?? '';
         $this->checkCsrfToken($token);
 
@@ -64,13 +72,11 @@ class Account extends Controller
 
     public function updatePassword()
     {
-        // SÉCURITÉ CRITIQUE : N'accepter que les requêtes POST
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('HTTP/1.1 405 Method Not Allowed');
             exit;
         }
 
-        // VÉRIFICATION CSRF : Protection critique pour le changement de mot de passe
         $token = $_POST['csrf_token'] ?? '';
         $this->checkCsrfToken($token);
 
@@ -95,13 +101,11 @@ class Account extends Controller
 
     public function deleteAccount()
     {
-        // SÉCURITÉ CRITIQUE : N'accepter que les requêtes POST
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('HTTP/1.1 405 Method Not Allowed');
             exit;
         }
 
-        // VÉRIFICATION CSRF : Protection contre la suppression forcée du compte
         $token = $_POST['csrf_token'] ?? '';
         $this->checkCsrfToken($token);
 
@@ -119,17 +123,16 @@ class Account extends Controller
 
     public function getOrderDetails($orderId)
     {
-        // SÉCURITÉ : Lecture seule via AJAX, on force le format JSON et on nettoie les erreurs
         header('Content-Type: application/json');
-        ob_clean(); // Anti-Crash JSON
+        ob_clean(); 
 
         $userId = Model::sessionGet('userId');
-        
-        // PROTECTION IDOR : La requête SQL vérifie que la commande appartient à $userId
         $order = $this->model->getOrderById((int)$orderId, $userId);
 
         if ($order) {
-            $cartData = !empty($order['cart_data']) ? unserialize($order['cart_data']) : [];
+            // Sécurité : PHP Object Injection prévenue par allowed_classes
+            $cartData = !empty($order['cart_data']) ? unserialize($order['cart_data'], ['allowed_classes' => false]) : [];
+            
             echo json_encode([
                 'status' => 'success',
                 'order' => $order,
@@ -138,12 +141,8 @@ class Account extends Controller
         } else {
             echo json_encode(['status' => 'error', 'message' => 'Commande introuvable ou accès non autorisé.']);
         }
-        exit; // Toujours terminer après un JSON
+        exit; 
     }
-
-    // =======================================================
-    // PAGE ET API DES FAVORIS
-    // =======================================================
 
     public function favorites()
     {
@@ -159,17 +158,14 @@ class Account extends Controller
 
     public function toggleFavorite($productId)
     {
-        // SOLUTION ANTI-CRASH : Force le navigateur à lire du JSON pur et ignore les warnings PHP
         header('Content-Type: application/json');
         ob_clean();
 
-        // SÉCURITÉ CRITIQUE : N'accepter que les requêtes POST
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             echo json_encode(['status' => 'error', 'message' => 'Méthode non autorisée.']);
             exit;
         }
 
-        // VÉRIFICATION CSRF AJAX : Vérifier le jeton passé par le JS
         $token = $_POST['csrf_token'] ?? '';
         if ($token !== Model::sessionGet('csrf_token')) {
             echo json_encode(['status' => 'error', 'message' => 'Jeton de sécurité invalide.']);
@@ -194,7 +190,7 @@ class Account extends Controller
             'message' => $action === 'added' ? 'Produit ajouté à vos favoris !' : 'Produit retiré de vos favoris.',
             'favCount' => $favCount
         ]);
-        exit; // Toujours terminer l'exécution après un echo JSON
+        exit; 
     }
 }
 ?>

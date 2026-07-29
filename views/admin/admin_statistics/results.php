@@ -5,10 +5,13 @@ $totalOrders = count($result);
 $paiedOrders = $stat['order_paied'] ?? 0;
 $paiedPercentage = $totalOrders > 0 ? round(($paiedOrders / $totalOrders) * 100, 2) : 0;
 
-// Calcul du chiffre d'affaires total de la période
+// FIX LOGIQUE (Standard DWWM) : Calcul du chiffre d'affaires total de la période 
+// UNIQUEMENT sur les commandes payées.
 $totalRevenue = 0;
 foreach ($result as $row) {
-    $totalRevenue += (int)($row['total_price'] ?? $row['amount'] ?? 0);
+    if (isset($row['is_paid']) && $row['is_paid'] == 1) {
+        $totalRevenue += (float)($row['total_price'] ?? $row['amount'] ?? 0);
+    }
 }
 ?>
 <div class="admin-container">
@@ -27,46 +30,51 @@ foreach ($result as $row) {
     </header>
 
     <div class="stats-summary-grid">
-        <div class="summary-card card-blue">
-            <span class="summary-title">Total des commandes</span>
-            <span class="summary-value"><?= $totalOrders ?></span>
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fa-solid fa-shopping-cart"></i></div>
+            <div class="stat-content">
+                <span class="stat-title">Total des commandes</span>
+                <span class="stat-value"><?= $totalOrders ?></span>
+            </div>
         </div>
-        <div class="summary-card card-green">
-            <span class="summary-title">Commandes Payées</span>
-            <span class="summary-value"><?= $paiedOrders ?></span>
+        <div class="stat-card">
+            <div class="stat-icon success"><i class="fa-solid fa-check-circle"></i></div>
+            <div class="stat-content">
+                <span class="stat-title">Commandes payées</span>
+                <span class="stat-value"><?= $paiedOrders ?> <small>(<?= $paiedPercentage ?>%)</small></span>
+            </div>
         </div>
-        <div class="summary-card card-orange">
-            <span class="summary-title">Taux de conversion</span>
-            <span class="summary-value"><?= $paiedPercentage ?>%</span>
-        </div>
-        <div class="summary-card card-purple">
-            <span class="summary-title">Chiffre d'affaires</span>
-            <span class="summary-value"><?= number_format($totalRevenue, 0, ',', ' ') ?> €</span>
+        <div class="stat-card">
+            <div class="stat-icon primary"><i class="fa-solid fa-euro-sign"></i></div>
+            <div class="stat-content">
+                <span class="stat-title">Chiffre d'affaires</span>
+                <span class="stat-value"><?= number_format($totalRevenue, 2, ',', ' ') ?> €</span>
+            </div>
         </div>
     </div>
 
-    <div class="admin-table-wrapper">
-        <table class="admin-table" aria-label="Résultats détaillés des commandes">
+    <div class="admin-table-wrapper mt-25">
+        <table class="admin-table" aria-label="Détail des commandes de la période sélectionnée">
             <thead>
                 <tr>
-                    <th scope="col" style="width: 80px;">Réf</th>
-                    <th scope="col">Date</th>
-                    <th scope="col">Client / Destinataire</th>
-                    <th scope="col">Montant Total</th>
-                    <th scope="col" class="text-center">Statut Paiement</th>
-                    <th scope="col">Ville</th>
-                    <th scope="col" class="text-center" style="width: 80px;">Détails</th>
+                    <th scope="col" class="col-id text-center">N°</th>
+                    <th scope="col">Date de création</th>
+                    <th scope="col">Nom du client</th>
+                    <th scope="col">Montant</th>
+                    <th scope="col" class="text-center">Statut du paiement</th>
+                    <th scope="col">Ville de livraison</th>
+                    <th scope="col" class="text-center">Détails</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if(!empty($result)): foreach ($result as $row): 
-                    $isPaid = (isset($row['is_paid']) && $row['is_paid'] == 1) ? 1 : 0;
+                    $isPaid = (int)($row['is_paid'] ?? 0);
                 ?>
                 <tr>
-                    <td><strong>#<?= (int)$row['id']; ?></strong></td>
-                    <td><?= htmlspecialchars($row['created_date'] ?? $row['tarikh'] ?? 'N/A', ENT_QUOTES, 'UTF-8'); ?></td>
+                    <td class="text-center"><strong>#<?= (int)$row['id']; ?></strong></td>
+                    <td><?= htmlspecialchars($row['created_date'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
                     <td><?= htmlspecialchars($row['last_name'] ?? 'Client', ENT_QUOTES, 'UTF-8'); ?></td>
-                    <td><strong><?= number_format($row['total_price'] ?? $row['amount'] ?? 0, 0, ',', ' '); ?> €</strong></td>
+                    <td><strong><?= number_format((float)($row['total_price'] ?? $row['amount'] ?? 0), 2, ',', ' '); ?> €</strong></td>
                     
                     <td class="text-center">
                         <span class="badge-payment <?= $isPaid === 1 ? 'paid' : 'unpaid' ?>">

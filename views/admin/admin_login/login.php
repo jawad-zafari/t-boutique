@@ -22,12 +22,12 @@
             </div>
 
             <?php if (isset($_GET['error']) && $_GET['error'] == 1): ?>
-                <div class="alert-message alert-danger text-center" role="alert">
+                <div class="alert-message alert-danger text-center" role="alert" aria-live="assertive">
                     <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Identifiants incorrects ou accès non autorisé.
                 </div>
             <?php endif; ?>
 
-            <div id="jsLoginErrorMessage" class="alert-message alert-danger" style="display: none;" role="alert"></div>
+            <div id="jsLoginErrorMessage" class="alert-message alert-danger display-none-box" role="alert" aria-live="assertive"></div>
 
             <form action="<?= URL ?>AdminLogin/checkUser" method="post" id="adminLoginForm">
                 
@@ -55,6 +55,5 @@
     </div>
 
     <script src="<?= URL ?>public/assets/js/admin_login.js" defer></script>
-
 </body>
 </html>

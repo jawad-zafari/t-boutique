@@ -2,7 +2,8 @@
 
 /**
  * Modèle ModelAdminStat
- * Gère les calculs et extractions de données pour les rapports.
+ * Gère les calculs et extractions de données pour les rapports de ventes.
+ * Sécurité optimisée : Cast strict des variables (Anti-Injection).
  */
 class ModelAdminStat extends Model
 {
@@ -23,7 +24,7 @@ class ModelAdminStat extends Model
         $m2 = (int)($data['month2'] ?? 0);
         $d2 = (int)($data['day2'] ?? 0);
 
-        // Validation de base pour éviter des dates vides
+        // Validation de base pour éviter des dates vides ou invalides
         if ($y1 === 0 || $m1 === 0 || $d1 === 0) {
             return [
                 'result' => [], 'order_paied' => 0, 'amount_total' => 0, 
@@ -44,16 +45,13 @@ class ModelAdminStat extends Model
         $result = $this->doSelect($sql, [$startDateTime, $endDateTime]);
         
         $ordersPaid = 0;
-        $amountTotal = 0;
 
         // Calculs des totaux uniquement sur les résultats filtrés
         if (!empty($result) && is_array($result)) {
             foreach ($result as $row) {
-                // On ne calcule le chiffre d'affaires que sur les commandes payées
+                // On compte uniquement le nombre de commandes payées
                 if (isset($row['is_paid']) && $row['is_paid'] == 1) {
                     $ordersPaid++;
-                    // Fallback sécurisé pour récupérer le montant total (Cast en float)
-                    $amountTotal += (float)($row['total_price'] ?? $row['amount'] ?? 0);
                 }
             }
         }
@@ -61,7 +59,6 @@ class ModelAdminStat extends Model
         return [
             'result' => is_array($result) ? $result : [],
             'order_paied' => $ordersPaid,
-            'amount_total' => $amountTotal,
             'startDate' => $startDate,
             'endDate' => $endDate
         ];

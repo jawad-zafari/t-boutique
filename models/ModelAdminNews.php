@@ -26,9 +26,9 @@ class ModelAdminNews extends Model
 
     public function addNews($data, $files)
     {
-        // SÉCURITÉ CRITIQUE : Nettoyage des entrées avec strip_tags (Anti-XSS Stocké)
-        $title = strip_tags(trim($data['title'] ?? ''));
-        $shortDesc = strip_tags(trim($data['short_desc'] ?? ''));
+        // SÉCURITÉ CRITIQUE : Nettoyage des entrées avec htmlspecialchars (Anti-XSS Stocké)
+        $title = htmlspecialchars(trim($data['title'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $shortDesc = htmlspecialchars(trim($data['short_desc'] ?? ''), ENT_QUOTES, 'UTF-8');
         $createdAt = date('Y-m-d'); 
 
         if (empty($title)) return;
@@ -44,10 +44,10 @@ class ModelAdminNews extends Model
 
     public function editNews($id, $data, $files)
     {
-        // SÉCURITÉ CRITIQUE : Nettoyage avec strip_tags
-        $title = strip_tags(trim($data['title'] ?? ''));
-        $shortDesc = strip_tags(trim($data['short_desc'] ?? ''));
-        $createdAt = strip_tags(trim($data['created_at'] ?? date('Y-m-d')));
+        // SÉCURITÉ CRITIQUE : Nettoyage strict avec htmlspecialchars
+        $title = htmlspecialchars(trim($data['title'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $shortDesc = htmlspecialchars(trim($data['short_desc'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $createdAt = htmlspecialchars(trim($data['created_at'] ?? date('Y-m-d')), ENT_QUOTES, 'UTF-8');
         $safeId = (int)$id;
 
         if (empty($title)) return;

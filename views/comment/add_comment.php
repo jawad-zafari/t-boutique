@@ -16,7 +16,10 @@
             
             <?php
             $commentInfo = $data['commentInfo'] ?? [];
-            $commentResult = !empty($commentInfo['parameters']) ? unserialize($commentInfo['parameters']) : [];
+            
+            // SÉCURITÉ CRITIQUE : Prévention de l'attaque "PHP Object Injection"
+            $commentResult = !empty($commentInfo['parameters']) ? unserialize($commentInfo['parameters'], ['allowed_classes' => false]) : [];
+            
             $params = $data['params'] ?? [];
             ?>
 
