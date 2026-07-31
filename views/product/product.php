@@ -2,14 +2,17 @@
 /**
  * Vue Principale du Produit (product.php)
  * Affiche les informations principales, la galerie d'images, le prix et les actions.
- * Protection Anti-XSS stricte avec htmlspecialchars et injection du jeton CSRF.
+ * SÉCURITÉ : Protection Anti-XSS stricte et respect absolu de l'architecture MVC.
  */
 
-// Récupération et sécurisation des données transmises par le contrôleur
+// SÉCURITÉ : Récupération et sécurisation des données transmises par le contrôleur
 $product = $data['productInfo'] ?? [];
 $gallery = $data['gallery'] ?? [];
 $csrfToken = $data['csrf_token'] ?? '';
 $userId = Model::sessionGet('userId');
+
+// RÈGLE MVC : Récupération de l'état "Favori" calculé par le contrôleur (Aucune requête SQL dans la vue)
+$isFavorite = $data['isFavorite'] ?? false;
 
 // Préparation de la galerie d'images (Image principale + images secondaires)
 $allImages = [];
@@ -26,16 +29,6 @@ if (!empty($gallery)) {
             'url' => URL . 'public/images/products/' . $productId . '/gallery/large/' . htmlspecialchars($g['image_name'], ENT_QUOTES, 'UTF-8'),
             'alt' => 'Galerie image ' . htmlspecialchars($product['title'] ?? '', ENT_QUOTES, 'UTF-8')
         ];
-    }
-}
-
-// Vérification de l'état "Favori" du produit pour l'utilisateur connecté
-$isFavorite = false;
-if ($userId) {
-    $baseModel = new Model();
-    $checkFav = $baseModel->doSelect("SELECT id FROM favorites WHERE user_id = ? AND product_id = ?", [(int)$userId, $productId]);
-    if (!empty($checkFav)) {
-        $isFavorite = true;
     }
 }
 ?>

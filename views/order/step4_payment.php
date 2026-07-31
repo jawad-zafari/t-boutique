@@ -1,7 +1,8 @@
 <?php
-$totalProductsPrice = $data['cartData'][1] ?? 0;
-$totalDiscount = $data['cartData'][2] ?? 0;
-$shippingPrice = $data['postPrice'] ?? 0;
+// SÉCURITÉ : Typage rigoureux
+$totalProductsPrice = (float)($data['cartData'][1] ?? 0);
+$totalDiscount = (float)($data['cartData'][2] ?? 0);
+$shippingPrice = (float)($data['postPrice'] ?? 0);
 $finalTotal = $totalProductsPrice + $shippingPrice - $totalDiscount;
 ?>
 <div class="checkout-modern-container order-page-wrapper">
@@ -32,7 +33,7 @@ $finalTotal = $totalProductsPrice + $shippingPrice - $totalDiscount;
                     <p class="text-muted-sm">Si vous possédez un code promotionnel, veuillez l'appliquer ci-dessous pour mettre à jour votre facture :</p>
                     
                     <div class="promo-code-input-flex-row">
-                        <input type="text" id="codePromoInput" name="code_promo" class="form-control code-promo-field" placeholder="Saisir votre code promo...">
+                        <input type="text" id="codePromoInput" name="code_promo" class="form-control code-promo-field" placeholder="Saisir votre code promo..." autocomplete="off">
                         <button type="button" id="btnVerifyPromo" class="btn-stepper-secondary">Appliquer</button>
                     </div>
                 </div>

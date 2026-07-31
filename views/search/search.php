@@ -1,5 +1,11 @@
 <?php
-// Sécurisation et récupération des données de base
+/**
+ * Vue de la page de Recherche (search.php)
+ * Affiche la barre de filtres et le conteneur des résultats.
+ * SÉCURITÉ : Tous les affichages dynamiques sont sécurisés via htmlspecialchars et typage (int).
+ */
+
+// Récupération sécurisée des données de base
 $sideFilters = $data['attrRight'] ?? [];
 $colors = $data['colors'] ?? [];
 $topFilters = $data['attr'] ?? [];
@@ -13,7 +19,7 @@ $csrfToken = $data['csrf_token'] ?? '';
         
         <input type="hidden" name="categoryId" value="<?= $categoryId ?>">
         <input type="hidden" name="keyword" value="<?= htmlspecialchars($keyword, ENT_QUOTES, 'UTF-8') ?>">
-        <!-- AJOUT DU JETON CSRF POUR LA SECURITE DU PANIER -->
+        
         <input type="hidden" id="globalCsrfToken" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
         
         <div class="search-toolbar glass-panel">
@@ -42,7 +48,7 @@ $csrfToken = $data['csrf_token'] ?? '';
             </select>
 
             <?php if(!empty($topFilters)): foreach ($topFilters as $filter): ?>
-            <select name="attr_<?= (int)($filter['id'] ?? 0) ?>" class="form-control filter-select" aria-label="Filtrer par <?= htmlspecialchars($filter['title'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+            <select name="attr_<?= (int)($filter['id'] ?? 0) ?>" class="form-control filter-select" aria-label="Filtrer par <?= htmlspecialchars($filter['title'] ?? 'Attribut', ENT_QUOTES, 'UTF-8') ?>">
                 <option value=""><?= htmlspecialchars($filter['title'] ?? '', ENT_QUOTES, 'UTF-8') ?> : Tous</option>
                 <?php if(!empty($filter['values'])): foreach ($filter['values'] as $val): ?>
                 <option value="<?= (int)($val['id'] ?? 0) ?>"><?= htmlspecialchars($val['value_text'] ?? '', ENT_QUOTES, 'UTF-8') ?></option>

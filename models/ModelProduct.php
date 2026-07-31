@@ -2,8 +2,8 @@
 
 /**
  * Modèle ModelProduct
- * Gestion sécurisée des requêtes SQL pour la page produit.
- * Utilise PDO avec requêtes préparées pour éviter les injections SQL.
+ * Gère les requêtes SQL liées à la page d'un produit.
+ * Sécurité : Utilisation systématique de requêtes préparées (PDO) contre l'injection SQL.
  */
 class ModelProduct extends Model
 {
@@ -13,7 +13,7 @@ class ModelProduct extends Model
     }
 
     /**
-     * Recherche la meilleure image disponible pour le produit.
+     * Recherche la meilleure image disponible pour le produit selon la taille.
      */
     public function findProductImage($id, $size = 350) 
     {
@@ -29,13 +29,14 @@ class ModelProduct extends Model
     }
 
     /**
-     * Récupère toutes les informations d'un produit spécifique.
+     * Récupère toutes les informations d'un produit spécifique et calcule les prix.
      */
     public function productInfo($id)
     {
+        // SÉCURITÉ : Forçage du type
         $id = (int)$id; 
         
-        // Incrémentation du nombre de vues
+        // Incrémentation du compteur de vues du produit
         $sqlUpdateView = "UPDATE products SET views = views + 1 WHERE id = ?";
         $this->doQuery($sqlUpdateView, [$id]);
 
@@ -44,14 +45,14 @@ class ModelProduct extends Model
         
         if (!$result) return [];
 
-        // Calcul des prix et remises
+        // RÈGLE MÉTIER : Calcul des prix et des remises
         $price = $result['price'] ?? 0;
         $discount = $result['discount_percent'] ?? 0;
         $priceCalculate = $this->calculateDiscount($price, $discount);
         $result['price_discount'] = $priceCalculate[0];
         $result['price_total'] = $priceCalculate[1];
 
-        // Calcul de la date d'expiration pour l'offre spéciale
+        // Calcul de la date d'expiration si c'est une offre spéciale
         $timeSpecial = $result['special_offer_expires_at'] ?? 0;
         $options = self::getoption();
         $durationSpecial = $options['special_time'] ?? 0;
@@ -60,11 +61,11 @@ class ModelProduct extends Model
         date_default_timezone_set('Europe/Paris');
         $result['date_special'] = date('F d,Y H:i:s', $timeEnd);
 
-        // Récupération des couleurs
+        // Récupération des couleurs disponibles
         $sqlColors = "SELECT * FROM product_colors pc JOIN colors c ON pc.color_id = c.id WHERE pc.product_id = ?";
         $result['colors'] = $this->doSelect($sqlColors, [$id]);
 
-        // Récupération des garanties
+        // Récupération des garanties disponibles
         $sqlGuarantees = "SELECT * FROM product_guarantees pg JOIN guarantees g ON pg.guarantee_id = g.id WHERE pg.product_id = ?";
         $result['guarantees'] = $this->doSelect($sqlGuarantees, [$id]);
 
@@ -72,7 +73,7 @@ class ModelProduct extends Model
     }
 
     /**
-     * Récupère les produits marqués comme exclusifs (Limite : 5).
+     * Récupère une liste de produits marqués comme exclusifs (Limite à 5).
      */
     public function getExclusiveProducts()
     {
@@ -81,17 +82,17 @@ class ModelProduct extends Model
     }
 
     /**
-     * Récupère la galerie d'images du produit.
+     * Récupère la galerie d'images secondaires du produit.
      */
     public function getGallery($id)
     {
-        // On classe par "is_main" pour afficher l'image principale en premier si elle existe
+        // L'image principale (is_main) est affichée en premier
         $sql = "SELECT * FROM product_galleries WHERE product_id = ? ORDER BY is_main DESC";
         return $this->doSelect($sql, [(int)$id]);
     }
 
     /**
-     * Récupère les avis des experts.
+     * Récupère les évaluations et avis rédigés par les experts.
      */
     public function getExpertReviews($id)
     {
@@ -100,23 +101,30 @@ class ModelProduct extends Model
     }
 
     /**
-     * Récupère les spécifications techniques.
+     * Récupère les spécifications techniques du produit selon sa catégorie.
      */
     public function getTechnicalSpecs($categoryId, $productId)
     {
-        $sql = "SELECT a.title, av.value FROM attributes a LEFT JOIN attribute_values av ON a.id = av.attribute_id AND av.product_id = ? WHERE a.category_id = ?";
+        $sql = "SELECT a.title, av.value 
+                FROM attributes a 
+                LEFT JOIN attribute_values av ON a.id = av.attribute_id AND av.product_id = ? 
+                WHERE a.category_id = ?";
         return $this->doSelect($sql, [(int)$productId, (int)$categoryId]);
     }
 
     /**
-     * Récupère les critères d'évaluation et les scores moyens.
+     * Récupère les critères d'évaluation de la catégorie et calcule les scores moyens.
      */
     public function getCommentParameters($categoryId, $productId)
     {
         $sqlParams = "SELECT * FROM review_parameters WHERE category_id = ?";
         $params = $this->doSelect($sqlParams, [(int)$categoryId]);
 
-        $sqlScores = "SELECT parameter_id, AVG(score) as avg_score FROM comment_scores cs JOIN comments c ON cs.comment_id = c.id WHERE c.product_id = ? GROUP BY parameter_id";
+        $sqlScores = "SELECT parameter_id, AVG(score) as avg_score 
+                      FROM comment_scores cs 
+                      JOIN comments c ON cs.comment_id = c.id 
+                      WHERE c.product_id = ? 
+                      GROUP BY parameter_id";
         $scoresRaw = $this->doSelect($sqlScores, [(int)$productId]);
         
         $scores = [];
@@ -128,31 +136,34 @@ class ModelProduct extends Model
     }
 
     /**
-     * Récupère les commentaires validés par l'administrateur.
+     * Récupère les commentaires validés par les administrateurs (is_approved = 1).
      */
     public function getProductComments($id)
     {
-        // La colonne `username` est utilisée comme prénom d'utilisateur
-        $sql = "SELECT c.*, u.username as first_name, u.last_name FROM comments c LEFT JOIN users u ON c.user_id = u.id WHERE c.product_id = ? AND c.is_approved = 1 ORDER BY c.id DESC";
+        $sql = "SELECT c.*, u.username as first_name, u.last_name 
+                FROM comments c 
+                LEFT JOIN users u ON c.user_id = u.id 
+                WHERE c.product_id = ? AND c.is_approved = 1 
+                ORDER BY c.id DESC";
         return $this->doSelect($sql, [(int)$id]);
     }
 
     /**
-     * Récupère les questions et leurs réponses associées.
+     * Récupère les questions validées et leurs réponses associées.
      */
     public function getQuestionsAndAnswers($id)
     {
-        // Récupérer les questions (parent_id = 0)
+        // Étape 1 : Récupérer les questions principales (parent_id = 0)
         $sqlQ = "SELECT * FROM questions WHERE product_id = ? AND parent_id = 0 AND is_approved = 1 ORDER BY id DESC";
         $questions = $this->doSelect($sqlQ, [(int)$id]);
 
-        // Récupérer les réponses associées
+        // Étape 2 : Récupérer toutes les réponses associées à ce produit
         $sqlA = "SELECT * FROM questions WHERE product_id = ? AND parent_id != 0 AND is_approved = 1";
         $answersRaw = $this->doSelect($sqlA, [(int)$id]);
         
         $answers = [];
         foreach ($answersRaw as $ans) {
-            // Le parent_id correspond à l'ID de la question
+            // L'ID du parent sert de clé pour associer rapidement la réponse à la question
             $answers[$ans['parent_id']] = $ans;
         }
 
@@ -160,27 +171,27 @@ class ModelProduct extends Model
     }
 
     /**
-     * Ajoute un produit au panier (Gère les quantités si le produit existe déjà).
+     * Ajoute un produit au panier ou incrémente la quantité s'il existe déjà.
      */
     public function addToCart($productId, $colorId, $guaranteeId)
     {
         $cookie = parent::getCartCookie();
         
-        // Vérifier si le produit avec ces options exactes existe déjà dans le panier
+        // SÉCURITÉ : Requête préparée pour vérifier l'existence exacte du produit
         $sqlCheck = "SELECT * FROM cart_items WHERE session_cookie = ? AND product_id = ? AND color_id = ? AND guarantee_id = ?";
         $params = [$cookie, (int)$productId, (int)$colorId, (int)$guaranteeId];
         $result = $this->doSelect($sqlCheck, $params);
 
         if (isset($result[0])) {
-            // Mise à jour de la quantité
+            // Le produit existe avec les mêmes options, on incrémente la quantité
             $sql = "UPDATE cart_items SET quantity = quantity + 1 WHERE session_cookie = ? AND product_id = ? AND color_id = ? AND guarantee_id = ?";
         } else {
-            // Insertion d'une nouvelle ligne
+            // Nouveau produit dans le panier
             $sql = "INSERT INTO cart_items (session_cookie, product_id, quantity, color_id, guarantee_id) VALUES (?, ?, 1, ?, ?)";
         }
         $this->doQuery($sql, $params);
 
-        // Retourner le nombre total d'articles dans le panier
+        // Récupérer et retourner le nombre total d'articles pour la mise à jour du compteur
         $sqlCount = "SELECT SUM(quantity) as total FROM cart_items WHERE session_cookie = ?";
         $countResult = $this->doSelect($sqlCount, [$cookie], true);
         return $countResult['total'] ?? 0;
@@ -188,7 +199,6 @@ class ModelProduct extends Model
 
     /**
      * Enregistre une nouvelle question dans la base de données.
-     * Le paramètre $userId est passé par le contrôleur (Règle MVC).
      */
     public function addQuestion($productId, $userId, $questionText)
     {
@@ -198,11 +208,12 @@ class ModelProduct extends Model
 
         $createdAt = date('Y-m-d H:i:s');
         
-        // SÉCURITÉ ANTI-XSS : Nettoyage strict (htmlspecialchars est préférable à strip_tags pour le DWWM)
+        // SÉCURITÉ ANTI-XSS : Nettoyage strict des caractères spéciaux avant insertion en base
+        // htmlspecialchars est préféré à strip_tags selon les normes DWWM
         $safeContent = htmlspecialchars(trim($questionText), ENT_QUOTES, 'UTF-8');
         
         $sql = "INSERT INTO questions (content, product_id, user_id, parent_id, is_approved, created_at) VALUES (?, ?, ?, 0, 0, ?)";
-        $this->doQuery($sql, [$safeContent, (int)$productId, $userId, $createdAt]);
+        $this->doQuery($sql, [$safeContent, (int)$productId, (int)$userId, $createdAt]);
     }
 }
 ?>

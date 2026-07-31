@@ -1,6 +1,6 @@
 /**
  * Logique JavaScript pour la page d'accueil (Home)
- * Sécurisé (Anti-XSS, Routing, DOM Manipulation, CSRF Protection)
+ * Sécurité: Protection contre XSS (DOM), intégration CSRF pour Fetch API, routing sécurisé.
  */
 document.addEventListener("DOMContentLoaded", () => {
     
@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const baseTag = document.querySelector('base');
     const baseUrl = baseTag ? baseTag.getAttribute('href') : '/';
 
-    // SÉCURITÉ : Récupération du jeton CSRF injecté dans la vue (Phase 2)
+    // SÉCURITÉ : Récupération du jeton CSRF injecté dans la vue
     const homeWrapper = document.getElementById('homeMainWrapper');
     const csrfToken = homeWrapper ? homeWrapper.getAttribute('data-csrf') : '';
 
@@ -140,7 +140,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Vider l'élément parent en toute sécurité
                 parentItem.innerHTML = '';
                 
-                // SÉCURITÉ : Création manuelle de l'iframe pour éviter toute injection
+                // SÉCURITÉ : Création manuelle de l'iframe pour éviter toute injection HTML/JS
                 const iframe = document.createElement('iframe');
                 iframe.src = videoSrc;
                 iframe.setAttribute('frameborder', '0');
@@ -196,7 +196,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.addEventListener('click', (e) => {
         const newsItem = e.target.closest('.clickable-news-item');
         if (newsItem && newsModal) {
-            // SÉCURITÉ : Utilisation de textContent pour neutraliser les scripts malveillants
+            // SÉCURITÉ : Utilisation de textContent pour neutraliser l'injection de scripts malveillants
             if (newsModalTitle) newsModalTitle.textContent = newsItem.getAttribute('data-title') || '';
             if (newsModalDate) newsModalDate.textContent = newsItem.getAttribute('data-date') || '';
             if (newsModalDesc) newsModalDesc.textContent = newsItem.getAttribute('data-desc') || '';
@@ -218,7 +218,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // =========================================================================
-    // 7. GESTION DU PANIER (AJAX) - SÉCURISÉ AVEC CSRF
+    // 7. GESTION DU PANIER (AJAX) - SÉCURISÉ AVEC CSRF ET DOM SÉCURISÉ
     // =========================================================================
     function showHomeToast(message, type = 'success') {
         let toast = document.getElementById('homeToastNotification');
@@ -230,7 +230,7 @@ document.addEventListener("DOMContentLoaded", () => {
         
         toast.className = `toast-notification toast-${type}`;
         
-        // Anti-XSS sur le message du toast
+        // SÉCURITÉ : Anti-XSS sur le message du toast via textContent
         const span = document.createElement('span');
         span.textContent = message;
 
@@ -265,8 +265,8 @@ document.addEventListener("DOMContentLoaded", () => {
             cardDiv.className = 'cart-item-card';
 
             const img = document.createElement('img');
-            img.src = `${baseUrl}public/images/products/${item.id}/product_220.jpg`;
-            img.alt = item.title;
+            img.src = `${baseUrl}public/images/products/${parseInt(item.id, 10)}/product_220.jpg`;
+            img.alt = item.title || 'Produit';
             img.className = 'item-img';
             img.onerror = function() { this.src = 'https://placehold.co/80x80/f5f5f5/111?text=Img'; };
 
@@ -286,11 +286,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const qtyWrapper = document.createElement('div');
             qtyWrapper.className = 'qty-wrapper';
-            qtyWrapper.innerHTML = `
-                <button type="button" class="btn-qty minus" data-row="${item.cartRow}">-</button>
-                <input type="text" class="input-qty" value="${qty}" readonly data-row="${item.cartRow}">
-                <button type="button" class="btn-qty plus" data-row="${item.cartRow}">+</button>
-            `;
+
+            // SÉCURITÉ : Création sécurisée des éléments pour éviter l'injection DOM
+            const btnMinus = document.createElement('button');
+            btnMinus.type = 'button';
+            btnMinus.className = 'btn-qty minus';
+            btnMinus.setAttribute('data-row', item.cartRow);
+            btnMinus.textContent = '-';
+
+            const inputQty = document.createElement('input');
+            inputQty.type = 'text';
+            inputQty.className = 'input-qty';
+            inputQty.value = qty;
+            inputQty.readOnly = true;
+            inputQty.setAttribute('data-row', item.cartRow);
+
+            const btnPlus = document.createElement('button');
+            btnPlus.type = 'button';
+            btnPlus.className = 'btn-qty plus';
+            btnPlus.setAttribute('data-row', item.cartRow);
+            btnPlus.textContent = '+';
+
+            qtyWrapper.appendChild(btnMinus);
+            qtyWrapper.appendChild(inputQty);
+            qtyWrapper.appendChild(btnPlus);
 
             const btnRemove = document.createElement('button');
             btnRemove.type = 'button';
@@ -333,7 +352,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 formData.append('colorId', '0');
                 formData.append('guaranteeId', '0');
                 
-                // SÉCURITÉ CRITIQUE : Injection du jeton CSRF lu depuis le HTML
+                // SÉCURITÉ CRITIQUE : Envoi du jeton CSRF lu depuis le HTML
                 formData.append('csrf_token', csrfToken);
                 
                 const response = await fetch(`${baseUrl}Cart/addToCart/${productId}`, {
@@ -355,7 +374,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     const totalPrice = cartData[1] || 0;
                     
                     let totalCount = 0;
-                    cartItems.forEach(item => totalCount += parseInt(item.quantity || 1));
+                    cartItems.forEach(item => totalCount += parseInt(item.quantity || 1, 10));
                     
                     const badge = document.getElementById('navCartCounterBadge');
                     if (badge) {

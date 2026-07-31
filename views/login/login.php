@@ -1,5 +1,5 @@
 <?php
-// SÉCURITÉ : Récupération du paramètre de retour (Intended URL) de manière propre
+// SÉCURITÉ : Récupération du paramètre de retour (Intended URL) de manière propre et protégée contre XSS
 $backUrl = isset($_GET['back']) ? htmlspecialchars($_GET['back'], ENT_QUOTES, 'UTF-8') : '';
 ?>
 <div class="login-container">
@@ -23,17 +23,20 @@ $backUrl = isset($_GET['back']) ? htmlspecialchars($_GET['back'], ENT_QUOTES, 'U
             <div id="jsLoginErrorMessage" class="alert-message alert-danger-modern" role="alert"></div>
             
             <?php if (isset($_GET['error']) && $_GET['error'] == 1): ?>
-                <div class="alert-message alert-danger-modern" role="alert">
-                    <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> Adresse e-mail ou mot de passe incorrect.
+                <div class="alert-message alert-danger-modern show-error" role="alert">
+                    <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+                    <span> Identifiants incorrects. Veuillez réessayer.</span>
                 </div>
             <?php endif; ?>
-            
-            <form action="<?= URL ?>Login/checkUser" method="post" id="formLogin">
+
+            <form action="<?= URL ?>Login/checkUser" method="POST" id="formLogin" class="modern-form">
                 
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($data['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
                 
-                <input type="hidden" name="back_url" value="<?= $backUrl ?>">
-                
+                <?php if(!empty($backUrl)): ?>
+                    <input type="hidden" name="back_url" value="<?= $backUrl ?>">
+                <?php endif; ?>
+
                 <div class="form-group">
                     <label for="email"><i class="fa-solid fa-envelope" aria-hidden="true"></i> Adresse E-mail :</label>
                     <input type="email" id="email" name="email" class="form-control" dir="ltr" placeholder="exemple@email.com" autocomplete="email" required>

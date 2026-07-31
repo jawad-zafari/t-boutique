@@ -3,7 +3,7 @@
 /**
  * Modèle ModelAccount
  * Gère les données de l'espace client.
- * Requêtes sécurisées via PDO.
+ * Sécurité: Protection contre les injections SQL (PDO) et prévention des failles IDOR.
  */
 class ModelAccount extends Model
 {
@@ -14,6 +14,7 @@ class ModelAccount extends Model
 
     public function getUserInfo($userId)
     {
+        // SÉCURITÉ : Forçage du type entier (Integer Casting)
         $sql = "SELECT * FROM users WHERE id = ?";
         $result = $this->doSelect($sql, [(int)$userId]);
         return $result[0] ?? [];
@@ -21,21 +22,24 @@ class ModelAccount extends Model
 
     public function updateProfile($data, $userId)
     {
-        // RÈGLE MVC : PDO sécurise contre les injections SQL (Prepared Statements).
-        // L'échappement XSS (htmlspecialchars) se fait uniquement dans la vue pour éviter le double encodage.
-        $username = trim($data['username'] ?? '');
-        $email = filter_var($data['email'] ?? '', FILTER_SANITIZE_EMAIL);
-        $lastName = trim($data['last_name'] ?? '');
-        $mobile = trim($data['mobile'] ?? '');
-        $phone = trim($data['phone'] ?? '');
-        $address = trim($data['address'] ?? '');
-        $city = trim($data['city'] ?? '');
+        // ARCHITECTURE MVC : PDO sécurise contre les injections SQL (Prepared Statements).
+        // L'échappement XSS (htmlspecialchars) se fait uniquement dans la vue (Pas de double encodage).
+        $username   = trim($data['username'] ?? '');
+        $email      = filter_var($data['email'] ?? '', FILTER_SANITIZE_EMAIL);
+        $lastName   = trim($data['last_name'] ?? '');
+        $mobile     = trim($data['mobile'] ?? '');
+        $phone      = trim($data['phone'] ?? '');
+        $address    = trim($data['address'] ?? '');
+        $city       = trim($data['city'] ?? '');
         $postalCode = trim($data['postal_code'] ?? '');
-        $gender = (int) ($data['gender'] ?? 1); 
+        $gender     = (int) ($data['gender'] ?? 1); 
         $newsletter = isset($data['newsletter']) ? 1 : 0;
 
         $sql = "UPDATE users SET username = ?, email = ?, last_name = ?, mobile = ?, phone = ?, address = ?, city = ?, postal_code = ?, gender = ?, newsletter = ? WHERE id = ?";
-        $this->doQuery($sql, [$username, $email, $lastName, $mobile, $phone, $address, $city, $postalCode, $gender, $newsletter, (int)$userId]);
+        $this->doQuery($sql, [
+            $username, $email, $lastName, $mobile, $phone, $address, 
+            $city, $postalCode, $gender, $newsletter, (int)$userId
+        ]);
     }
 
     public function checkOldPassword($userId, $oldPassword)
@@ -45,6 +49,7 @@ class ModelAccount extends Model
         
         if (!empty($result)) {
             $hashedPassword = $result[0]['password'];
+            // SÉCURITÉ : Vérification du hash (bcrypt)
             return password_verify($oldPassword, $hashedPassword);
         }
         
@@ -53,6 +58,7 @@ class ModelAccount extends Model
 
     public function updatePassword($userId, $newPassword)
     {
+        // SÉCURITÉ : Hachage du mot de passe avec l'algorithme par défaut (bcrypt)
         $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
         
         $sql = "UPDATE users SET password = ? WHERE id = ?";
@@ -73,7 +79,7 @@ class ModelAccount extends Model
 
     public function getOrderById($orderId, $userId)
     {
-        // PROTECTION IDOR : Vérification stricte du user_id
+        // SÉCURITÉ CRITIQUE (Anti-IDOR) : Vérification stricte du user_id dans la requête
         $sql = "SELECT * FROM orders WHERE id = ? AND user_id = ?";
         $result = $this->doSelect($sql, [(int)$orderId, (int)$userId], true);
         return $result;

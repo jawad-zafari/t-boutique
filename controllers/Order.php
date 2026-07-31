@@ -1,20 +1,21 @@
 <?php
 
 /**
- * Controller Order
- * Gère le tunnel d'achat en 4 étapes
- * Sécurité stricte : Vérification du panier vide à chaque étape
+ * Contrôleur Order
+ * Gère le tunnel d'achat en 4 étapes (Connexion, Adresse, Résumé, Paiement).
+ * Sécurité stricte : Vérification du panier, requêtes POST obligatoires, et protection CSRF.
  */
 class Order extends Controller 
 {
     public function __construct() 
     {
         parent::__construct();
+        // SÉCURITÉ : Initialisation de la session pour accéder au panier et au jeton CSRF
         Model::sessionInit(); 
     }
 
     /**
-     * Vérification de la connexion utilisateur
+     * Vérification de la connexion de l'utilisateur
      */
     private function checkLogin()
     {
@@ -40,7 +41,7 @@ class Order extends Controller
     }
 
     /**
-     * LOGIQUE MÉTIER (Business Logic) : Traitement unifié du panier
+     * LOGIQUE MÉTIER (Business Logic) : Traitement unifié des données du panier
      */
     private function processCartData() 
     {
@@ -50,6 +51,7 @@ class Order extends Controller
         $totalPrice = 0;
         $totalDiscount = 0;
 
+        // Validation et sécurisation des données du panier
         if (isset($rawCartData[0]) && is_array($rawCartData[0]) && isset($rawCartData[1]) && is_numeric($rawCartData[1])) {
             $cart = $rawCartData[0];
             $totalPrice = (float)$rawCartData[1];
@@ -58,6 +60,7 @@ class Order extends Controller
             $cart = is_array($rawCartData) ? $rawCartData : [];
         }
 
+        // Recalcul de sécurité si le total est incorrect
         if ($totalPrice <= 0 && !empty($cart)) {
             foreach ($cart as $item) {
                 $qty = (int)($item['tedad'] ?? $item['quantity'] ?? 1);
@@ -86,12 +89,12 @@ class Order extends Controller
     }
 
     /**
-     * Étape 2 : Adresse de livraison
+     * Étape 2 : Choix de l'adresse de livraison
      */
     public function address() 
     {
         $this->checkLogin(); 
-        $this->checkCartNotEmpty(); // Vérification du panier non vide
+        $this->checkCartNotEmpty(); 
 
         $addresses = $this->model->getAddresses();
         $shippingTypes = $this->model->getShippingTypes();
@@ -107,17 +110,20 @@ class Order extends Controller
     }
 
     /**
-     * Traitement AJAX : Ajout d'adresse
+     * Traitement AJAX : Ajout d'une nouvelle adresse
      */
     public function addAddressAjax()
     {
         $this->checkLogin();
 
+        // SÉCURITÉ : Uniquement les requêtes POST
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('HTTP/1.1 405 Method Not Allowed');
-            exit(json_encode(['status' => 'error', 'message' => 'Méthode non autorisée']));
+            echo json_encode(['status' => 'error', 'message' => 'Méthode non autorisée.']);
+            exit;
         }
 
+        // SÉCURITÉ : Validation CSRF
         $this->checkCsrfToken($_POST['csrf_token'] ?? '');
 
         if (empty($_POST['last_name']) || empty($_POST['mobile']) || empty($_POST['city_name']) || empty($_POST['postal_code']) || empty($_POST['address'])) {
@@ -126,9 +132,10 @@ class Order extends Controller
         }
 
         $addressId = $this->model->addAddress($_POST);
+        $userId = (int)Model::sessionGet('userId');
 
         if ($addressId > 0) {
-            $newAddress = $this->model->getAddressById($addressId);
+            $newAddress = $this->model->getAddressById($addressId, $userId);
             echo json_encode([
                 'status'  => 'success',
                 'message' => 'Adresse enregistrée avec succès !',
@@ -141,22 +148,31 @@ class Order extends Controller
     }
 
     /**
-     * Étape 3 : Résumé
+     * Étape 3 : Résumé de la commande
      */
     public function summary() 
     {
         $this->checkLogin();
-        $this->checkCartNotEmpty(); // Vérification du panier non vide
+        $this->checkCartNotEmpty();
 
         $addressId = Model::sessionGet('selected_address_id');
         $shippingTypeId = Model::sessionGet('selected_shipping_type_id');
+        $userId = (int)Model::sessionGet('userId');
 
         if (!$addressId || !$shippingTypeId) {
             header('Location: ' . URL . 'Order/address?error=address_missing');
             exit;
         }
 
-        $addressInfo = $this->model->getAddressById((int)$addressId);
+        // SÉCURITÉ IDOR : On passe l'ID utilisateur pour vérifier qu'il est bien propriétaire de l'adresse
+        $addressInfo = $this->model->getAddressById((int)$addressId, $userId);
+        
+        // Si l'adresse n'appartient pas à l'utilisateur, on bloque
+        if (!$addressInfo) {
+            header('Location: ' . URL . 'Order/address?error=unauthorized_address');
+            exit;
+        }
+
         $shippingPrice = $this->model->getShippingPrice((int)$shippingTypeId);
 
         $data = [
@@ -171,12 +187,12 @@ class Order extends Controller
     }
 
     /**
-     * Étape 4 : Choix du mode de paiement
+     * Étape 4 : Paiement
      */
     public function payment() 
     {
         $this->checkLogin();
-        $this->checkCartNotEmpty(); // Vérification du panier non vide
+        $this->checkCartNotEmpty(); 
 
         $shippingTypeId = Model::sessionGet('selected_shipping_type_id');
         $shippingPrice = $this->model->getShippingPrice((int)$shippingTypeId);
@@ -193,13 +209,14 @@ class Order extends Controller
     }
 
     /**
-     * Sauvegarde de la session d'adresse et de livraison
+     * AJAX : Sauvegarde de la sélection (Adresse et Livraison) dans la session
      */
     public function saveAddressSession()
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('HTTP/1.1 405 Method Not Allowed');
-            exit(json_encode(['status' => 'error', 'message' => 'Méthode non autorisée']));
+            echo json_encode(['status' => 'error', 'message' => 'Méthode non autorisée.']);
+            exit;
         }
 
         $this->checkCsrfToken($_POST['csrf_token'] ?? '');
@@ -212,30 +229,43 @@ class Order extends Controller
             Model::sessionSet('selected_shipping_type_id', $shippingId);
             echo json_encode(['status' => 'success']);
         } else {
-            echo json_encode(['status' => 'error', 'message' => 'Données invalides']);
+            echo json_encode(['status' => 'error', 'message' => 'Données invalides.']);
         }
+        exit;
     }
 
     /**
-     * Code Promo
+     * AJAX : Vérification du code promotionnel (Sécurisé en POST)
      */
-    public function checkPromoCode($code) 
+    public function checkPromoCode() 
     {
         $this->checkLogin();
+        
+        // SÉCURITÉ : On bloque si ce n'est pas une requête POST
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['status' => 'error', 'message' => 'Méthode non autorisée.']);
+            exit;
+        }
+
+        $this->checkCsrfToken($_POST['csrf_token'] ?? '');
+        
+        $code = $_POST['code'] ?? '';
         $safeCode = htmlspecialchars(trim($code), ENT_QUOTES, 'UTF-8');
+        
         $result = $this->model->verifyPromoCode($safeCode);
         $totalPrice = $this->model->calculateTotalPrice($safeCode);
 
         echo json_encode([$result, $totalPrice]);
+        exit;
     }
 
     /**
-     * Enregistrement final de la commande
+     * Enregistrement final de la commande en base de données
      */
     public function saveOrder() 
     {
         $this->checkLogin();
-        $this->checkCartNotEmpty(); // Bloquer la création si le panier est vide
+        $this->checkCartNotEmpty(); 
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('HTTP/1.1 405 Method Not Allowed');
@@ -247,6 +277,7 @@ class Order extends Controller
         $orderId = $this->model->saveOrder($_POST);
         
         if ($orderId > 0) {
+            // Nettoyage de la session après validation
             Model::sessionSet('selected_address_id', null);
             Model::sessionSet('selected_shipping_type_id', null);
             

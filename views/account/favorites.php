@@ -29,9 +29,9 @@
         $favorites = $data['favorites'] ?? [];
         if (!empty($favorites)):
             foreach ($favorites as $product):
-                $discount = $product['discount_percent'] ?? 0;
+                $discount = (int)($product['discount_percent'] ?? 0);
                 $hasDiscount = $discount > 0;
-                $productId = (int) ($product['id'] ?? 0);
+                $productId = (int)($product['id'] ?? 0);
         ?>
             <div class="product-card hover-glow" id="fav-card-<?= $productId ?>">
                 
@@ -53,10 +53,10 @@
                     <div class="price-cart-row">
                         <div class="product-price-container">
                             <?php if($hasDiscount): ?>
-                                <del class="price-old"><?= number_format($product['price'] ?? 0, 0, ',', ' ') ?> €</del>
-                                <span class="product-price price-danger"><?= number_format($product['price_total'] ?? 0, 0, ',', ' ') ?> €</span>
+                                <del class="price-old"><?= number_format((float)($product['price'] ?? 0), 0, ',', ' ') ?> €</del>
+                                <span class="product-price price-danger"><?= number_format((float)($product['price_total'] ?? 0), 0, ',', ' ') ?> €</span>
                             <?php else: ?>
-                                <span class="product-price price-primary"><?= number_format($product['price'] ?? 0, 0, ',', ' ') ?> €</span>
+                                <span class="product-price price-primary"><?= number_format((float)($product['price'] ?? 0), 0, ',', ' ') ?> €</span>
                             <?php endif; ?>
                         </div> 
                         <button type="button" class="btn-quick-add square-btn rounded-action-btn" data-id="<?= $productId ?>" aria-label="Ajouter ce produit au panier" title="Ajouter au panier">

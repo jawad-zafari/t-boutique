@@ -20,7 +20,10 @@ $exclusives = $data['exclusives'] ?? [];
             <?php if (!empty($exclusives)): foreach ($exclusives as $row): 
                 $exId = (int)($row['id'] ?? 0);
                 $exTitle = htmlspecialchars($row['title'] ?? 'Produit', ENT_QUOTES, 'UTF-8');
-                $exPrice = (float)($row['price'] ?? 0);
+                
+                // RÈGLE MÉTIER : Affichage correct du prix avec remise (si calculé par le modèle)
+                $exPrice = (float)($row['price_total'] ?? $row['price'] ?? 0);
+                
                 $thumbUrl = URL . 'public/images/products/' . $exId . '/product_220.jpg';
             ?>
                 <div class="exclusive-item-wrapper">

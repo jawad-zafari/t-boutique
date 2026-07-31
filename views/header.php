@@ -1,7 +1,11 @@
 <?php
-// ARCHITECTURE DWWM STRICTE : Vue pure sans logique métier (MVC).
-// Les variables sont définies par le contrôleur et transmises à cette vue.
+/**
+ * Vue globale : Header (header.php)
+ * Architecture DWWM stricte : Séparation des préoccupations (SoC).
+ * Sécurité : Protection XSS (htmlspecialchars), Typage strict (int/float) et jeton CSRF.
+ */
 
+// Récupération sécurisée des variables transmises par le contrôleur global
 $userId    = $userId ?? false;
 $userLevel = $userLevel ?? 0;
 $menuList  = $menuList ?? [];
@@ -50,7 +54,7 @@ $csrfToken = $csrf_token ?? '';
 
         <div class="header-actions">
             
-            <?php if ($userLevel == 1): ?>
+            <?php if ((int)$userLevel === 1): ?>
                 <a href="<?= URL ?>AdminDashboard/index" class="btn-icon" aria-label="Administration" title="Administration">
                     <i class="fa-solid fa-user-gear" aria-hidden="true"></i>
                 </a>
@@ -58,7 +62,7 @@ $csrfToken = $csrf_token ?? '';
 
             <a href="<?= URL ?>Account/favorites" class="btn-icon" aria-label="Mes favoris" title="Mes favoris">
                 <i class="fa-regular fa-heart" aria-hidden="true"></i>
-                <span class="cart-counter <?= $favCount == 0 ? 'is-hidden' : '' ?>" id="navFavCounterBadge"><?= (int)$favCount ?></span>
+                <span class="cart-counter <?= (int)$favCount === 0 ? 'is-hidden' : '' ?>" id="navFavCounterBadge"><?= (int)$favCount ?></span>
             </a>
 
             <?php if ($userId == false): ?>
@@ -123,6 +127,7 @@ $csrfToken = $csrf_token ?? '';
         $priceTotalAll = 0;
         if(!empty($cartItems)): 
             foreach($cartItems as $item): 
+                // SÉCURITÉ : Typage rigoureux pour les calculs financiers
                 $qty = (int)($item['quantity'] ?? $item['tedad'] ?? 1);
                 $price = (float)($item['price'] ?? 0);
                 $priceTotalAll += ($price * $qty);

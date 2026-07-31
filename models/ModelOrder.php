@@ -1,9 +1,9 @@
 <?php
 
 /**
- * Model ModelOrder
+ * Modèle ModelOrder
  * Gestion sécurisée de la création des commandes et de l'assainissement des données.
- * Parfaitement protégé contre les injections SQL et les failles XSS.
+ * Protection stricte contre les injections SQL (PDO), les failles XSS et les failles IDOR.
  */
 class ModelOrder extends Model 
 {
@@ -20,15 +20,20 @@ class ModelOrder extends Model
         return $this->doSelect($sql, [$userId]);
     }
 
-    public function getAddressById($addressId)
+    /**
+     * SÉCURITÉ CRITIQUE (Anti-IDOR) : 
+     * Ajout du paramètre $userId pour s'assurer qu'un utilisateur ne puisse pas
+     * récupérer l'adresse d'un autre utilisateur en modifiant l'ID.
+     */
+    public function getAddressById($addressId, $userId)
     {
-        $sql = "SELECT * FROM user_addresses WHERE id = ?";
-        $result = $this->doSelect($sql, [(int)$addressId], true);
+        $sql = "SELECT * FROM user_addresses WHERE id = ? AND user_id = ?";
+        $result = $this->doSelect($sql, [(int)$addressId, (int)$userId], true);
         return $result;
     }
 
     /**
-     * Ajout d'une adresse via AJAX
+     * Ajout d'une adresse via AJAX (Sanitisation stricte XSS)
      */
     public function addAddress($data)
     {
@@ -37,6 +42,7 @@ class ModelOrder extends Model
         
         if ($userId <= 0) return 0; 
 
+        // Protection XSS avant l'insertion en base
         $lastName = htmlspecialchars(trim($data['last_name'] ?? ''), ENT_QUOTES, 'UTF-8');
         $mobile = htmlspecialchars(trim($data['mobile'] ?? ''), ENT_QUOTES, 'UTF-8');
         $phone = htmlspecialchars(trim($data['phone'] ?? ''), ENT_QUOTES, 'UTF-8');
@@ -129,7 +135,8 @@ class ModelOrder extends Model
         $addressId = (int)Model::sessionGet('selected_address_id');
         $shippingMethodId = (int)Model::sessionGet('selected_shipping_type_id');
         
-        $addressInfo = $this->getAddressById($addressId);
+        // SÉCURITÉ IDOR : Vérification stricte du propriétaire de l'adresse
+        $addressInfo = $this->getAddressById($addressId, $userId);
         if (!$addressInfo) return 0;
 
         $lastName = strip_tags(trim($addressInfo['last_name'] ?? ''));
@@ -142,7 +149,7 @@ class ModelOrder extends Model
 
         $cartData = $this->getCartData();
         $cartItems = $cartData[0] ?? [];
-        $cartDataString = serialize($cartItems);
+        $cartDataString = serialize($cartItems); // Les objets sont désactivés au unserialize plus tard
 
         $shippingPrice = $this->getShippingPrice($shippingMethodId);
         
@@ -155,7 +162,7 @@ class ModelOrder extends Model
         
         $barcode = 'ORD-' . $timestamp . '-' . rand(1000, 9999);
 
-        // CORRECTION STRICTE : Ajout des champs pay_card_number et pay_bank_name vides par défaut
+        // Requête préparée PDO pour contrer les injections SQL
         $sql = "INSERT INTO orders 
                 (transaction_id_before, transaction_id_after, barcode, tracking_code, last_name, province, city, postal_code, mobile, phone, address_data, cart_data, total_amount, shipping_method_id, shipping_price, user_id, is_paid, payment_method_id, pay_card_number, pay_bank_name, created_timestamp, created_date) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1, ?, ?, ?, ?)";
@@ -185,6 +192,7 @@ class ModelOrder extends Model
         
         $this->doQuery($sql, $params);
 
+        // Vidage du panier
         $cookie = parent::getCartCookie();
         $sqlEmptyCart = "DELETE FROM cart_items WHERE session_cookie = ?";
         $this->doQuery($sqlEmptyCart, [$cookie]);

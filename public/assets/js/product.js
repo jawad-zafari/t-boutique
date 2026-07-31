@@ -1,7 +1,7 @@
 /**
  * Logique JavaScript pour la page Produit
  * Document Clean Code - 100% Vanilla JS (Carrousel, Tabs, Panier AJAX & Questions)
- * Hautement sécurisé (Anti-XSS via textNode, Gestion robuste des erreurs JSON)
+ * Architecture DWWM : Hautement sécurisée (Anti-XSS, Gestion robuste des erreurs JSON, CSRF)
  */
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -28,7 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
             toast = document.createElement('div');
             toast.id = 'productToastNotification';
             
-            // Configuration des styles de base
+            // Configuration des styles de base (Pas de dépendance CSS externe stricte pour le toast)
             toast.style.position = 'fixed';
             toast.style.bottom = '20px';
             toast.style.right = '20px';
@@ -43,20 +43,23 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         
         toast.style.backgroundColor = (type === 'danger') ? '#e03131' : '#2b8a3e';
-        toast.innerHTML = ''; // Réinitialisation propre
+        
+        // Nettoyage propre et sécurisé
+        toast.textContent = ''; 
         
         const icon = document.createElement('i');
         icon.className = (type === 'danger') ? 'fa-solid fa-circle-exclamation' : 'fa-solid fa-circle-check';
         icon.style.marginRight = '10px';
         
-        // SÉCURITÉ : Utilisation exclusive de createTextNode pour prévenir toute injection XSS
+        // SÉCURITÉ CRITIQUE : Utilisation de createTextNode pour prévenir toute injection XSS (Cross-Site Scripting)
         const textNode = document.createTextNode(message);
 
         toast.appendChild(icon);
         toast.appendChild(textNode);
         
-        toast.style.opacity = '1';
         toast.style.display = 'block';
+        // Petit délai pour permettre à la transition CSS de s'appliquer
+        setTimeout(() => { toast.style.opacity = '1'; }, 10);
         
         // Disparition automatique après 3 secondes
         setTimeout(() => {
@@ -97,13 +100,17 @@ document.addEventListener("DOMContentLoaded", () => {
     if (zoomModal && zoomedImage && mainImageNode) {
         const openZoom = () => {
             zoomedImage.src = mainImageNode.src;
+            zoomModal.classList.add('active');
             zoomModal.style.display = 'flex';
         };
 
         if (btnTriggerImageZoom) btnTriggerImageZoom.addEventListener('click', openZoom);
         mainImageNode.addEventListener('click', openZoom);
 
-        const closeZoom = () => { zoomModal.style.display = 'none'; };
+        const closeZoom = () => { 
+            zoomModal.classList.remove('active');
+            zoomModal.style.display = 'none'; 
+        };
         
         if (closeZoomModal) closeZoomModal.addEventListener('click', closeZoom);
         zoomModal.addEventListener('click', (e) => {
@@ -160,7 +167,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 formData.append('quantity', '1');
                 formData.append('colorId', '0');
                 formData.append('guaranteeId', '0');
-                formData.append('csrf_token', csrfToken); // SÉCURITÉ
+                formData.append('csrf_token', csrfToken); // SÉCURITÉ : Validation de l'origine
 
                 const response = await fetch(`${baseUrl}Product/addToCart/${productId}`, {
                     method: 'POST',
@@ -173,7 +180,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 try {
                     result = await response.json();
                 } catch (jsonError) {
-                    throw new Error("Format de réponse inattendu du serveur.");
+                    throw new Error("Format de réponse inattendu du serveur (Erreur 500 possible).");
                 }
 
                 if (response.ok && result.status !== 'error') {
@@ -181,7 +188,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     
                     // Mise à jour de l'icône du panier dans le header
                     const badge = document.getElementById('navCartCounterBadge');
-                    if (badge && result.totalItems) {
+                    if (badge && result.totalItems !== undefined) {
                         badge.textContent = result.totalItems;
                         badge.style.display = 'inline-flex';
                         badge.style.transform = "scale(1.4)";
@@ -194,6 +201,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 console.error("Erreur d'ajout au panier :", error);
                 showProductToast("Erreur de communication avec le serveur.", "danger");
             } finally {
+                // Restauration de l'état du bouton
                 this.innerHTML = originalIcon;
                 this.disabled = false;
             }
@@ -221,12 +229,13 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!productId) return;
 
             try {
+                // Feedback utilisateur
                 btnSubmitQuestion.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Envoi...';
                 btnSubmitQuestion.disabled = true;
 
                 const formData = new URLSearchParams();
                 formData.append('question', questionText);
-                formData.append('csrf_token', csrfToken); // SÉCURITÉ
+                formData.append('csrf_token', csrfToken); // SÉCURITÉ : Protection CSRF
 
                 const response = await fetch(`${baseUrl}Product/addQuestion/${productId}`, {
                     method: 'POST',
@@ -234,7 +243,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     body: formData.toString()
                 });
 
-                // ROBUSTESSE : Protection contre les erreurs 500 retournant du HTML
+                // ROBUSTESSE : Gestion sécurisée des erreurs serveur (HTML non désiré)
                 let result;
                 try {
                     result = await response.json();
@@ -252,6 +261,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 console.error("Erreur Q&A:", error);
                 showProductToast(error.message || "Erreur de réseau.", "danger");
             } finally {
+                // Restauration du bouton
                 btnSubmitQuestion.innerHTML = '<i class="fa-solid fa-paper-plane" aria-hidden="true"></i> Soumettre la question';
                 btnSubmitQuestion.disabled = false;
             }

@@ -1,16 +1,16 @@
 <?php
 
 /**
- * Controller Index (Page d'accueil)
+ * Controller: Index (Page d'accueil)
  * Gère le chargement de toutes les sections dynamiques de la page d'accueil.
- * Mise à jour : Ajout du jeton CSRF pour sécuriser les actions AJAX (Panier, Favoris)
+ * Sécurité: Ajout du jeton CSRF pour sécuriser les actions AJAX (Panier, Favoris)
  */
 class Index extends Controller
 {
     public function __construct()
     {
         parent::__construct();
-        // SÉCURITÉ : Initialisation de la session pour générer le jeton CSRF
+        // SÉCURITÉ : Initialisation de la session pour la gestion du jeton CSRF
         Model::sessionInit();
     }
 
@@ -49,7 +49,7 @@ class Index extends Controller
             'latest_news'     => $latestNews,
             'brands'          => $brands,
             'tv_settings'     => $tvSettings,
-            // SÉCURITÉ CRITIQUE : Génération du jeton pour protéger les clics sur la page d'accueil
+            // SÉCURITÉ CRITIQUE : Génération du jeton pour protéger les actions sur la page d'accueil
             'csrf_token'      => $this->generateCsrfToken()
         ];
 

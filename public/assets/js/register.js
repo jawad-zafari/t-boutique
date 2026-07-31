@@ -1,6 +1,7 @@
 /**
  * Validation et gestion dynamique du formulaire d'inscription client (Register)
- * Code 100% Vanilla JS - Conforme aux normes DWWM (Sécurité Anti-XSS et Accessibilité).
+ * Code 100% Vanilla JS - Conforme aux normes DWWM.
+ * Sécurité : Prévention stricte des failles DOM-Based XSS (Utilisation de textContent).
  */
 document.addEventListener("DOMContentLoaded", () => {
     
@@ -18,76 +19,82 @@ document.addEventListener("DOMContentLoaded", () => {
             const rulesCheckbox = document.getElementById('rules');
             
             let isValid = true;
-            let errors = []; // Stockage des messages d'erreur
+            let errors = []; 
 
-            // Réinitialisation des styles d'erreur sur les champs de saisie
+            // 1. Réinitialisation des styles d'erreur sur les champs de saisie
             [lastNameInput, mobileInput, emailInput, passwordInput, passwordConfirmInput].forEach(input => {
                 if (input) {
                     input.classList.remove('is-invalid');
                 }
             });
             
-            // Masquer le conteneur de messages d'erreur
+            // Masquer et vider le conteneur de messages d'erreur
             errorContainer.classList.add('is-hidden');
-            errorContainer.innerHTML = '';
+            // SÉCURITÉ : Utilisation de textContent au lieu de innerHTML pour vider l'élément
+            errorContainer.textContent = ''; 
 
-            // 1. Validation du nom complet
-            if (lastNameInput && lastNameInput.value.trim().length < 3) {
+            // 2. Validation du Nom Complet
+            if (!lastNameInput || lastNameInput.value.trim() === '') {
                 isValid = false;
-                errors.push("Veuillez saisir votre nom complet (minimum 3 caractères).");
-                lastNameInput.classList.add('is-invalid');
+                errors.push("Le nom complet est obligatoire.");
+                if (lastNameInput) lastNameInput.classList.add('is-invalid');
             }
 
-            // 2. Validation du numéro de mobile (Saisie numérique uniquement)
-            if (mobileInput) {
-                const mobileValue = mobileInput.value.replace(/\s+/g, '');
-                // Accepte un format standard de mobile (10 à 14 chiffres)
-                if (!/^\d{10,14}$/.test(mobileValue)) {
-                    isValid = false;
-                    errors.push("Veuillez entrer un numéro de mobile valide (10 à 14 chiffres).");
-                    mobileInput.classList.add('is-invalid');
-                }
-            }
-
-            // 3. Validation du format de l'adresse e-mail
-            if (emailInput) {
-                const emailValue = emailInput.value.trim();
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                if (!emailValue || !emailRegex.test(emailValue)) {
-                    isValid = false;
-                    errors.push("Veuillez saisir une adresse e-mail valide.");
-                    emailInput.classList.add('is-invalid');
-                }
-            }
-
-            // 4. Validation de la sécurité et de la confirmation du mot de passe
-            if (passwordInput && passwordConfirmInput) {
-                const passwordVal = passwordInput.value;
-                const passwordConfirmVal = passwordConfirmInput.value;
-
-                if (passwordVal.length < 6) {
-                    isValid = false;
-                    errors.push("Le mot de passe doit contenir au moins 6 caractères.");
-                    passwordInput.classList.add('is-invalid');
-                } else if (passwordVal !== passwordConfirmVal) {
-                    isValid = false;
-                    errors.push("Les mots de passe ne correspondent pas.");
-                    passwordInput.classList.add('is-invalid');
-                    passwordConfirmInput.classList.add('is-invalid');
-                }
-            }
-
-            // 5. Vérification de l'acceptation des conditions générales
-            if (rulesCheckbox && !rulesCheckbox.checked) {
+            // 3. Validation du Numéro de Mobile (Expression régulière)
+            if (!mobileInput || mobileInput.value.trim() === '') {
                 isValid = false;
-                errors.push("Vous devez accepter les conditions générales pour continuer.");
+                errors.push("Le numéro de mobile est obligatoire.");
+                if (mobileInput) mobileInput.classList.add('is-invalid');
+            } else if (!/^[0-9]{10,14}$/.test(mobileInput.value.trim())) {
+                isValid = false;
+                errors.push("Le format du numéro de mobile est invalide (uniquement des chiffres, entre 10 et 14).");
+                if (mobileInput) mobileInput.classList.add('is-invalid');
             }
 
-            // Si le formulaire contient des erreurs, on bloque l'envoi et on affiche les erreurs
+            // 4. Validation de l'E-mail
+            if (!emailInput || emailInput.value.trim() === '') {
+                isValid = false;
+                errors.push("L'adresse e-mail est obligatoire.");
+                if (emailInput) emailInput.classList.add('is-invalid');
+            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.value.trim())) {
+                isValid = false;
+                errors.push("Le format de l'adresse e-mail est invalide.");
+                if (emailInput) emailInput.classList.add('is-invalid');
+            }
+
+            // 5. Validation du Mot de passe
+            if (!passwordInput || passwordInput.value.trim() === '') {
+                isValid = false;
+                errors.push("Le mot de passe est obligatoire.");
+                if (passwordInput) passwordInput.classList.add('is-invalid');
+            } else if (passwordInput.value.trim().length < 6) {
+                isValid = false;
+                errors.push("Le mot de passe doit contenir au moins 6 caractères pour des raisons de sécurité.");
+                if (passwordInput) passwordInput.classList.add('is-invalid');
+            }
+
+            // 6. Validation de la Confirmation du Mot de passe
+            if (!passwordConfirmInput || passwordConfirmInput.value.trim() === '') {
+                isValid = false;
+                errors.push("La confirmation du mot de passe est obligatoire.");
+                if (passwordConfirmInput) passwordConfirmInput.classList.add('is-invalid');
+            } else if (passwordInput.value.trim() !== passwordConfirmInput.value.trim()) {
+                isValid = false;
+                errors.push("Les deux mots de passe ne correspondent pas.");
+                if (passwordConfirmInput) passwordConfirmInput.classList.add('is-invalid');
+            }
+
+            // 7. Validation des Conditions Générales
+            if (!rulesCheckbox || !rulesCheckbox.checked) {
+                isValid = false;
+                errors.push("Vous devez accepter les conditions générales avant de continuer.");
+            }
+
+            // 8. Affichage des erreurs si la validation échoue
             if (!isValid) {
-                event.preventDefault(); // Annulation de la soumission du formulaire
+                event.preventDefault(); // Bloque la soumission du formulaire vers le serveur
 
-                // Création sécurisée de l'en-tête d'erreur (Anti-XSS)
+                // SÉCURITÉ : Création sécurisée de l'en-tête d'erreur (DOM Building)
                 const headerBox = document.createElement('div');
                 headerBox.className = 'error-header';
 
@@ -102,20 +109,21 @@ document.addEventListener("DOMContentLoaded", () => {
                 headerBox.appendChild(titleElement);
                 errorContainer.appendChild(headerBox);
 
-                // Construction d'une liste HTML pour présenter chaque erreur clairement
+                // Construction d'une liste HTML pour présenter chaque erreur
                 const ul = document.createElement('ul');
                 ul.className = 'error-list';
 
                 errors.forEach(msg => {
                     const li = document.createElement('li');
-                    li.textContent = msg; // SÉCURITÉ : textContent empêche l'injection HTML (XSS)
+                    // SÉCURITÉ : textContent empêche l'injection de scripts (XSS)
+                    li.textContent = msg; 
                     ul.appendChild(li);
                 });
 
                 errorContainer.appendChild(ul);
                 errorContainer.classList.remove('is-hidden');
 
-                // Défilement fluide vers le message d'erreur pour l'expérience utilisateur (UX)
+                // Défilement fluide vers la boîte de message pour une meilleure expérience utilisateur
                 errorContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         });

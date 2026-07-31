@@ -1,13 +1,13 @@
 <?php 
-// Récupération des données transmises par le contrôleur (Principe MVC)
+// RÈGLE MVC : Récupération des données transmises par le contrôleur
 $userInfo = $data['userInfo'] ?? [];
 $userName = !empty($userInfo['username']) ? $userInfo['username'] : (!empty($userInfo['last_name']) ? $userInfo['last_name'] : 'Utilisateur');
 $userEmail = $userInfo['email'] ?? '';
 $userInitial = strtoupper(mb_substr($userName, 0, 1, 'UTF-8'));
 
 $orders = $data['orders'] ?? [];
-$totalOrdersCount = $data['totalOrdersCount'] ?? count($orders);
-$totalSpent = $data['totalSpent'] ?? 0;
+$totalOrdersCount = (int)($data['totalOrdersCount'] ?? count($orders));
+$totalSpent = (float)($data['totalSpent'] ?? 0);
 $latestOrder = $data['latestOrder'] ?? ($orders[0] ?? null);
 ?>
 
@@ -49,7 +49,7 @@ $latestOrder = $data['latestOrder'] ?? ($orders[0] ?? null);
             <div class="dashboard-stats-row">
                 <div class="stat-card">
                     <div class="stat-icon bg-blue-light"><i class="fa-solid fa-bag-shopping color-blue" aria-hidden="true"></i></div>
-                    <div class="stat-details"><span class="stat-title">COMMANDES TOTALES</span><span class="stat-value"><?= (int)$totalOrdersCount ?></span></div>
+                    <div class="stat-details"><span class="stat-title">COMMANDES TOTALES</span><span class="stat-value"><?= $totalOrdersCount ?></span></div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon bg-green-light"><i class="fa-solid fa-wallet color-green" aria-hidden="true"></i></div>
@@ -69,7 +69,7 @@ $latestOrder = $data['latestOrder'] ?? ($orders[0] ?? null);
                                 <strong class="order-ref-highlight">Commande #<?= (int)$latestOrder['id'] ?></strong><br>
                                 <span class="order-date-label">Passée le <?= htmlspecialchars($latestOrder['created_date'] ?? '', ENT_QUOTES, 'UTF-8') ?></span>
                             </div>
-                            <div class="order-amount-large"><?= number_format($latestOrder['total_amount'] ?? 0, 2, ',', ' ') ?> €</div>
+                            <div class="order-amount-large"><?= number_format((float)($latestOrder['total_amount'] ?? 0), 2, ',', ' ') ?> €</div>
                         </div>
                     </div>
                 <?php else: ?>
@@ -101,7 +101,7 @@ $latestOrder = $data['latestOrder'] ?? ($orders[0] ?? null);
                         <tr>
                             <td><strong>#<?= (int)$order['id'] ?></strong></td>
                             <td><?= htmlspecialchars($order['created_date'] ?? '', ENT_QUOTES, 'UTF-8') ?></td>
-                            <td><strong><?= number_format($order['total_amount'] ?? 0, 2, ',', ' ') ?> €</strong></td>
+                            <td><strong><?= number_format((float)($order['total_amount'] ?? 0), 2, ',', ' ') ?> €</strong></td>
                             <td>
                                 <?php if(isset($order['is_paid']) && $order['is_paid'] == 1): ?>
                                     <span class="status-badge-paid">Payée</span>

@@ -1,6 +1,7 @@
 /**
  * Validation du formulaire de connexion client (Login)
  * Architecture Vanilla JS - Respect du SoC (Zéro style en ligne)
+ * Sécurité : Manipulation du DOM sécurisée contre les failles XSS (DOM-based XSS)
  */
 document.addEventListener("DOMContentLoaded", () => {
     
@@ -20,8 +21,8 @@ document.addEventListener("DOMContentLoaded", () => {
             emailInput.classList.remove('input-error');
             passwordInput.classList.remove('input-error');
             
-            // On vide le conteneur d'erreurs (le CSS :not(:empty) le masquera automatiquement)
-            errorContainer.innerHTML = "";
+            // SÉCURITÉ : Vider le conteneur en toute sécurité (au lieu de innerHTML)
+            errorContainer.textContent = "";
             errorContainer.classList.remove('show-error');
 
             // 2. Validation de l'E-mail
@@ -29,9 +30,9 @@ document.addEventListener("DOMContentLoaded", () => {
             if (emailValue === "") {
                 isValid = false;
                 errorMessages.push("L'adresse e-mail est requise.");
-                emailInput.classList.add('input-error'); // Ajout de la classe d'erreur
+                emailInput.classList.add('input-error');
             } else {
-                // Expression régulière standard pour valider le format de l'e-mail
+                // Expression régulière standard pour valider l'e-mail
                 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                 if (!emailRegex.test(emailValue)) {
                     isValid = false;
@@ -44,20 +45,21 @@ document.addEventListener("DOMContentLoaded", () => {
             if (passwordInput.value.trim() === "") {
                 isValid = false;
                 errorMessages.push("Le mot de passe est requis.");
-                passwordInput.classList.add('input-error'); // Ajout de la classe d'erreur
+                passwordInput.classList.add('input-error');
             }
 
             // 4. Affichage des erreurs et blocage de l'envoi
             if (!isValid) {
                 event.preventDefault(); 
                 
-                // SÉCURITÉ (Anti-XSS) : Création sécurisée des éléments DOM
+                // SÉCURITÉ (Anti-XSS) : Création sécurisée des éléments DOM au lieu de innerHTML
                 const icon = document.createElement('i');
                 icon.className = "fa-solid fa-circle-exclamation";
                 icon.setAttribute('aria-hidden', 'true');
                 errorContainer.appendChild(icon);
 
                 const textSpan = document.createElement('span');
+                // SÉCURITÉ : Utilisation de textContent
                 textSpan.textContent = " " + errorMessages.join(" ");
                 errorContainer.appendChild(textSpan);
                 

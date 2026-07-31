@@ -12,6 +12,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const baseTag = document.querySelector('base');
     const baseUrl = baseTag ? baseTag.getAttribute('href') : '/';
 
+    // ARCHITECTURE : Gestion de l'erreur de chargement d'image sans attribut HTML en ligne (onerror)
+    document.querySelectorAll('.product-thumbnail-img').forEach((img) => {
+        img.addEventListener('error', function () {
+            this.src = 'https://placehold.co/100x100/f1f3f5/3b5bdb?text=Produit';
+        }, { once: true });
+    });
+
     // Fonction pour récupérer le jeton CSRF de façon sécurisée
     function getCsrfToken() {
         const mainCart = document.getElementById('mainCart');

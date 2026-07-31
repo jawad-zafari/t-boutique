@@ -1,8 +1,13 @@
 /**
  * Logique JavaScript pour la page de Recherche et Filtres Dynamiques
- * Architecture robuste : Vanilla JS & Fetch API (Sécurisé contre les failles XSS)
+ * Architecture robuste : Vanilla JS & Fetch API (Conforme aux normes DWWM)
+ * Sécurité : Protection XSS (DOM Building), CSRF et gestion robuste des erreurs (Anti-Crash)
  */
 document.addEventListener("DOMContentLoaded", () => {
+
+    // Garde de sécurité : Empêche les exécutions multiples du script
+    if (window.searchScriptEventsBound) return;
+    window.searchScriptEventsBound = true;
 
     let currentPage = 1;
     
@@ -10,16 +15,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const productsContainer = document.getElementById('productsContainer');
     const paginationContainer = document.getElementById('paginationContainer');
     
-    // Récupération dynamique de l'URL de base pour un routage AJAX sans erreur 404
+    // Récupération dynamique de l'URL de base pour un routage AJAX sécurisé
     const baseTag = document.querySelector('base');
     const baseUrl = baseTag ? baseTag.getAttribute('href') : '/';
     
     initializeListeners();
-    executeSearch(1); // Lancement de la première recherche au chargement
+    executeSearch(1); // Lancement automatique de la première recherche au chargement
 
-    // ---------------------------------------------------------
+    // =========================================================================
     // FONCTION GLOBALE DE NOTIFICATION TOAST (ANTI-XSS)
-    // ---------------------------------------------------------
+    // =========================================================================
     function showSearchToast(message, type = 'success') {
         let toast = document.getElementById('searchToastNotification');
         if (!toast) {
@@ -30,12 +35,14 @@ document.addEventListener("DOMContentLoaded", () => {
         
         toast.className = `toast-notification toast-${type}`;
         
-        // SÉCURITÉ : Création des nœuds manuellement pour éviter l'injection de scripts via innerHTML
-        toast.innerHTML = '';
+        // SÉCURITÉ : Nettoyage sécurisé via textContent (évite les failles XSS par rapport à innerHTML)
+        toast.textContent = '';
+        
         const icon = document.createElement('i');
         icon.className = type === 'danger' ? 'fa-solid fa-circle-exclamation' : 'fa-solid fa-cart-check';
         icon.setAttribute('aria-hidden', 'true');
         
+        // SÉCURITÉ : Injection sécurisée du texte de la notification
         const textNode = document.createTextNode(" " + message);
         toast.appendChild(icon);
         toast.appendChild(textNode);
@@ -44,6 +51,9 @@ document.addEventListener("DOMContentLoaded", () => {
         setTimeout(() => { toast.classList.remove('show'); }, 3000);
     }
 
+    // =========================================================================
+    // INITIALISATION DES ÉCOUTEURS D'ÉVÉNEMENTS (Filtres)
+    // =========================================================================
     function initializeListeners() {
         if (!searchForm) return;
         const formElements = searchForm.querySelectorAll('select, input[type="checkbox"]');
@@ -52,6 +62,9 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // =========================================================================
+    // MOTEUR DE RECHERCHE AJAX (ROBUSTE)
+    // =========================================================================
     async function executeSearch(page) {
         if (!searchForm || !productsContainer) return;
 
@@ -59,6 +72,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const formData = new FormData(searchForm);
         formData.append('current_page', currentPage);
 
+        // Feedback visuel (Le HTML ici est statique, donc sécurisé)
         productsContainer.innerHTML = `
             <li class="loading-state" role="status">
                 <i class="fa-solid fa-circle-notch fa-spin fa-2x loading-icon" aria-hidden="true"></i>
@@ -72,7 +86,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 body: formData
             });
 
-            const data = await response.json();
+            // ROBUSTESSE : Protection contre les erreurs 500 retournant du code HTML
+            let data;
+            try {
+                data = await response.json();
+            } catch (jsonError) {
+                throw new Error("Format de réponse inattendu du serveur.");
+            }
 
             if (response.ok && !data.error) {
                 const products = data[0] || [];
@@ -84,12 +104,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 productsContainer.innerHTML = `<li class="empty-state">${data.message || data.error || 'Erreur lors de la récupération.'}</li>`;
             }
         } catch (error) {
+            console.error("Erreur de recherche :", error);
             productsContainer.innerHTML = '<li class="error-state">Erreur de connexion au serveur.</li>';
         }
     }
 
+    // =========================================================================
+    // RENDU DES PRODUITS (DOM BUILDING STRICT POUR SÉCURITÉ MAXIMALE)
+    // =========================================================================
     function renderProducts(products) {
-        productsContainer.innerHTML = ''; 
+        productsContainer.textContent = ''; // Nettoyage sécurisé
 
         if (products.length === 0) {
             const li = document.createElement('li');
@@ -139,7 +163,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const img = document.createElement('img');
             img.src = `${baseUrl}public/images/products/${product.id}/product_220.jpg`;
             img.className = 'product-img';
-            img.alt = product.title; 
+            img.alt = product.title || 'Image du produit'; 
             img.onerror = function() { this.src = 'https://placehold.co/220x220/f1f3f5/3b5bdb?text=Produit'; };
 
             imgWrapper.appendChild(img);
@@ -154,7 +178,7 @@ document.addEventListener("DOMContentLoaded", () => {
             
             const titleH4 = document.createElement('h4');
             titleH4.className = 'product-title';
-            titleH4.textContent = product.title; 
+            titleH4.textContent = product.title || 'Produit inconnu'; // Injection sécurisée
 
             linkTitle.appendChild(titleH4);
 
@@ -204,9 +228,12 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // =========================================================================
+    // RENDU DE LA PAGINATION
+    // =========================================================================
     function renderPagination(totalPages) {
         if (!paginationContainer) return;
-        paginationContainer.innerHTML = ''; 
+        paginationContainer.textContent = ''; // Nettoyage sécurisé
         
         if (totalPages <= 1) return;
 
@@ -239,7 +266,7 @@ document.addEventListener("DOMContentLoaded", () => {
         btn.className = 'btn-page';
         btn.setAttribute('data-page', pageNumber);
         btn.setAttribute('aria-label', ariaLabel);
-        btn.innerHTML = htmlContent; 
+        btn.innerHTML = htmlContent; // Sécurisé car le contenu est généré par le code (Pas de saisie utilisateur)
 
         btn.addEventListener('click', (e) => {
             e.preventDefault();
@@ -250,9 +277,9 @@ document.addEventListener("DOMContentLoaded", () => {
         return btn;
     }
 
-    // ---------------------------------------------------------
-    // GESTION DU PANIER (AJAX) - AJOUT RAPIDE
-    // ---------------------------------------------------------
+    // =========================================================================
+    // GESTION DU PANIER (AJOUT RAPIDE - AJAX)
+    // =========================================================================
     document.addEventListener('click', async (e) => {
         const btnAdd = e.target.closest('.btn-quick-add');
         if (btnAdd) {
@@ -265,7 +292,7 @@ document.addEventListener("DOMContentLoaded", () => {
             btnAdd.disabled = true;
 
             try {
-                // SÉCURITÉ : Lecture du jeton caché pour autoriser l'ajout au panier
+                // SÉCURITÉ : Lecture du jeton caché pour autoriser l'ajout au panier (CSRF)
                 const csrfInput = document.getElementById('globalCsrfToken');
                 const csrfToken = csrfInput ? csrfInput.value : '';
 
@@ -273,7 +300,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 formData.append('quantity', '1');
                 formData.append('colorId', '0');
                 formData.append('guaranteeId', '0');
-                formData.append('csrf_token', csrfToken); // Envoi au contrôleur Cart
+                formData.append('csrf_token', csrfToken); 
                 
                 const response = await fetch(`${baseUrl}Cart/addToCart/${productId}`, {
                     method: 'POST',
@@ -281,16 +308,21 @@ document.addEventListener("DOMContentLoaded", () => {
                     body: formData.toString()
                 });
 
-                if (response.ok) {
-                    const cartData = await response.json();
-                    
-                    // On s'adapte au format original de Cart.php (qui renvoie un tableau)
+                // ROBUSTESSE : Gestion sécurisée du parsing JSON
+                let cartData;
+                try {
+                    cartData = await response.json();
+                } catch (jsonError) {
+                    throw new Error("Erreur de réponse du serveur.");
+                }
+
+                if (response.ok && !cartData.error) {
                     const cartItems = cartData[0] || [];
                     
                     let totalCount = 0;
                     cartItems.forEach(item => totalCount += parseInt(item.quantity || 1));
                     
-                    // Mise à jour de la pastille rouge dans le menu
+                    // Mise à jour du compteur dans la barre de navigation
                     const badge = document.getElementById('navCartCounterBadge');
                     if (badge) {
                         badge.innerText = totalCount;
@@ -298,9 +330,9 @@ document.addEventListener("DOMContentLoaded", () => {
                         setTimeout(() => { badge.style.transform = "scale(1)"; }, 300);
                     }
                     
-                    showSearchToast("Produit ajouté au panier !");
+                    showSearchToast("Produit ajouté au panier avec succès !");
                 } else {
-                    showSearchToast("Erreur lors de la communication.", "danger");
+                    showSearchToast("Erreur lors de la communication avec le serveur.", "danger");
                 }
             } catch (error) {
                 console.error("Erreur d'ajout au panier :", error);

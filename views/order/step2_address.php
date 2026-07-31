@@ -1,5 +1,5 @@
 <?php
-// MVC RESPECTÉ : Aucune logique de calcul complexe ici. Les données viennent du contrôleur.
+// ARCHITECTURE MVC : Aucune logique métier complexe dans la vue.
 $cart = $data['cartData'][0] ?? [];
 $totalProductsPrice = (float)($data['cartData'][1] ?? 0);
 $totalDiscount = (float)($data['cartData'][2] ?? 0);
@@ -41,7 +41,7 @@ $postTypes = $data['postType'] ?? [];
                     </button>
                 </div>
 
-                <div class="address-cards-grid">
+                <div class="address-cards-grid" id="addressListContainer">
                     <?php if(!empty($addresses)): foreach($addresses as $addr): ?>
                         <div class="modern-selection-card js-address-card" data-id="<?= (int)$addr['id'] ?>">
                             <div class="card-radio-select">
@@ -69,9 +69,9 @@ $postTypes = $data['postType'] ?? [];
                                 <div class="form-group full-width"><label for="postal_code">Code postal *</label><input type="text" id="postal_code" name="postal_code" class="form-control" dir="ltr" required></div>
                                 <div class="form-group full-width"><label for="address">Adresse complète *</label><textarea id="address" name="address" rows="2" class="form-control" required></textarea></div>
                             </div>
-                            <div class="inline-form-actions margin-top-md" style="display: flex; justify-content: flex-end; gap: 10px;">
+                            <div class="inline-form-actions margin-top-md flex-end-gap">
                                 <button type="button" class="btn-account-secondary" id="btnCancelAddressInline">Annuler</button>
-                                <button type="submit" class="btn-account-submit" style="background-color: #2b8a3e; color: white;"><i class="fa-solid fa-save" aria-hidden="true"></i> Enregistrer l'adresse</button>
+                                <button type="submit" class="btn-account-submit color-bg-success" id="btnSubmitAddress"><i class="fa-solid fa-save" aria-hidden="true"></i> Enregistrer l'adresse</button>
                             </div>
                         </form>
                     </div>
@@ -89,7 +89,7 @@ $postTypes = $data['postType'] ?? [];
                                 <label for="ship_<?= (int)$method['id'] ?>"><strong><?= htmlspecialchars($method['title'] ?? '', ENT_QUOTES, 'UTF-8') ?></strong></label>
                             </div>
                             <span class="shipping-price-tag font-weight-bold color-success">
-                                <?= (isset($method['price']) && (float)$method['price'] > 0) ? number_format($method['price'], 2, ',', ' ') . ' €' : 'Gratuit' ?>
+                                <?= (isset($method['price']) && (float)$method['price'] > 0) ? number_format((float)$method['price'], 2, ',', ' ') . ' €' : 'Gratuit' ?>
                             </span>
                         </div>
                     <?php endforeach; endif; ?>

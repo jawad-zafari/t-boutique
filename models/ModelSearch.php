@@ -1,9 +1,9 @@
 <?php
 
 /**
- * Model ModelSearch
+ * Modèle ModelSearch
  * Gère les requêtes de recherche complexes avec filtrage dynamique et pagination native.
- * Sécurité maximale grâce aux requêtes préparées PDO.
+ * Sécurité maximale : Requêtes préparées PDO, Liste blanche (Whitelisting) et Typage.
  */
 class ModelSearch extends Model
 {
@@ -56,8 +56,8 @@ class ModelSearch extends Model
      */
     public function doSearch($data)
     {
-        // 1. Assainissement et conversion stricte des paramètres
-        $keyword = isset($data['keyword']) ? strip_tags(trim($data['keyword'])) : '';
+        // 1. Assainissement et conversion stricte des paramètres (Anti-XSS et Type Casting)
+        $keyword = isset($data['keyword']) ? htmlspecialchars(trim($data['keyword']), ENT_QUOTES, 'UTF-8') : '';
         $categoryId = isset($data['categoryId']) ? (int)$data['categoryId'] : 0;
         $inStock = isset($data['in_stock']) ? (int)$data['in_stock'] : 0;
         
@@ -67,7 +67,7 @@ class ModelSearch extends Model
         $currentPage = isset($data['current_page']) ? (int)$data['current_page'] : 1;
         if ($currentPage < 1) { $currentPage = 1; }
 
-        // Liste blanche stricte pour la limite par page
+        // SÉCURITÉ CRITIQUE : Liste blanche (Whitelisting) stricte pour la limite par page
         $limit = isset($data['limit']) ? (int)$data['limit'] : 20;
         if (!in_array($limit, [20, 40, 60])) { $limit = 20; }
 
@@ -99,13 +99,14 @@ class ModelSearch extends Model
         $resultCount = $this->doSelect($sqlCount, $params, true);
         $totalProducts = (int)($resultCount['total'] ?? 0);
 
-        // 4. Tri et récupération avec LIMIT / OFFSET sécurisés
+        // 4. Tri et récupération (Validation stricte de l'ordre pour éviter l'injection SQL)
         $orderBy = "id";
         if ($orderType1 == 1) { $orderBy = "price"; }
         if ($orderType1 == 2) { $orderBy = "views"; }
         
         $orderDir = ($orderType2 == 2) ? "DESC" : "ASC";
         
+        // $limit et $offset sont déjà forcés en (int), donc l'injection est impossible ici
         $sqlData = "SELECT * FROM products WHERE $whereSql ORDER BY $orderBy $orderDir LIMIT $limit OFFSET $offset";
         $productsRaw = $this->doSelect($sqlData, $params);
         
@@ -123,8 +124,10 @@ class ModelSearch extends Model
      */
     public function suggestProducts($keyword)
     {
-        $safeKeyword = strip_tags(trim($keyword));
-        if (strlen($safeKeyword) < 2) {
+        $safeKeyword = htmlspecialchars(trim($keyword), ENT_QUOTES, 'UTF-8');
+        
+        // Utilisation de mb_strlen pour compter correctement les caractères spéciaux (ex: accents)
+        if (mb_strlen($safeKeyword, 'UTF-8') < 2) {
             return [];
         }
         
@@ -135,7 +138,7 @@ class ModelSearch extends Model
     }
 
     /**
-     * Méthode auxiliaire pour calculer les prix remisés (Public pour respecter la classe parente)
+     * Méthode auxiliaire pour calculer les prix remisés
      */
     public function calculateProductsPrices($products)
     {

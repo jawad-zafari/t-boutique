@@ -75,6 +75,7 @@ $activeTab = $data['activeTab'] ?? 'reviews';
                 <div class="reviews-summary-scores">
                     <h5>Critères d'évaluation</h5>
                     <?php if (!empty($paramNames)): foreach ($paramNames as $pId => $pName): 
+                        // SÉCURITÉ : Forçage du typage pour le calcul de la barre de progression
                         $score = isset($paramScores[$pId]) ? (float)$paramScores[$pId] : 3.0;
                     ?>
                         <div class="score-row-item">

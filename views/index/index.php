@@ -8,10 +8,10 @@
             ?>
             <div class="slide" role="group" aria-roledescription="slide">
                 <a href="<?= htmlspecialchars($slide['link'] ?? '#', ENT_QUOTES, 'UTF-8') ?>" class="slide-link-container">
-                    <img src="<?= URL . htmlspecialchars($slide['image_path'], ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($slide['title'], ENT_QUOTES, 'UTF-8') ?>" class="slide-bg">
+                    <img src="<?= URL . htmlspecialchars($slide['image_path'] ?? '', ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($slide['title'] ?? '', ENT_QUOTES, 'UTF-8') ?>" class="slide-bg">
                     
                     <div class="slide-content">
-                        <h2 class="slide-title"><?= htmlspecialchars($slide['title'], ENT_QUOTES, 'UTF-8') ?></h2>
+                        <h2 class="slide-title"><?= htmlspecialchars($slide['title'] ?? '', ENT_QUOTES, 'UTF-8') ?></h2>
                         
                         <?php if(!empty($slide['description'])): ?>
                             <p class="slide-desc"><?= htmlspecialchars($slide['description'], ENT_QUOTES, 'UTF-8') ?></p>
@@ -91,11 +91,12 @@
                     <?php 
                     $brands = $data['brands'] ?? [];
                     if(!empty($brands)): foreach($brands as $brand): 
-                        $brandName = htmlspecialchars($brand['title'], ENT_QUOTES, 'UTF-8');
+                        $brandId = (int)($brand['id'] ?? 0);
+                        $brandName = htmlspecialchars($brand['title'] ?? '', ENT_QUOTES, 'UTF-8');
                     ?>
                     <div class="brands-carousel-item">
-                        <a href="<?= URL ?>Collection/index/category/<?= $brand['id'] ?>/1" class="brand-item-circle" title="<?= $brandName ?>" aria-label="<?= $brandName ?>">
-                            <img src="<?= URL . htmlspecialchars($brand['image_path'], ENT_QUOTES, 'UTF-8') ?>" 
+                        <a href="<?= URL ?>Collection/index/category/<?= $brandId ?>/1" class="brand-item-circle" title="<?= $brandName ?>" aria-label="<?= $brandName ?>">
+                            <img src="<?= URL . htmlspecialchars($brand['image_path'] ?? '', ENT_QUOTES, 'UTF-8') ?>" 
                                  alt="<?= $brandName ?>" 
                                  onerror="this.outerHTML='<span class=\'brand-text-fallback\'><?= addslashes($brandName) ?></span>'">
                         </a>
@@ -122,12 +123,14 @@
             
             <div class="carousel-track">
                 <?php foreach($specialOffers as $product): 
-                    $price = $product['price'] ?? 0;
-                    $discount = $product['discount_percent'] ?? 0;
+                    $price = (float)($product['price'] ?? 0);
+                    $discount = (int)($product['discount_percent'] ?? 0);
                     $hasDiscount = $discount > 0;
+                    $prodId = (int)($product['id'] ?? 0);
+                    $prodTitle = htmlspecialchars($product['title'] ?? '', ENT_QUOTES, 'UTF-8');
                 ?>
                 <div class="product-card hover-glow">
-                    <button type="button" class="btn-favorite-toggle" data-id="<?= $product['id'] ?>" aria-label="Ajouter aux favoris" title="Ajouter aux favoris">
+                    <button type="button" class="btn-favorite-toggle" data-id="<?= $prodId ?>" aria-label="Ajouter aux favoris" title="Ajouter aux favoris">
                         <i class="fa-regular fa-heart" aria-hidden="true"></i>
                     </button>
                     <?php if($hasDiscount): ?>
@@ -136,27 +139,27 @@
                         <div class="badge-item badge-new">Nouveau</div>
                     <?php endif; ?>
                     
-                    <a href="<?= URL ?>Product/index/<?= $product['id'] ?>" class="card-link-wrapper" aria-label="Voir le produit <?= htmlspecialchars($product['title'], ENT_QUOTES, 'UTF-8') ?>">
+                    <a href="<?= URL ?>Product/index/<?= $prodId ?>" class="card-link-wrapper" aria-label="Voir le produit <?= $prodTitle ?>">
                         <div class="image-wrapper">
-                            <img src="<?= URL ?>public/images/products/<?= $product['id'] ?>/product_220.jpg" alt="<?= htmlspecialchars($product['title'], ENT_QUOTES, 'UTF-8') ?>" class="product-img" onerror="this.src='https://placehold.co/220x220/f1f3f5/3b5bdb?text=Produit'">
+                            <img src="<?= URL ?>public/images/products/<?= $prodId ?>/product_220.jpg" alt="<?= $prodTitle ?>" class="product-img" onerror="this.src='https://placehold.co/220x220/f1f3f5/3b5bdb?text=Produit'">
                         </div>
                     </a>
 
                     <div class="card-content">
-                        <a href="<?= URL ?>Product/index/<?= $product['id'] ?>" class="product-title-link">
-                            <h4 class="product-title"><?= htmlspecialchars($product['title'], ENT_QUOTES, 'UTF-8') ?></h4>
+                        <a href="<?= URL ?>Product/index/<?= $prodId ?>" class="product-title-link">
+                            <h4 class="product-title"><?= $prodTitle ?></h4>
                         </a>
                         
                         <div class="price-cart-row">
                             <div class="product-price-container">
                                 <?php if($hasDiscount): ?>
                                     <del class="price-old"><?= number_format($price, 0, ',', ' ') ?> €</del>
-                                    <span class="product-price price-danger"><?= number_format($product['price_total'] ?? 0, 0, ',', ' ') ?> €</span>
+                                    <span class="product-price price-danger"><?= number_format((float)($product['price_total'] ?? 0), 0, ',', ' ') ?> €</span>
                                 <?php else: ?>
                                     <span class="product-price price-primary"><?= number_format($price, 0, ',', ' ') ?> €</span>
                                 <?php endif; ?>
                             </div>
-                            <button type="button" class="btn-quick-add square-btn" data-id="<?= $product['id'] ?>" aria-label="Ajouter au panier" title="Ajouter au panier">
+                            <button type="button" class="btn-quick-add square-btn" data-id="<?= $prodId ?>" aria-label="Ajouter au panier" title="Ajouter au panier">
                                 <i class="fa-solid fa-cart-plus" aria-hidden="true"></i>
                             </button>
                         </div>
@@ -182,12 +185,14 @@
             
             <div class="carousel-track">
                 <?php foreach($latestProducts as $product): 
-                    $price = $product['price'] ?? 0;
-                    $discount = $product['discount_percent'] ?? 0;
+                    $price = (float)($product['price'] ?? 0);
+                    $discount = (int)($product['discount_percent'] ?? 0);
                     $hasDiscount = $discount > 0;
+                    $prodId = (int)($product['id'] ?? 0);
+                    $prodTitle = htmlspecialchars($product['title'] ?? '', ENT_QUOTES, 'UTF-8');
                 ?>
                 <div class="product-card hover-glow">
-                    <button type="button" class="btn-favorite-toggle" data-id="<?= $product['id'] ?>" aria-label="Ajouter aux favoris">
+                    <button type="button" class="btn-favorite-toggle" data-id="<?= $prodId ?>" aria-label="Ajouter aux favoris">
                         <i class="fa-regular fa-heart" aria-hidden="true"></i>
                     </button>
                     <?php if($hasDiscount): ?>
@@ -196,27 +201,27 @@
                         <div class="badge-item badge-new">Nouveau</div>
                     <?php endif; ?>
                     
-                    <a href="<?= URL ?>Product/index/<?= $product['id'] ?>" class="card-link-wrapper" aria-label="Voir le produit <?= htmlspecialchars($product['title'], ENT_QUOTES, 'UTF-8') ?>">
+                    <a href="<?= URL ?>Product/index/<?= $prodId ?>" class="card-link-wrapper" aria-label="Voir le produit <?= $prodTitle ?>">
                         <div class="image-wrapper">
-                            <img src="<?= URL ?>public/images/products/<?= $product['id'] ?>/product_220.jpg" alt="<?= htmlspecialchars($product['title'], ENT_QUOTES, 'UTF-8') ?>" class="product-img" onerror="this.src='https://placehold.co/220x220/f1f3f5/3b5bdb?text=Produit'">
+                            <img src="<?= URL ?>public/images/products/<?= $prodId ?>/product_220.jpg" alt="<?= $prodTitle ?>" class="product-img" onerror="this.src='https://placehold.co/220x220/f1f3f5/3b5bdb?text=Produit'">
                         </div>
                     </a>
 
                     <div class="card-content">
-                        <a href="<?= URL ?>Product/index/<?= $product['id'] ?>" class="product-title-link">
-                            <h4 class="product-title"><?= htmlspecialchars($product['title'], ENT_QUOTES, 'UTF-8') ?></h4>
+                        <a href="<?= URL ?>Product/index/<?= $prodId ?>" class="product-title-link">
+                            <h4 class="product-title"><?= $prodTitle ?></h4>
                         </a>
                         
                         <div class="price-cart-row">
                             <div class="product-price-container">
                                 <?php if($hasDiscount): ?>
                                     <del class="price-old"><?= number_format($price, 0, ',', ' ') ?> €</del>
-                                    <span class="product-price price-danger"><?= number_format($product['price_total'] ?? 0, 0, ',', ' ') ?> €</span>
+                                    <span class="product-price price-danger"><?= number_format((float)($product['price_total'] ?? 0), 0, ',', ' ') ?> €</span>
                                 <?php else: ?>
                                     <span class="product-price price-primary"><?= number_format($price, 0, ',', ' ') ?> €</span>
                                 <?php endif; ?>
                             </div>
-                            <button type="button" class="btn-quick-add square-btn" data-id="<?= $product['id'] ?>" aria-label="Ajouter au panier">
+                            <button type="button" class="btn-quick-add square-btn" data-id="<?= $prodId ?>" aria-label="Ajouter au panier">
                                 <i class="fa-solid fa-cart-plus" aria-hidden="true"></i>
                             </button>
                         </div>
@@ -241,12 +246,14 @@
             
             <div class="carousel-track">
                 <?php foreach($exclusives as $product): 
-                    $price = $product['price'] ?? 0;
-                    $discount = $product['discount_percent'] ?? 0;
+                    $price = (float)($product['price'] ?? 0);
+                    $discount = (int)($product['discount_percent'] ?? 0);
                     $hasDiscount = $discount > 0;
+                    $prodId = (int)($product['id'] ?? 0);
+                    $prodTitle = htmlspecialchars($product['title'] ?? '', ENT_QUOTES, 'UTF-8');
                 ?>
                 <div class="product-card hover-glow">
-                    <button type="button" class="btn-favorite-toggle" data-id="<?= $product['id'] ?>" aria-label="Ajouter aux favoris">
+                    <button type="button" class="btn-favorite-toggle" data-id="<?= $prodId ?>" aria-label="Ajouter aux favoris">
                         <i class="fa-regular fa-heart" aria-hidden="true"></i>
                     </button>
                     <?php if($hasDiscount): ?>
@@ -255,27 +262,27 @@
                         <div class="badge-item badge-new">Nouveau</div>
                     <?php endif; ?>
                     
-                    <a href="<?= URL ?>Product/index/<?= $product['id'] ?>" class="card-link-wrapper">
+                    <a href="<?= URL ?>Product/index/<?= $prodId ?>" class="card-link-wrapper">
                         <div class="image-wrapper">
-                            <img src="<?= URL ?>public/images/products/<?= $product['id'] ?>/product_220.jpg" alt="<?= htmlspecialchars($product['title'], ENT_QUOTES, 'UTF-8') ?>" class="product-img" onerror="this.src='https://placehold.co/220x220/f1f3f5/3b5bdb?text=Produit'">
+                            <img src="<?= URL ?>public/images/products/<?= $prodId ?>/product_220.jpg" alt="<?= $prodTitle ?>" class="product-img" onerror="this.src='https://placehold.co/220x220/f1f3f5/3b5bdb?text=Produit'">
                         </div>
                     </a>
 
                     <div class="card-content">
-                        <a href="<?= URL ?>Product/index/<?= $product['id'] ?>" class="product-title-link">
-                            <h4 class="product-title"><?= htmlspecialchars($product['title'], ENT_QUOTES, 'UTF-8') ?></h4>
+                        <a href="<?= URL ?>Product/index/<?= $prodId ?>" class="product-title-link">
+                            <h4 class="product-title"><?= $prodTitle ?></h4>
                         </a>
                         
                         <div class="price-cart-row">
                             <div class="product-price-container">
                                 <?php if($hasDiscount): ?>
                                     <del class="price-old"><?= number_format($price, 0, ',', ' ') ?> €</del>
-                                    <span class="product-price price-danger"><?= number_format($product['price_total'] ?? 0, 0, ',', ' ') ?> €</span>
+                                    <span class="product-price price-danger"><?= number_format((float)($product['price_total'] ?? 0), 0, ',', ' ') ?> €</span>
                                 <?php else: ?>
                                     <span class="product-price price-primary"><?= number_format($price, 0, ',', ' ') ?> €</span>
                                 <?php endif; ?>
                             </div>
-                            <button type="button" class="btn-quick-add square-btn" data-id="<?= $product['id'] ?>" aria-label="Ajouter au panier">
+                            <button type="button" class="btn-quick-add square-btn" data-id="<?= $prodId ?>" aria-label="Ajouter au panier">
                                 <i class="fa-solid fa-cart-plus" aria-hidden="true"></i>
                             </button>
                         </div>
@@ -300,12 +307,14 @@
             
             <div class="carousel-track">
                 <?php foreach($mostViewed as $product): 
-                    $price = $product['price'] ?? 0;
-                    $discount = $product['discount_percent'] ?? 0;
+                    $price = (float)($product['price'] ?? 0);
+                    $discount = (int)($product['discount_percent'] ?? 0);
                     $hasDiscount = $discount > 0;
+                    $prodId = (int)($product['id'] ?? 0);
+                    $prodTitle = htmlspecialchars($product['title'] ?? '', ENT_QUOTES, 'UTF-8');
                 ?>
                 <div class="product-card hover-glow">
-                    <button type="button" class="btn-favorite-toggle" data-id="<?= $product['id'] ?>" aria-label="Ajouter aux favoris">
+                    <button type="button" class="btn-favorite-toggle" data-id="<?= $prodId ?>" aria-label="Ajouter aux favoris">
                         <i class="fa-regular fa-heart" aria-hidden="true"></i>
                     </button>
                     <?php if($hasDiscount): ?>
@@ -314,27 +323,27 @@
                         <div class="badge-item badge-new">Nouveau</div>
                     <?php endif; ?>
                     
-                    <a href="<?= URL ?>Product/index/<?= $product['id'] ?>" class="card-link-wrapper">
+                    <a href="<?= URL ?>Product/index/<?= $prodId ?>" class="card-link-wrapper">
                         <div class="image-wrapper">
-                            <img src="<?= URL ?>public/images/products/<?= $product['id'] ?>/product_220.jpg" alt="<?= htmlspecialchars($product['title'], ENT_QUOTES, 'UTF-8') ?>" class="product-img" onerror="this.src='https://placehold.co/220x220/f1f3f5/3b5bdb?text=Produit'">
+                            <img src="<?= URL ?>public/images/products/<?= $prodId ?>/product_220.jpg" alt="<?= $prodTitle ?>" class="product-img" onerror="this.src='https://placehold.co/220x220/f1f3f5/3b5bdb?text=Produit'">
                         </div>
                     </a>
 
                     <div class="card-content">
-                        <a href="<?= URL ?>Product/index/<?= $product['id'] ?>" class="product-title-link">
-                            <h4 class="product-title"><?= htmlspecialchars($product['title'], ENT_QUOTES, 'UTF-8') ?></h4>
+                        <a href="<?= URL ?>Product/index/<?= $prodId ?>" class="product-title-link">
+                            <h4 class="product-title"><?= $prodTitle ?></h4>
                         </a>
                         
                         <div class="price-cart-row">
                             <div class="product-price-container">
                                 <?php if($hasDiscount): ?>
                                     <del class="price-old"><?= number_format($price, 0, ',', ' ') ?> €</del>
-                                    <span class="product-price price-danger"><?= number_format($product['price_total'] ?? 0, 0, ',', ' ') ?> €</span>
+                                    <span class="product-price price-danger"><?= number_format((float)($product['price_total'] ?? 0), 0, ',', ' ') ?> €</span>
                                 <?php else: ?>
                                     <span class="product-price price-primary"><?= number_format($price, 0, ',', ' ') ?> €</span>
                                 <?php endif; ?>
                             </div>
-                            <button type="button" class="btn-quick-add square-btn" data-id="<?= $product['id'] ?>" aria-label="Ajouter au panier">
+                            <button type="button" class="btn-quick-add square-btn" data-id="<?= $prodId ?>" aria-label="Ajouter au panier">
                                 <i class="fa-solid fa-cart-plus" aria-hidden="true"></i>
                             </button>
                         </div>
@@ -357,8 +366,8 @@
             <div class="tv-carousel-track" id="tvCarouselTrack">
                 <?php
                 $tvSettings = $data['tv_settings'] ?? [];
-                $tvCover = !empty($tvSettings['tv_cover_image']) ? URL . $tvSettings['tv_cover_image'] : 'https://placehold.co/600x400/1a1a2e/ffffff?text=Boutique+TV+1';
-                $tvLink = !empty($tvSettings['tv_video_link']) ? $tvSettings['tv_video_link'] : 'https://www.youtube.com/embed/tgbNymZ7vqY';
+                $tvCover = !empty($tvSettings['tv_cover_image']) ? URL . htmlspecialchars($tvSettings['tv_cover_image'], ENT_QUOTES, 'UTF-8') : 'https://placehold.co/600x400/1a1a2e/ffffff?text=Boutique+TV+1';
+                $tvLink = !empty($tvSettings['tv_video_link']) ? htmlspecialchars($tvSettings['tv_video_link'], ENT_QUOTES, 'UTF-8') : 'https://www.youtube.com/embed/tgbNymZ7vqY';
                 
                 $tvItems = $data['tv_items'] ?? [
                     ['video_link' => $tvLink, 'cover_image' => $tvCover, 'title' => 'Présentation de notre Boutique'],
@@ -367,8 +376,8 @@
                 ];
 
                 foreach($tvItems as $item):
-                    $vLink = htmlspecialchars($item['video_link'], ENT_QUOTES, 'UTF-8');
-                    $vCover = htmlspecialchars($item['cover_image'], ENT_QUOTES, 'UTF-8');
+                    $vLink = htmlspecialchars($item['video_link'] ?? '', ENT_QUOTES, 'UTF-8');
+                    $vCover = htmlspecialchars($item['cover_image'] ?? '', ENT_QUOTES, 'UTF-8');
                     $vTitle = htmlspecialchars($item['title'] ?? 'Vidéo TV', ENT_QUOTES, 'UTF-8');
                 ?>
                 <div class="tv-carousel-item" data-video-src="<?= $vLink ?>">
@@ -386,7 +395,7 @@
             <div class="section-header">
                 <h3 class="section-title"><i class="fa-regular fa-newspaper" aria-hidden="true"></i> Dernières actualités</h3>
                 <div class="header-nav-buttons">
-                    <button type="button" class="nav-btn prev" id="newsBtnPrev" aria-label="Actualités précédentes"><i class="fa-solid fa-angle-left" aria-hidden="true"></i></button>
+                    <button type="button" class="nav-btn prev" id="newsBtnPrev" aria-label="Actualités便利な"><i class="fa-solid fa-angle-left" aria-hidden="true"></i></button>
                     <button type="button" class="nav-btn next" id="newsBtnNext" aria-label="Actualités suivantes"><i class="fa-solid fa-angle-right" aria-hidden="true"></i></button>
                 </div>
             </div>
@@ -395,10 +404,10 @@
                 <?php 
                 $newsList = $data['latest_news'] ?? [];
                 if(!empty($newsList)): foreach($newsList as $news): 
-                    $newsTitle = htmlspecialchars($news['title'], ENT_QUOTES, 'UTF-8');
+                    $newsTitle = htmlspecialchars($news['title'] ?? '', ENT_QUOTES, 'UTF-8');
                     $newsDesc = htmlspecialchars($news['short_desc'] ?? '', ENT_QUOTES, 'UTF-8');
-                    $newsImg = URL . htmlspecialchars($news['image_path'], ENT_QUOTES, 'UTF-8');
-                    $newsDate = Model::MiladiTojalili($news['created_at']);
+                    $newsImg = URL . htmlspecialchars($news['image_path'] ?? '', ENT_QUOTES, 'UTF-8');
+                    $newsDate = htmlspecialchars(Model::MiladiTojalili($news['created_at'] ?? ''), ENT_QUOTES, 'UTF-8');
                 ?>
                 <div class="news-card clickable-news-item hover-glow" role="button" tabindex="0" data-title="<?= $newsTitle ?>" data-desc="<?= $newsDesc ?>" data-img="<?= $newsImg ?>" data-date="<?= $newsDate ?>">
                     <div class="news-card-img">
@@ -407,7 +416,7 @@
                     <div class="news-card-body">
                         <span class="news-date"><?= $newsDate ?></span>
                         <h4 class="news-title"><?= $newsTitle ?></h4>
-                        <p class="news-excerpt"><?= mb_strimwidth($newsDesc, 0, 80, '...') ?></p>
+                        <p class="news-excerpt"><?= htmlspecialchars(mb_strimwidth($news['short_desc'] ?? '', 0, 80, '...'), ENT_QUOTES, 'UTF-8') ?></p>
                         <span class="news-read-more">Lire la suite <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
                     </div>
                 </div>

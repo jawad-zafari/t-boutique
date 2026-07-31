@@ -1,8 +1,9 @@
 <?php
 
 /**
- * Model ModelIndex
- * Sécurisé contre les injections SQL (Forçage du typage des limites)
+ * Model: ModelIndex
+ * Gère les requêtes de la page d'accueil.
+ * Sécurité: Prévention des injections SQL via PDO et conversion de type (casting).
  */
 class ModelIndex extends Model
 {
@@ -19,6 +20,7 @@ class ModelIndex extends Model
 
     public function getSpecialOffers()
     {
+        // SÉCURITÉ : Utilisation de requête préparée avec PDO (?)
         $sql = "SELECT * FROM products WHERE is_special_offer = ?";
         $result = $this->doSelect($sql, [1]);
 
@@ -43,8 +45,9 @@ class ModelIndex extends Model
 
     public function getExclusiveProducts()
     {
-        $sql = "SELECT * FROM products WHERE is_exclusive = 1";
-        $result = $this->doSelect($sql);
+        // SÉCURITÉ : Utilisation de requête préparée
+        $sql = "SELECT * FROM products WHERE is_exclusive = ?";
+        $result = $this->doSelect($sql, [1]);
 
         foreach ($result as $key => $row) {
             $priceCalculate = $this->calculateDiscount($row['price'], $row['discount_percent']);
@@ -55,10 +58,11 @@ class ModelIndex extends Model
 
     public function getMostViewedProducts()
     {
-        $sqlLimit = "SELECT * FROM settings WHERE setting_key = 'limit_slider'";
-        $resultLimit = $this->doSelect($sqlLimit, [], true);
+        // SÉCURITÉ : Requête préparée pour récupérer la limite
+        $sqlLimit = "SELECT * FROM settings WHERE setting_key = ?";
+        $resultLimit = $this->doSelect($sqlLimit, ['limit_slider'], true);
         
-        // SÉCURITÉ : Forcer en entier (Integer) pour éviter une injection SQL via la limite
+        // SÉCURITÉ : Forçage du type en entier (Integer) pour prévenir l'injection SQL
         $limit = isset($resultLimit['setting_value']) ? (int)$resultLimit['setting_value'] : 10;
 
         $sql = "SELECT * FROM products ORDER BY views DESC LIMIT " . $limit;
@@ -73,10 +77,11 @@ class ModelIndex extends Model
 
     public function getLatestProducts()
     {
-        $sqlLimit = "SELECT * FROM settings WHERE setting_key = 'limit_slider'";
-        $resultLimit = $this->doSelect($sqlLimit, [], true);
+        // SÉCURITÉ : Requête préparée
+        $sqlLimit = "SELECT * FROM settings WHERE setting_key = ?";
+        $resultLimit = $this->doSelect($sqlLimit, ['limit_slider'], true);
         
-        // SÉCURITÉ : Forcer en entier
+        // SÉCURITÉ : Forçage du type (Integer)
         $limit = isset($resultLimit['setting_value']) ? (int)$resultLimit['setting_value'] : 10;
 
         $sql = "SELECT * FROM products ORDER BY id DESC LIMIT " . $limit;
@@ -94,7 +99,7 @@ class ModelIndex extends Model
      */
     public function getLatestNews($limit = 3)
     {
-        // SÉCURITÉ : Forcer en entier
+        // SÉCURITÉ : Forçage du type (Integer)
         $safeLimit = (int)$limit;
         $sql = "SELECT * FROM news ORDER BY id DESC LIMIT " . $safeLimit;
         return $this->doSelect($sql);
@@ -105,10 +110,11 @@ class ModelIndex extends Model
      */
     public function getBrands($limit = 6)
     {
-        // SÉCURITÉ : Forcer en entier
+        // SÉCURITÉ : Forçage du type (Integer)
         $safeLimit = (int)$limit;
-        $sql = "SELECT * FROM categories WHERE is_brand = 1 ORDER BY id DESC LIMIT " . $safeLimit;
-        return $this->doSelect($sql);
+        // SÉCURITÉ : Utilisation de requête préparée
+        $sql = "SELECT * FROM categories WHERE is_brand = ? ORDER BY id DESC LIMIT " . $safeLimit;
+        return $this->doSelect($sql, [1]);
     }
 
     /**

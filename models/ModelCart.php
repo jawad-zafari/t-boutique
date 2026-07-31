@@ -3,7 +3,7 @@
 /**
  * Modèle ModelCart
  * Gère la logique des données du panier (Ajout, Mise à jour, Suppression).
- * Sécurité DWWM : Requêtes préparées PDO et typage strict (Integer Casting).
+ * Sécurité DWWM : Requêtes préparées PDO, typage strict (Integer Casting) et protection IDOR.
  */
 class ModelCart extends Model
 {
@@ -23,9 +23,12 @@ class ModelCart extends Model
         // SÉCURITÉ CRITIQUE : Transtypage (Casting) en entier pur (int)
         // Empêche toute injection SQL si un utilisateur manipule l'ID dans la requête AJAX
         $safeCartRowId = (int) $cartRowId;
-        
-        $sql = "DELETE FROM cart_items WHERE id = ?";
-        $this->doQuery($sql, [$safeCartRowId]);
+        $cookie = parent::getCartCookie();
+
+        // PROTECTION IDOR : on vérifie que la ligne appartient bien au panier (cookie) de l'appelant
+        // avant de la supprimer, pour empêcher un visiteur de modifier le panier d'un autre visiteur
+        $sql = "DELETE FROM cart_items WHERE id = ? AND session_cookie = ?";
+        $this->doQuery($sql, [$safeCartRowId, $cookie]);
     }
 
     public function updateCartItem($data)
@@ -33,11 +36,13 @@ class ModelCart extends Model
         // SÉCURITÉ : Nettoyage et typage strict des données entrantes
         $quantity = (int) ($data['quantity'] ?? 1);
         $cartRowId = (int) ($data['cartRow'] ?? 0);
+        $cookie = parent::getCartCookie();
 
         // On s'assure que la quantité et l'ID sont valides avant d'exécuter la requête
         if ($quantity > 0 && $cartRowId > 0) {
-            $sql = "UPDATE cart_items SET quantity = ? WHERE id = ?";
-            $this->doQuery($sql, [$quantity, $cartRowId]);
+            // PROTECTION IDOR : on vérifie que la ligne appartient bien au panier (cookie) de l'appelant
+            $sql = "UPDATE cart_items SET quantity = ? WHERE id = ? AND session_cookie = ?";
+            $this->doQuery($sql, [$quantity, $cartRowId, $cookie]);
         }
     }
 

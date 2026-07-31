@@ -22,7 +22,7 @@ $totalPriceAll = $data['priceTotalAll'] ?? 0;
                 <div class="cart-product-card" data-row="<?= (int)$currentRowId ?>">
                     
                     <div class="product-image-box">
-                        <img src="<?= URL ?>public/images/products/<?= (int)$row['id'] ?>/product_220.jpg" alt="<?= htmlspecialchars($row['title'] ?? 'Produit', ENT_QUOTES, 'UTF-8') ?>" onerror="this.src='https://placehold.co/100x100/f1f3f5/3b5bdb?text=Produit'">
+                        <img src="<?= URL ?>public/images/products/<?= (int)$row['id'] ?>/product_220.jpg" alt="<?= htmlspecialchars($row['title'] ?? 'Produit', ENT_QUOTES, 'UTF-8') ?>" class="product-thumbnail-img">
                     </div>
 
                     <div class="product-info-box">
