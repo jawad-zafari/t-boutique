@@ -395,7 +395,7 @@
             <div class="section-header">
                 <h3 class="section-title"><i class="fa-regular fa-newspaper" aria-hidden="true"></i> Dernières actualités</h3>
                 <div class="header-nav-buttons">
-                    <button type="button" class="nav-btn prev" id="newsBtnPrev" aria-label="Actualités便利な"><i class="fa-solid fa-angle-left" aria-hidden="true"></i></button>
+                    <button type="button" class="nav-btn prev" id="newsBtnPrev" aria-label="Actualités précédentes"><i class="fa-solid fa-angle-left" aria-hidden="true"></i></button>
                     <button type="button" class="nav-btn next" id="newsBtnNext" aria-label="Actualités suivantes"><i class="fa-solid fa-angle-right" aria-hidden="true"></i></button>
                 </div>
             </div>
@@ -407,7 +407,9 @@
                     $newsTitle = htmlspecialchars($news['title'] ?? '', ENT_QUOTES, 'UTF-8');
                     $newsDesc = htmlspecialchars($news['short_desc'] ?? '', ENT_QUOTES, 'UTF-8');
                     $newsImg = URL . htmlspecialchars($news['image_path'] ?? '', ENT_QUOTES, 'UTF-8');
-                    $newsDate = htmlspecialchars(Model::MiladiTojalili($news['created_at'] ?? ''), ENT_QUOTES, 'UTF-8');
+                    
+                    // UTILISATION DE LA FONCTION STANDARD
+                    $newsDate = htmlspecialchars(Model::formatDateForDisplay($news['created_at'] ?? ''), ENT_QUOTES, 'UTF-8');
                 ?>
                 <div class="news-card clickable-news-item hover-glow" role="button" tabindex="0" data-title="<?= $newsTitle ?>" data-desc="<?= $newsDesc ?>" data-img="<?= $newsImg ?>" data-date="<?= $newsDate ?>">
                     <div class="news-card-img">

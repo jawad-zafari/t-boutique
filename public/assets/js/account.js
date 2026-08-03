@@ -1,18 +1,19 @@
 /**
  * Logique JavaScript globale pour l'espace Client (SPA Dashboard)
- * Document Clean Code - Vanilla JS 
- * Sécurité: Protection CSRF stricte & DOM-based XSS prévention (createElement)
+ * Document Clean Code - Vanilla JS (Sécurisé CSRF)
  */
 document.addEventListener("DOMContentLoaded", () => {
     
+    // Récupération dynamique de l'URL de base
     const baseTag = document.querySelector('base');
     const baseUrl = baseTag ? baseTag.getAttribute('href') : '/';
 
+    // Récupération du jeton CSRF depuis l'attribut data-csrf
     const dashboardWrapper = document.getElementById('mainAccountDashboard');
     const csrfToken = dashboardWrapper ? dashboardWrapper.getAttribute('data-csrf') : '';
 
     // =========================================================================
-    // SYSTÈME DE TOAST PERSONNALISÉ (Sécurisé)
+    // SYSTÈME DE TOAST PERSONNALISÉ (Notifications)
     // =========================================================================
     function showAccountToast(message, type = 'danger') {
         let toast = document.getElementById('accountToastNotification');
@@ -33,13 +34,13 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         toast.style.backgroundColor = (type === 'danger') ? '#e03131' : '#2b8a3e';
-        toast.innerHTML = ''; // Nettoyage initial sécurisé
+        toast.innerHTML = '';
         
         const icon = document.createElement('i');
         icon.className = (type === 'danger') ? 'fa-solid fa-circle-exclamation' : 'fa-solid fa-circle-check';
         icon.style.marginRight = '10px';
         
-        // SÉCURITÉ CRITIQUE : Utilisation de textNode pour prévenir toute injection XSS
+        // SÉCURITÉ : Anti-XSS via textNode
         const textNode = document.createTextNode(message); 
 
         toast.appendChild(icon);
@@ -55,7 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // =========================================================================
-    // 1. GESTION DES ONGLETS DU DASHBOARD (SPA avec persistance)
+    // 1. GESTION DES ONGLETS DU DASHBOARD (Single Page Application)
     // =========================================================================
     const navItems = document.querySelectorAll('.account-nav-list .nav-item[data-target]');
     const tabContents = document.querySelectorAll('.account-tab-content');
@@ -71,7 +72,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (activeNav && targetContent) {
             activeNav.classList.add('active');
             targetContent.classList.add('active');
-            // Persistance de l'état pour une meilleure UX
             sessionStorage.setItem('activeDashboardTab', targetId);
         }
     }
@@ -87,7 +87,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Vérification des paramètres URL pour forcer l'affichage de l'onglet Infos
+    // Gestion du routage après soumission (PRG Pattern)
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('success') || urlParams.has('error')) {
         switchTab('tabInfo');
@@ -111,12 +111,14 @@ document.addEventListener("DOMContentLoaded", () => {
         btn.addEventListener('click', function() {
             const input = this.previousElementSibling;
             const icon = this.querySelector('i');
-            if (input && input.type === 'password') {
+            if(input.type === 'password') {
                 input.type = 'text';
-                if(icon) { icon.classList.remove('fa-eye'); icon.classList.add('fa-eye-slash'); }
-            } else if (input) {
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
                 input.type = 'password';
-                if(icon) { icon.classList.remove('fa-eye-slash'); icon.classList.add('fa-eye'); }
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
             }
         });
     });
@@ -124,26 +126,66 @@ document.addEventListener("DOMContentLoaded", () => {
     // =========================================================================
     // 3. GESTION DES MODALES (Déconnexion & Suppression)
     // =========================================================================
-    const openModal = (id) => {
-        const el = document.getElementById(id);
-        if (el) el.classList.add('active');
-    };
-    const closeModal = (id) => {
-        const el = document.getElementById(id);
-        if (el) el.classList.remove('active');
-    };
+    const btnOpenDeleteModal = document.getElementById('btnOpenDeleteModal');
+    const deleteModal = document.getElementById('deleteAccountModal');
+    const btnCancelDelete = document.getElementById('btnCancelDelete');
 
-    document.getElementById('btnOpenDeleteModal')?.addEventListener('click', () => openModal('deleteAccountModal'));
-    document.getElementById('btnCancelDelete')?.addEventListener('click', () => closeModal('deleteAccountModal'));
+    const btnOpenLogoutModal = document.getElementById('btnOpenLogoutModal');
+    const logoutModal = document.getElementById('logoutModal');
+    const btnCancelLogout = document.getElementById('btnCancelLogout');
 
-    document.getElementById('btnOpenLogoutModal')?.addEventListener('click', () => openModal('logoutModal'));
-    document.getElementById('btnCancelLogout')?.addEventListener('click', () => closeModal('logoutModal'));
+    if (btnOpenDeleteModal && deleteModal) {
+        btnOpenDeleteModal.addEventListener('click', () => { deleteModal.classList.add('active'); });
+        if(btnCancelDelete) btnCancelDelete.addEventListener('click', () => { deleteModal.classList.remove('active'); });
+    }
+
+    if (btnOpenLogoutModal && logoutModal) {
+        btnOpenLogoutModal.addEventListener('click', () => { logoutModal.classList.add('active'); });
+        if(btnCancelLogout) btnCancelLogout.addEventListener('click', () => { logoutModal.classList.remove('active'); });
+    }
 
     // =========================================================================
-    // 4. GESTION DES DÉTAILS DE LA COMMANDE (Sécurisé Anti-XSS)
+    // 4. ACTIVATION D'UN CODE DE REDUCTION
+    // =========================================================================
+    const btnActivateVoucher = document.getElementById('btnActivateVoucher');
+    const voucherInput = document.getElementById('voucherCode');
+
+    if (btnActivateVoucher && voucherInput) {
+        btnActivateVoucher.addEventListener('click', async () => {
+            const codeValue = voucherInput.value.trim();
+            if (codeValue === "") {
+                showAccountToast("Veuillez saisir un code de réduction valide.");
+                return;
+            }
+            try {
+                const params = new URLSearchParams();
+                params.append('code', codeValue);
+                params.append('csrf_token', csrfToken);
+
+                const response = await fetch(`${baseUrl}Account/activateVoucher`, {
+                    method: 'POST',
+                    body: params
+                });
+                
+                if (response.ok) {
+                    sessionStorage.setItem('activeDashboardTab', 'tabVouchers');
+                    window.location.reload(); 
+                } else {
+                    showAccountToast("Le code saisi est invalide ou expiré.");
+                }
+            } catch (error) { 
+                console.error(error); 
+                showAccountToast("Erreur de connexion au serveur.");
+            }
+        });
+    }
+
+    // =========================================================================
+    // 5. GESTION DES DÉTAILS DE LA COMMANDE (MODALE AJAX)
     // =========================================================================
     const btnViewOrders = document.querySelectorAll('.btn-view-order');
     const orderModal = document.getElementById('orderDetailsModal');
+    const btnCloseOrderModal = document.getElementById('btnCloseOrderModal');
     
     const loader = document.getElementById('orderDetailsLoader');
     const content = document.getElementById('orderDetailsContent');
@@ -152,15 +194,12 @@ document.addEventListener("DOMContentLoaded", () => {
         btnViewOrders.forEach(btn => {
             btn.addEventListener('click', async function() {
                 const orderId = this.getAttribute('data-id');
-                if (!orderId) return;
                 
                 orderModal.classList.add('active');
-                if (loader) loader.style.display = 'block';
-                if (content) content.style.display = 'none';
+                loader.style.display = 'block';
+                content.style.display = 'none';
                 
-                const refElem = document.getElementById('modalOrderRef');
-                // SÉCURITÉ : textContent utilisé à la place de innerHTML
-                if (refElem) refElem.textContent = '#' + orderId;
+                document.getElementById('modalOrderRef').textContent = '#' + orderId;
 
                 try {
                     const response = await fetch(`${baseUrl}Account/getOrderDetails/${orderId}`);
@@ -170,96 +209,63 @@ document.addEventListener("DOMContentLoaded", () => {
                         const order = data.order;
                         const products = data.products;
 
-                        document.getElementById('modalOrderDate').textContent = order.created_date || '';
+                        document.getElementById('modalOrderDate').textContent = order.created_date;
+                        document.getElementById('modalOrderStatus').innerHTML = (order.is_paid == 1) ? '<span class="status-badge-paid">Payée</span>' : '<span class="status-badge-pending">En attente</span>';
                         document.getElementById('modalOrderAddress').textContent = order.address_data || 'Adresse non spécifiée';
-                        
-                        const statusContainer = document.getElementById('modalOrderStatus');
-                        if (statusContainer) {
-                            statusContainer.innerHTML = '';
-                            const statusSpan = document.createElement('span');
-                            statusSpan.className = (order.is_paid == 1) ? 'status-badge-paid' : 'status-badge-pending';
-                            statusSpan.textContent = (order.is_paid == 1) ? 'Payée' : 'En attente';
-                            statusContainer.appendChild(statusSpan);
-                        }
                         
                         document.getElementById('modalOrderShipping').textContent = parseFloat(order.shipping_price) > 0 ? new Intl.NumberFormat('fr-FR').format(order.shipping_price) + ' €' : 'Gratuit';
                         document.getElementById('modalOrderTotal').textContent = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2 }).format(order.total_amount) + ' €';
 
                         const productsContainer = document.getElementById('modalOrderProducts');
-                        if (productsContainer) {
-                            productsContainer.innerHTML = ''; // Nettoyage
+                        productsContainer.innerHTML = '';
 
-                            if (products && products.length > 0) {
-                                products.forEach(p => {
-                                    const qty = p.tedad || p.quantity || 1;
-                                    const price = p.price || 0;
-                                    const totalPrice = qty * price;
-                                    const imgSrc = `${baseUrl}public/images/products/${parseInt(p.id)}/product_220.jpg`;
-                                    
-                                    // SÉCURITÉ : Création stricte des éléments du DOM (DOM Building)
-                                    const itemDiv = document.createElement('div');
-                                    itemDiv.className = 'modal-product-item';
-
-                                    const imgContainer = document.createElement('div');
-                                    imgContainer.className = 'product-img';
-                                    const img = document.createElement('img');
-                                    img.src = imgSrc;
-                                    img.alt = p.title || 'Produit';
-                                    img.onerror = function() { this.src = 'https://placehold.co/60x60/f8f9fa/adb5bd?text=Image'; };
-                                    imgContainer.appendChild(img);
-
-                                    const detailsContainer = document.createElement('div');
-                                    detailsContainer.className = 'product-details';
-                                    
-                                    const titleDiv = document.createElement('div');
-                                    titleDiv.className = 'product-title';
-                                    titleDiv.textContent = p.title || 'Produit inconnu'; // Injection sécurisée
-
-                                    const metaDiv = document.createElement('div');
-                                    metaDiv.className = 'product-meta';
-                                    metaDiv.textContent = `Quantité : ${qty}`;
-
-                                    detailsContainer.appendChild(titleDiv);
-                                    detailsContainer.appendChild(metaDiv);
-
-                                    const priceDiv = document.createElement('div');
-                                    priceDiv.className = 'product-price';
-                                    priceDiv.textContent = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2 }).format(totalPrice) + ' €';
-
-                                    itemDiv.appendChild(imgContainer);
-                                    itemDiv.appendChild(detailsContainer);
-                                    itemDiv.appendChild(priceDiv);
-
-                                    productsContainer.appendChild(itemDiv);
-                                });
-                            } else {
-                                const emptyMsg = document.createElement('p');
-                                emptyMsg.className = 'text-muted-color';
-                                emptyMsg.textContent = 'Détails des articles indisponibles.';
-                                productsContainer.appendChild(emptyMsg);
-                            }
+                        if (products && products.length > 0) {
+                            products.forEach(p => {
+                                // SÉCURITÉ DWWM : Utilisation stricte de la variable 'quantity'
+                                const qty = p.quantity || 1;
+                                const price = p.price || 0;
+                                const totalPrice = qty * price;
+                                const imgSrc = `${baseUrl}public/images/products/${p.id}/product_220.jpg`;
+                                
+                                const html = `
+                                <div class="modal-product-item">
+                                    <div class="product-img">
+                                        <img src="${imgSrc}" alt="" onerror="this.src='https://placehold.co/60x60/f8f9fa/adb5bd?text=Image'">
+                                    </div>
+                                    <div class="product-details">
+                                        <div class="product-title">${p.title.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>
+                                        <div class="product-meta">Quantité : ${qty}</div>
+                                    </div>
+                                    <div class="product-price">${new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2 }).format(totalPrice)} €</div>
+                                </div>`;
+                                productsContainer.insertAdjacentHTML('beforeend', html);
+                            });
+                        } else {
+                            productsContainer.innerHTML = '<p class="text-muted-color">Détails des articles indisponibles.</p>';
                         }
 
-                        if (loader) loader.style.display = 'none';
-                        if (content) content.style.display = 'block';
+                        loader.style.display = 'none';
+                        content.style.display = 'block';
 
                     } else {
                         showAccountToast(data.message);
-                        closeModal('orderDetailsModal');
+                        orderModal.classList.remove('active');
                     }
                 } catch (error) {
                     console.error("Erreur Fetch Order Details", error);
                     showAccountToast("Une erreur s'est produite lors de la récupération des données.");
-                    closeModal('orderDetailsModal');
+                    orderModal.classList.remove('active');
                 }
             });
         });
     }
 
-    document.getElementById('btnCloseOrderModal')?.addEventListener('click', () => closeModal('orderDetailsModal'));
+    if (btnCloseOrderModal) {
+        btnCloseOrderModal.addEventListener('click', () => { orderModal.classList.remove('active'); });
+    }
 
     // =========================================================================
-    // 5. AJOUT AU PANIER DEPUIS LA PAGE FAVORIS (AJAX + CSRF)
+    // 6. AJOUT AU PANIER DEPUIS LA PAGE FAVORIS (AJAX)
     // =========================================================================
     document.addEventListener('click', async (e) => {
         const btnAdd = e.target.closest('.btn-quick-add');
@@ -273,7 +279,6 @@ document.addEventListener("DOMContentLoaded", () => {
             btnAdd.disabled = true;
 
             try {
-                // SÉCURITÉ : Récupération du jeton CSRF
                 let csrfForCart = csrfToken;
                 if(!csrfForCart) {
                     const csrfInput = document.querySelector('input[name="csrf_token"]');
@@ -299,7 +304,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     
                     let totalCount = 0;
                     if(Array.isArray(cartItems)) {
-                        cartItems.forEach(item => totalCount += parseInt(item.quantity || item.tedad || 1, 10));
+                        // SÉCURITÉ DWWM : Utilisation stricte de la variable 'quantity'
+                        cartItems.forEach(item => totalCount += parseInt(item.quantity || 1, 10));
                     } else if (responseData.totalItems) {
                         totalCount = parseInt(responseData.totalItems, 10);
                     }

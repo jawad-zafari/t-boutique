@@ -97,7 +97,7 @@ class Controller
             if (!isset($data['cartCount'])) {
                 $cartCount = 0;
                 foreach ($data['cartItems'] as $item) {
-                    $cartCount += (int)($item['quantity'] ?? $item['tedad'] ?? 1);
+                    $cartCount += (int)($item['quantity'] ?? 1);
                 }
                 $data['cartCount'] = $cartCount;
             }

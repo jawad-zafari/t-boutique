@@ -2,7 +2,8 @@
 
 /**
  * Classe App (Routeur principal du système MVC)
- * Analyse l'URL et charge le contrôleur, la méthode et les paramètres correspondants.
+ * Analyse l'URL et charge dynamiquement le contrôleur et la méthode correspondants.
+ * Conforme aux exigences DWWM : Protection contre les failles LFI (Local File Inclusion).
  */
 class App
 {
@@ -17,7 +18,6 @@ class App
             $url = $this->parseUrl($_GET['url']);
 
             if (!empty($url[0])) {
-                // Formater le nom du contrôleur (Ex: "adminProduct" -> "AdminProduct")
                 $this->controller = ucfirst($url[0]);
                 unset($url[0]);
             }
@@ -27,30 +27,29 @@ class App
                 unset($url[1]);
             }
 
-            // Réindexer le tableau des paramètres
+            // Réindexer le tableau des paramètres restants
             $this->params = array_values($url);
         }
 
-        // 2. VALIDATION DE SÉCURITÉ : Bloquer les caractères spéciaux (Prévention LFI / Path Traversal)
+        // 2. SÉCURITÉ DWWM : Bloquer les caractères spéciaux (Prévention LFI / Path Traversal)
         if (!preg_match('/^[a-zA-Z0-9_]+$/', $this->controller) || !preg_match('/^[a-zA-Z0-9_]+$/', $this->method)) {
             die("Erreur de sécurité : Caractères non autorisés détectés dans l'URL.");
         }
 
-        // 3. Vérification de l'existence du fichier contrôleur
+        // 3. Chargement sécurisé du contrôleur
         $controllerPath = 'controllers/' . $this->controller . '.php';
 
         if (file_exists($controllerPath)) {
             require_once $controllerPath;
 
-            // Vérifier si la classe existe dans le fichier chargé
             if (class_exists($this->controller)) {
                 $controllerObject = new $this->controller();
 
-                // 4. SÉCURITÉ DWWM : Réflexion pour vérifier que la méthode est publique et déclarée dans le contrôleur enfant
+                // 4. Vérification de l'existence de la méthode dans le contrôleur enfant
                 if (method_exists($controllerObject, $this->method)) {
                     $reflection = new ReflectionMethod($controllerObject, $this->method);
 
-                    // Empêcher l'exécution des méthodes héritées (ex: view, generateCsrfToken) ou non publiques
+                    // SÉCURITÉ : Empêcher l'exécution de méthodes héritées ou non publiques
                     if ($reflection->isPublic() && $reflection->getDeclaringClass()->getName() === $this->controller) {
                         call_user_func_array([$controllerObject, $this->method], $this->params);
                     } else {
@@ -69,7 +68,7 @@ class App
 
     /**
      * Nettoie et découpe l'URL passée en paramètre
-     * @param string $url L'URL brute depuis $_GET['url']
+     * @param string $url L'URL brute
      * @return array Tableau des segments de l'URL
      */
     private function parseUrl($url)
@@ -79,4 +78,3 @@ class App
         return explode('/', $url);
     }
 }
-?>

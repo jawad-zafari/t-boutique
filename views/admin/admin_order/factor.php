@@ -5,7 +5,7 @@ $cart = !empty($orderInfo['cart_data']) ? unserialize($orderInfo['cart_data'], [
 
 $subTotal = 0;
 foreach ($cart as $row) {
-    $qty = (int)($row['quantity'] ?? $row['tedad'] ?? 1);
+    $qty = (int)($row['quantity'] ?? 1);
     $subTotal += ($row['price'] ?? 0) * $qty;
 }
 $shippingPrice = $orderInfo['shipping_price'] ?? $orderInfo['post_price'] ?? 0;
@@ -81,7 +81,7 @@ $orderId = (int)($orderInfo['id'] ?? 0);
             </thead>
             <tbody>
                 <?php if (!empty($cart)): foreach ($cart as $row): 
-                    $qty = (int)($row['quantity'] ?? $row['tedad'] ?? 1);
+                    $qty = (int)($row['quantity'] ?? 1);
                     $unitPrice = $row['price'] ?? 0;
                 ?>
                 <tr>

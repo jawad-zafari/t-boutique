@@ -1,6 +1,6 @@
 /**
  * Logique JavaScript pour le Panier Offcanvas (Menu Latéral) et la page Panier
- * Architecture Vanilla JS - Sécurisée avec protection CSRF pour les requêtes Ajax
+ * Architecture Vanilla JS - Sécurisé avec protection CSRF pour les requêtes Ajax
  */
 document.addEventListener("DOMContentLoaded", () => {
     
@@ -12,14 +12,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const baseTag = document.querySelector('base');
     const baseUrl = baseTag ? baseTag.getAttribute('href') : '/';
 
-    // ARCHITECTURE : Gestion de l'erreur de chargement d'image sans attribut HTML en ligne (onerror)
-    document.querySelectorAll('.product-thumbnail-img').forEach((img) => {
-        img.addEventListener('error', function () {
-            this.src = 'https://placehold.co/100x100/f1f3f5/3b5bdb?text=Produit';
-        }, { once: true });
-    });
-
-    // Fonction pour récupérer le jeton CSRF de façon sécurisée
+    // =========================================================================
+    // RÉCUPÉRATION SÉCURISÉE DU JETON CSRF
+    // =========================================================================
     function getCsrfToken() {
         const mainCart = document.getElementById('mainCart');
         if (mainCart && mainCart.hasAttribute('data-csrf')) {
@@ -29,7 +24,9 @@ document.addEventListener("DOMContentLoaded", () => {
         return csrfInput ? csrfInput.value : '';
     }
 
-    // Gestion de l'ouverture/fermeture du panier latéral (Offcanvas)
+    // =========================================================================
+    // GESTION DU PANIER LATÉRAL (Offcanvas)
+    // =========================================================================
     function openCart() {
         if(cartSidebar && cartOverlay) {
             cartSidebar.classList.add('active');
@@ -46,95 +43,284 @@ document.addEventListener("DOMContentLoaded", () => {
 
     headerCartBtns.forEach(btn => {
         btn.addEventListener('click', (e) => {
-            e.preventDefault();
+            e.preventDefault(); 
             openCart();
         });
     });
 
-    if (closeCartBtn) closeCartBtn.addEventListener('click', closeCart);
-    if (cartOverlay) cartOverlay.addEventListener('click', closeCart);
+    if(closeCartBtn) closeCartBtn.addEventListener('click', closeCart);
+    if(cartOverlay) cartOverlay.addEventListener('click', closeCart);
 
     // =========================================================================
-    // 1. MISE À JOUR DYNAMIQUE DE L'INTERFACE (Page + Sidebar)
+    // SYSTÈME DE NOTIFICATION TOAST
     // =========================================================================
-    function updateCartUI(data) {
-        const cartItems = data[0] || [];
-        const totalPriceAll = data[1] || 0;
+    function showToastNotification(message, type = 'success') {
+        let toast = document.getElementById('cartToastNotification');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'cartToastNotification';
+            document.body.appendChild(toast);
+        }
         
-        let totalItems = 0;
-        cartItems.forEach(item => {
-            totalItems += parseInt(item.quantity || item.tedad || 1, 10);
-        });
+        toast.className = 'toast-notification';
+        
+        const span = document.createElement('span');
+        span.textContent = message;
 
-        // Mise à jour de la page principale du panier si on s'y trouve
-        const mainCart = document.getElementById('mainCart');
-        if (mainCart) {
-            // Mettre à jour les sous-totaux globaux
-            const totalElements = document.querySelectorAll('.total-all-price');
-            totalElements.forEach(el => {
-                el.textContent = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2 }).format(totalPriceAll) + ' €';
-            });
+        if (type === 'danger') {
+            toast.classList.add('toast-danger');
+            toast.innerHTML = `<i class="fa-solid fa-trash-can"></i> `;
+        } else if (type === 'error') {
+            toast.classList.add('toast-danger'); 
+            toast.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> `;
+        } else {
+            toast.classList.add('toast-success');
+            toast.innerHTML = `<i class="fa-solid fa-circle-check"></i> `;
+        }
+        
+        toast.appendChild(span);
+        toast.classList.add('show');
+        setTimeout(() => { toast.classList.remove('show'); }, 3000);
+    }
 
-            // Si le panier devient vide
-            if (cartItems.length === 0) {
-                location.reload(); // Recharger la page pour afficher l'état panier vide
+    // =========================================================================
+    // SOUMISSION GLOBALE DES FORMULAIRES D'AJOUT AU PANIER
+    // =========================================================================
+    document.addEventListener('submit', async (e) => {
+        const form = e.target.closest('.add-to-cart-form');
+        if (form) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+
+            let actionUrl = form.getAttribute('action');
+            if(!actionUrl.startsWith('http') && !actionUrl.startsWith(baseUrl)) {
+                 actionUrl = baseUrl + actionUrl;
+            }
+
+            const formData = new FormData(form);
+
+            if (!formData.has('csrf_token')) {
+                formData.append('csrf_token', getCsrfToken());
+            }
+
+            try {
+                const response = await fetch(actionUrl, { method: 'POST', body: formData });
+                const result = await response.json();
+                
+                if (result.status === 'error') {
+                    showToastNotification(result.message, 'error');
+                    return;
+                }
+                
+                rebuildCartDOM(result[0], result[1]);
+                showToastNotification("Produit ajouté au panier", 'success'); 
+                
+            } catch (error) {
+                console.error("Erreur technique lors de l'ajout au panier :", error);
+                showToastNotification("Erreur de connexion", 'error');
+            }
+        }
+    }, true);
+
+    // =========================================================================
+    // GESTION DES QUANTITÉS ET SUPPRESSION (Délégation d'événements)
+    // =========================================================================
+    document.body.addEventListener('click', (e) => {
+        
+        const btnMinus = e.target.closest('.btn-qty.minus');
+        if (btnMinus) {
+            const cartRow = btnMinus.getAttribute('data-row');
+            const container = btnMinus.closest('.quantity-selector-modern') || btnMinus.closest('.qty-wrapper');
+            if (container) {
+                const input = container.querySelector('.input-qty');
+                let currentVal = parseInt(input.value);
+                if (currentVal > 1) {
+                    currentVal--;
+                    input.value = currentVal;
+                    updateCartItem(currentVal, cartRow);
+                }
+            }
+            return;
+        }
+
+        const btnPlus = e.target.closest('.btn-qty.plus');
+        if (btnPlus) {
+            const cartRow = btnPlus.getAttribute('data-row');
+            const container = btnPlus.closest('.quantity-selector-modern') || btnPlus.closest('.qty-wrapper');
+            if (container) {
+                const input = container.querySelector('.input-qty');
+                let currentVal = parseInt(input.value);
+                if (currentVal < 30) {
+                    currentVal++;
+                    input.value = currentVal;
+                    updateCartItem(currentVal, cartRow);
+                }
+            }
+            return;
+        }
+
+        const btnRemove = e.target.closest('.btn-remove-item');
+        if (btnRemove) {
+            const cartRow = btnRemove.getAttribute('data-row');
+            deleteCartItem(cartRow);
+        }
+    });
+
+    async function updateCartItem(quantity, cartRow) {
+        const url = `${baseUrl}Cart/updateCart`; 
+        const params = new URLSearchParams();
+        params.append('cartRow', cartRow); 
+        params.append('quantity', quantity);
+        params.append('csrf_token', getCsrfToken()); 
+        
+        try {
+            const response = await fetch(url, { method: 'POST', body: params });
+            const result = await response.json();
+            
+            if (result.status === 'error') {
+                showToastNotification(result.message, 'error');
                 return;
             }
 
-            // Mettre à jour chaque ligne de produit
-            cartItems.forEach(item => {
-                const rowId = item.cartRow;
-                const qty = item.quantity || item.tedad || 1;
-                const price = item.price || 0;
+            if (document.getElementById('mainCart')) {
+                window.location.reload();
+            } else {
+                rebuildCartDOM(result[0], result[1]);
+            }
+        } catch (error) { console.error(error); }
+    }
 
-                const qtyInput = document.querySelector(`.input-qty[data-row="${rowId}"]`);
-                if (qtyInput) qtyInput.value = qty;
+    async function deleteCartItem(cartRow) {
+        try {
+            const url = `${baseUrl}Cart/deleteCart/${cartRow}`;
+            const params = new URLSearchParams();
+            params.append('csrf_token', getCsrfToken()); 
 
-                const lineTotal = document.querySelector(`.line-total[data-row="${rowId}"]`);
-                if (lineTotal) {
-                    lineTotal.textContent = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2 }).format(price * qty) + ' €';
-                }
-            });
-        }
+            const response = await fetch(url, { method: 'POST', body: params });
+            const result = await response.json();
+            
+            if (result.status === 'error') {
+                showToastNotification(result.message, 'error');
+                return;
+            }
 
-        // Mise à jour du tiroir latéral (Sidebar Offcanvas)
+            if (document.getElementById('mainCart')) {
+                window.location.reload();
+            } else {
+                rebuildCartDOM(result[0], result[1]);
+                showToastNotification("Produit retiré du panier", 'danger');
+            }
+        } catch (error) { console.error(error); }
+    }
+
+    // =========================================================================
+    // RECONSTRUCTION DYNAMIQUE DU DOM DU PANIER (AJAX)
+    // =========================================================================
+    function rebuildCartDOM(cartArray, totalPriceAll) {
         const sidebarBody = document.getElementById('cartSidebarBody');
         const sidebarTotal = document.getElementById('cartSidebarTotal');
-        const cartCounter = document.getElementById('cartBadgeCount');
+        const cartCounter = document.getElementById('headerCartCounter') || document.getElementById('navCartCounterBadge') || document.querySelector('.cart-counter'); 
+        
+        if (!sidebarBody) return;
+        
+        sidebarBody.innerHTML = '';
+        let totalItems = 0;
 
-        if (sidebarBody) {
-            sidebarBody.innerHTML = '';
+        if (!cartArray || cartArray.length === 0) {
+            const emptyContainer = document.createElement('div');
+            emptyContainer.className = 'sidebar-empty-state';
+
+            const emptyMsg = document.createElement('div');
+            emptyMsg.className = 'empty-msg-text';
+            emptyMsg.textContent = 'Votre panier est vide.';
+
+            const emptyIconBox = document.createElement('div');
+            emptyIconBox.className = 'empty-bg-icon';
             
-            if (cartItems.length === 0) {
-                sidebarBody.innerHTML = '<p class="text-center text-muted p-20">Votre panier est vide.</p>';
-            } else {
-                cartItems.forEach(item => {
-                    const cardDiv = document.createElement('div');
-                    cardDiv.className = 'sidebar-cart-item';
+            const iconElement = document.createElement('i');
+            iconElement.className = 'fa-solid fa-cart-arrow-down';
+            iconElement.setAttribute('aria-hidden', 'true');
+            
+            emptyIconBox.appendChild(iconElement);
+            emptyContainer.appendChild(emptyMsg);
+            emptyContainer.appendChild(emptyIconBox);
+            
+            sidebarBody.appendChild(emptyContainer);
+        } else {
+            cartArray.forEach(item => {
+                // SÉCURITÉ DWWM : Utilisation stricte de la variable 'quantity'
+                const qty = item.quantity || 1;
+                totalItems += parseInt(qty, 10);
+                const priceFormatted = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2 }).format(item.price);
+                
+                const cardDiv = document.createElement('div');
+                cardDiv.className = 'cart-item-card';
 
-                    const img = document.createElement('img');
-                    img.src = baseUrl + 'public/images/products/' + item.id + '/product_220.jpg';
-                    img.alt = item.title || 'Produit';
-                    img.onerror = function() { this.src = 'https://placehold.co/60x60/f1f3f5/3b5bdb?text=Img'; };
+                const img = document.createElement('img');
+                img.src = `${baseUrl}public/images/products/${item.id}/product_220.jpg`;
+                img.className = 'item-img';
+                img.alt = item.title;
+                img.onerror = function() { this.src = 'https://placehold.co/80x80/f5f5f5/111?text=Img'; };
 
-                    const detailsDiv = document.createElement('div');
-                    detailsDiv.className = 'sidebar-item-details';
+                const detailsDiv = document.createElement('div');
+                detailsDiv.className = 'item-details';
 
-                    const h4 = document.createElement('h4');
-                    h4.textContent = item.title || '';
+                const h4 = document.createElement('h4');
+                h4.className = 'item-title';
+                h4.textContent = item.title; 
 
-                    const priceDiv = document.createElement('div');
-                    priceDiv.className = 'sidebar-item-price';
-                    priceDiv.textContent = (item.quantity || 1) + ' x ' + new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2 }).format(item.price || 0) + ' €';
+                const priceDiv = document.createElement('div');
+                priceDiv.className = 'item-price';
+                priceDiv.textContent = `${priceFormatted} €`;
 
-                    detailsDiv.appendChild(h4);
-                    detailsDiv.appendChild(priceDiv);
-                    cardDiv.appendChild(img);
-                    cardDiv.appendChild(detailsDiv);
+                const controlsDiv = document.createElement('div');
+                controlsDiv.className = 'item-controls';
 
-                    sidebarBody.appendChild(cardDiv);
-                });
-            }
+                const qtyWrapper = document.createElement('div');
+                qtyWrapper.className = 'qty-wrapper';
+
+                const btnMinus = document.createElement('button');
+                btnMinus.type = 'button';
+                btnMinus.className = 'btn-qty minus';
+                btnMinus.setAttribute('data-row', item.cartRow);
+                btnMinus.textContent = '-';
+
+                const inputQty = document.createElement('input');
+                inputQty.type = 'text';
+                inputQty.className = 'input-qty';
+                inputQty.value = qty;
+                inputQty.readOnly = true;
+                inputQty.setAttribute('data-row', item.cartRow);
+
+                const btnPlus = document.createElement('button');
+                btnPlus.type = 'button';
+                btnPlus.className = 'btn-qty plus';
+                btnPlus.setAttribute('data-row', item.cartRow);
+                btnPlus.textContent = '+';
+
+                qtyWrapper.appendChild(btnMinus);
+                qtyWrapper.appendChild(inputQty);
+                qtyWrapper.appendChild(btnPlus);
+
+                const btnRemove = document.createElement('button');
+                btnRemove.type = 'button';
+                btnRemove.className = 'btn-remove-item';
+                btnRemove.setAttribute('data-row', item.cartRow);
+                btnRemove.innerHTML = '<i class="fa-solid fa-trash-can"></i>'; 
+
+                controlsDiv.appendChild(qtyWrapper);
+                controlsDiv.appendChild(btnRemove);
+
+                detailsDiv.appendChild(h4);
+                detailsDiv.appendChild(priceDiv);
+                detailsDiv.appendChild(controlsDiv);
+
+                cardDiv.appendChild(img);
+                cardDiv.appendChild(detailsDiv);
+
+                sidebarBody.appendChild(cardDiv);
+            });
         }
         
         if (sidebarTotal) {
@@ -143,109 +329,8 @@ document.addEventListener("DOMContentLoaded", () => {
         
         if (cartCounter) {
             cartCounter.textContent = totalItems;
+            cartCounter.classList.add('pulse-anim');
+            setTimeout(() => cartCounter.classList.remove('pulse-anim'), 300);
         }
     }
-
-    // =========================================================================
-    // 2. ENVOI DES REQUÊTES AJAX (AJOUT, MODIFICATION, SUPPRESSION)
-    // =========================================================================
-
-    // A. MODIFIER LA QUANTITÉ (BOUTONS + / - ET INPUT)
-    document.body.addEventListener('click', (e) => {
-        if (e.target.classList.contains('btn-qty')) {
-            const btn = e.target;
-            const rowId = btn.getAttribute('data-row');
-            const input = document.querySelector(`.input-qty[data-row="${rowId}"]`);
-            
-            if (input) {
-                let currentVal = parseInt(input.value, 10) || 1;
-                
-                if (btn.classList.contains('plus')) {
-                    currentVal++;
-                } else if (btn.classList.contains('minus') && currentVal > 1) {
-                    currentVal--;
-                }
-                
-                input.value = currentVal;
-                sendUpdateQtyAjax(rowId, currentVal);
-            }
-        }
-
-        // B. SUPPRIMER UN ARTICLE
-        if (e.target.closest('.btn-remove-item')) {
-            const btn = e.target.closest('.btn-remove-item');
-            const rowId = btn.getAttribute('data-row');
-            
-            if (rowId) {
-                sendDeleteCartAjax(rowId);
-            }
-        }
-    });
-
-    // Fonction AJAX : Mise à jour quantité
-    function sendUpdateQtyAjax(cartRow, quantity) {
-        const formData = new FormData();
-        formData.append('cartRow', cartRow);
-        formData.append('quantity', quantity);
-        formData.append('csrf_token', getCsrfToken());
-
-        fetch(baseUrl + 'Cart/updateCart', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => updateCartUI(data))
-        .catch(err => console.error("Erreur mise à jour panier:", err));
-    }
-
-    // Fonction AJAX : Suppression article
-    function sendDeleteCartAjax(cartRow) {
-        const formData = new FormData();
-        formData.append('csrf_token', getCsrfToken());
-
-        fetch(baseUrl + 'Cart/deleteCart/' + cartRow, {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            // Supprimer la carte du DOM immédiatement
-            const card = document.querySelector(`.cart-product-card[data-row="${cartRow}"]`);
-            if (card) card.remove();
-            
-            updateCartUI(data);
-        })
-        .catch(err => console.error("Erreur suppression article:", err));
-    }
-
-    // C. AJOUTER AU PANIER DEPUIS LA FICHE PRODUIT (Exemple global)
-    const btnAddToCartProduct = document.getElementById('btnAddToCartProduct');
-    if (btnAddToCartProduct) {
-        btnAddToCartProduct.addEventListener('click', (e) => {
-            e.preventDefault();
-            
-            const productId = btnAddToCartProduct.getAttribute('data-product-id');
-            const qtyInput = document.getElementById('productDetailQty');
-            const colorSelect = document.getElementById('productColorSelect');
-            const guaranteeSelect = document.getElementById('productGuaranteeSelect');
-
-            const formData = new FormData();
-            formData.append('quantity', qtyInput ? qtyInput.value : 1);
-            formData.append('colorId', colorSelect ? colorSelect.value : 0);
-            formData.append('guaranteeId', guaranteeSelect ? guaranteeSelect.value : 0);
-            formData.append('csrf_token', getCsrfToken());
-
-            fetch(baseUrl + 'Cart/addToCart/' + productId, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                updateCartUI(data);
-                openCart(); // Ouvrir le panier latéral pour confirmation visuelle
-            })
-            .catch(err => console.error("Erreur ajout panier:", err));
-        });
-    }
-
 });

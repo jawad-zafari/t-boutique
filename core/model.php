@@ -279,45 +279,53 @@ class Model
         return array($result, $priceTotalall, $discountTotalAll);
     }
 
-    public function calculatePostPrice($cityId)
+    /**
+     * Calcule les frais de livraison depuis la base de données
+     */
+    public function calculatePostPrice($cityId = 0)
     {
-        $cartInfo = $this->getCart();
-        $cart = $cartInfo[0];
-        $priceTotal = $cartInfo[1];
+        // Architecture DWWM : Récupération dynamique des prix depuis la table shipping_methods
+        $sql = "SELECT id, price FROM shipping_methods";
+        $methods = $this->doSelect($sql);
+        
+        // Valeurs par défaut sécurisées
+        $prices = array(
+            'express' => 5.00, 
+            'standard' => 0.00,
+            'pishtaz' => 5.00,   // Rétrocompatibilité si un ancien contrôleur l'utilise
+            'sefareshi' => 0.00  // Rétrocompatibilité si un ancien contrôleur l'utilise
+        );
 
-        $weightTotalAll = 0;
-        foreach ($cart as $row) {
-            $weight = $row['weight'] ?? 0;
-            $quantity = $row['quantity'] ?? 1;
-            $weightTotal = $weight * $quantity;
-            $weightTotalAll = $weightTotalAll + $weightTotal;
+        if (is_array($methods)) {
+            foreach ($methods as $method) {
+                $id = (int)$method['id'];
+                $price = (float)$method['price'];
+                
+                if ($id === 1) { // 1 correspond généralement à la Livraison Express
+                    $prices['express'] = $price;
+                    $prices['pishtaz'] = $price;
+                } elseif ($id === 2) { // 2 correspond généralement à la Livraison Standard
+                    $prices['standard'] = $price;
+                    $prices['sefareshi'] = $price;
+                }
+            }
         }
 
-        $payType = 1;
-        $helper = new helper('http://webservice1.link/ws/v1/rest/');
-
-        try {
-            $priceData1 = $helper->getPrices($cityId, $priceTotal, $weightTotalAll, $payType, 1);
-            $post_price_pishtaz = ($payType == 1) ? ($priceData1['posti'][1]['post'] ?? 0) : ($priceData1['naghdi'][1]['post'] ?? 0);
-        } catch (Exception $e) {
-            $post_price_pishtaz = 150;
-        }
-
-        try {
-            $priceData2 = $helper->getPrices($cityId, $priceTotal, $weightTotalAll, $payType, 2);
-            $post_price_sefareshi = ($payType == 1) ? ($priceData2['posti'][2]['post'] ?? 0) : ($priceData2['naghdi'][2]['post'] ?? 0);
-        } catch (Exception $e) {
-            $post_price_sefareshi = 100;
-        }
-
-        return array('pishtaz' => $post_price_pishtaz / 10, 'sefareshi' => $post_price_sefareshi / 10);
+        return $prices;
     }
 
-    public static function jaliliDate($format = 'Y/m/d') {
+    /**
+     * Formatage standard de la date actuelle
+     */
+    public static function getCurrentDate($format = 'Y-m-d H:i:s') 
+    {
         return date($format);
     }
 
-    public static function jaliliToMiladi($dateStr, $format = '/')
+    /**
+     * Traitement et normalisation d'une date pour la base de données
+     */
+    public static function formatDateForDB($dateStr, $format = '/')
     {
         try {
             $cleanDate = str_replace('/', '-', $dateStr);
@@ -328,7 +336,10 @@ class Model
         }
     }
 
-    public static function MiladiTojalili($dateStr, $format = '/')
+    /**
+     * Formatage d'une date standard pour l'affichage (JJ/MM/AAAA)
+     */
+    public static function formatDateForDisplay($dateStr, $format = '/')
     {
         try {
             $cleanDate = str_replace('/', '-', $dateStr);
@@ -366,65 +377,4 @@ class Model
         return $userInfo['role_id'] ?? 0;
     }
 }
-
-/**
- * Service Helper externe (Conservé pour compatibilité avec le système de livraison)
- */
-class helper {
-    private $url;
-    private $api_key;
-    const METHOD_POST = 'post';
-    const METHOD_GET = 'get';
-    private $errors = array();
-
-    public function __construct($webserviceUrl) {
-        $this->url = $webserviceUrl;
-        $this->api_key = 'F4960daa89D73A33332382fE661E7a18';
-    }
-
-    public function getPrices($des_city, $price, $weight, $buy_type, $delivery_type) {
-        $params = array('des_city' => $des_city, 'price' => $price, 'weight' => $weight, 'buy_type' => $buy_type, 'send_type' => $delivery_type);
-        return $this->call('order/getPrices.json', $params);
-    }
-
-    private function call($url, $params, $methodType = helper::METHOD_POST) {
-        $this->errors = array();
-        if (stripos($url, 'http://') === false) $url = $this->url . $url;
-        $params['api'] = $this->api_key;
-        $data = http_build_query($params);
-
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_POST, $methodType === helper::METHOD_POST);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
-        $result = curl_exec($ch);
-
-        if (class_exists('CurlHandle') && $ch instanceof CurlHandle) {
-            curl_close($ch);
-        } elseif (is_resource($ch)) {
-            curl_close($ch);
-        }
-
-        if ($result === false) throw new FrotelResponseException('Erreur cURL lors de la requête API.');
-
-        $result_decoded = json_decode($result, true);
-        if (json_last_error() == JSON_ERROR_NONE) return $this->parseResponse($result_decoded);
-
-        throw new FrotelResponseException('Échec de la lecture des données JSON.');
-    }
-
-    private function parseResponse($response) {
-        if (!isset($response['code'], $response['message'], $response['result'])) throw new FrotelResponseException('Format de réponse API invalide.');
-        if ($response['code'] == 0) return $response['result'];
-        $this->errors[] = $response['message'];
-        throw new FrotelWebserviceException($response['message']);
-    }
-
-    public function getErrors() { return $this->errors; }
-}
-
-class FrotelResponseException extends Exception {}
-class FrotelWebserviceException extends Exception {}
 ?>

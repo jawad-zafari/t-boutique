@@ -1,59 +1,72 @@
-<?php 
-// En Architecture MVC, les données sont fournies proprement par le contrôleur
+<?php
+/**
+ * Vue : Page Principale du Panier d'Achats (cart.php)
+ * Architecture MVC : Données transmises par le contrôleur Cart.php
+ * Sécurité DWWM : Protection XSS avec htmlspecialchars, typage strict et jeton CSRF.
+ */
+
 $cartItems = $data['cartItems'] ?? [];
-$totalPriceAll = $data['priceTotalAll'] ?? 0;
+$totalPriceAll = (float)($data['priceTotalAll'] ?? 0);
+$csrfToken = htmlspecialchars($data['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8');
 ?>
-<div id="mainCart" class="cart-modern-container" data-csrf="<?= htmlspecialchars($data['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+<div id="mainCart" class="cart-modern-container" data-csrf="<?= $csrfToken ?>">
     
     <div class="cart-header-main">
         <h2><i class="fa-solid fa-cart-shopping" aria-hidden="true"></i> Mon Panier d'Achats</h2>
     </div>
 
-    <?php if(!empty($cartItems)): ?>
+    <?php if (!empty($cartItems) && is_array($cartItems)): ?>
         <div class="cart-grid-layout">
             
             <div class="cart-items-column">
                 <?php foreach ($cartItems as $row): 
-                    $currentRowId = $row['cartRow'] ?? 0;
-                    $currentQty = $row['quantity'] ?? $row['tedad'] ?? 1;
-                    $unitPrice = $row['price'] ?? 0;
+                    $currentRowId = (int)($row['cartRow'] ?? 0);
+                    // NETTOYAGE DWWM : Utilisation stricte de 'quantity' (chaine 'tedad' supprimée)
+                    $currentQty = (int)($row['quantity'] ?? 1);
+                    $unitPrice = (float)($row['price'] ?? 0);
                     $totalPrice = $unitPrice * $currentQty;
+                    $productId = (int)($row['id'] ?? 0);
+                    $productTitle = htmlspecialchars($row['title'] ?? 'Produit', ENT_QUOTES, 'UTF-8');
+                    $colorTitle = !empty($row['colorTitle']) ? htmlspecialchars($row['colorTitle'], ENT_QUOTES, 'UTF-8') : null;
+                    $guaranteeTitle = !empty($row['garanteeTitle']) ? htmlspecialchars($row['garanteeTitle'], ENT_QUOTES, 'UTF-8') : null;
                 ?>
-                <div class="cart-product-card" data-row="<?= (int)$currentRowId ?>">
+                <div class="cart-product-card" data-row="<?= $currentRowId ?>">
                     
                     <div class="product-image-box">
-                        <img src="<?= URL ?>public/images/products/<?= (int)$row['id'] ?>/product_220.jpg" alt="<?= htmlspecialchars($row['title'] ?? 'Produit', ENT_QUOTES, 'UTF-8') ?>" class="product-thumbnail-img">
+                        <img src="<?= URL ?>public/images/products/<?= $productId ?>/product_220.jpg" 
+                             alt="<?= $productTitle ?>" 
+                             class="product-thumbnail-img"
+                             onerror="this.src='https://placehold.co/100x100/f1f3f5/3b5bdb?text=Produit'">
                     </div>
 
-                    <div class="product-info-box">
-                        <h3 class="product-title"><?= htmlspecialchars($row['title'] ?? '', ENT_QUOTES, 'UTF-8') ?></h3>
+                    <div class="product-details-box">
+                        <h3 class="product-title"><?= $productTitle ?></h3>
                         
-                        <div class="product-options">
-                            <?php if (!empty($row['colorTitle'])): ?>
-                                <span class="badge-option"><i class="fa-solid fa-palette" aria-hidden="true"></i> <?= htmlspecialchars($row['colorTitle'], ENT_QUOTES, 'UTF-8') ?></span>
-                            <?php endif; ?>
-                            <?php if (!empty($row['garanteeTitle'])): ?>
-                                <span class="badge-option"><i class="fa-solid fa-shield-cat" aria-hidden="true"></i> <?= htmlspecialchars($row['garanteeTitle'], ENT_QUOTES, 'UTF-8') ?></span>
-                            <?php endif; ?>
-                        </div>
+                        <?php if ($colorTitle): ?>
+                            <p class="product-meta"><i class="fa-solid fa-palette" aria-hidden="true"></i> Couleur : <strong><?= $colorTitle ?></strong></p>
+                        <?php endif; ?>
 
-                        <div class="product-price-unit">
-                            Prix unitaire : <strong><?= number_format($unitPrice, 2, ',', ' ') ?> €</strong>
+                        <?php if ($guaranteeTitle): ?>
+                            <p class="product-meta"><i class="fa-solid fa-shield" aria-hidden="true"></i> Garantie : <strong><?= $guaranteeTitle ?></strong></p>
+                        <?php endif; ?>
+
+                        <div class="product-price-unit margin-top-sm">
+                            Prix unitaire : <span><?= number_format($unitPrice, 2, ',', ' ') ?> €</span>
                         </div>
                     </div>
 
                     <div class="product-actions-box">
-                        <div class="quantity-control-wrapper">
-                            <button type="button" class="btn-qty minus" data-row="<?= (int)$currentRowId ?>" aria-label="Diminuer la quantité">-</button>
-                            <input type="number" class="input-qty" value="<?= (int)$currentQty ?>" min="1" data-row="<?= (int)$currentRowId ?>" aria-label="Quantité du produit">
-                            <button type="button" class="btn-qty plus" data-row="<?= (int)$currentRowId ?>" aria-label="Augmenter la quantité">+</button>
+                        <div class="quantity-selector-modern">
+                            <button type="button" class="btn-qty minus" data-row="<?= $currentRowId ?>" aria-label="Diminuer la quantité">-</button>
+                            <input type="text" class="input-qty" value="<?= $currentQty ?>" readonly aria-label="Quantité" data-row="<?= $currentRowId ?>">
+                            <button type="button" class="btn-qty plus" data-row="<?= $currentRowId ?>" aria-label="Augmenter la quantité">+</button>
                         </div>
 
                         <div class="product-total-price">
-                            <span class="line-total" data-row="<?= (int)$currentRowId ?>"><?= number_format($totalPrice, 2, ',', ' ') ?> €</span>
+                            <?= number_format($totalPrice, 2, ',', ' ') ?> €
                         </div>
 
-                        <button type="button" class="btn-remove-item" data-row="<?= (int)$currentRowId ?>" aria-label="Supprimer cet article du panier">
+                        <button type="button" class="btn-remove-item" data-row="<?= $currentRowId ?>" aria-label="Supprimer cet article">
                             <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
                         </button>
                     </div>
@@ -66,28 +79,31 @@ $totalPriceAll = $data['priceTotalAll'] ?? 0;
                 <div class="cart-summary-card">
                     <h3>Récapitulatif de la commande</h3>
                     
-                    <div class="summary-details">
+                    <div class="summary-lines">
                         <div class="summary-line">
-                            <span class="label">Sous-total Panier</span>
-                            <span class="value total-all-price"><?= number_format($totalPriceAll, 2, ',', ' ') ?> €</span>
+                            <span class="label">Sous-total articles</span>
+                            <span class="value"><?= number_format($totalPriceAll, 2, ',', ' ') ?> €</span>
                         </div>
+
                         <div class="summary-line">
                             <span class="label">Frais de livraison</span>
                             <span class="value text-muted">Calculés à l'étape suivante</span>
                         </div>
                         
+                        <div class="summary-line-separator"></div>
+
                         <div class="summary-line total-line">
                             <span class="label">Total TTC</span>
                             <span class="value highlight-total total-all-price"><?= number_format($totalPriceAll, 2, ',', ' ') ?> €</span>
                         </div>
                     </div>
                     
-                    <a class="btn-checkout-massive" href="<?= URL ?>Checkout/index" aria-label="Procéder au règlement de la commande">
+                    <a class="btn-checkout-massive" href="<?= URL ?>Order/address" aria-label="Procéder au règlement de la commande">
                         Valider mon panier <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
                     </a>
                     
                     <div class="secure-checkout-badge">
-                        <i class="fa-solid fa-shield-halved" aria-hidden="true"></i> Processus de paiement sécurisé
+                        <i class="fa-solid fa-shield-halved" aria-hidden="true"></i> Processus de paiement 100% sécurisé
                     </div>
                 </div>
             </div>

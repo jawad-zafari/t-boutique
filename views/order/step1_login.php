@@ -13,10 +13,6 @@
             </li>
             <li class="step-item" role="tab" aria-selected="false">
                 <span class="step-number">3</span>
-                <span class="step-text">Résumé</span>
-            </li>
-            <li class="step-item" role="tab" aria-selected="false">
-                <span class="step-number">4</span>
                 <span class="step-text">Paiement</span>
             </li>
         </ul>

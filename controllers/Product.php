@@ -1,34 +1,26 @@
 <?php
 
-/**
- * Contrôleur Product
- * Gère l'affichage détaillé d'un produit et les requêtes AJAX (Panier, Questions).
- * Architecture sécurisée : Protection CSRF, vérification des méthodes HTTP et typage strict.
- */
 class Product extends Controller
 {
     public function __construct()
     {
         parent::__construct();
-        // SÉCURITÉ : Initialisation de la session pour la vérification de l'utilisateur et du CSRF
+        // Initialisation de la session
         Model::sessionInit(); 
     }
 
-    /**
-     * Affiche la page principale d'un produit
-     * @param int $id Identifiant du produit
-     * @param string $activeTab L'onglet actif par défaut (ex: 'reviews')
-     */
+    
+    //  Affiche la page principale d'un produit
+    
     public function index($id, $activeTab = 'reviews')
     {
-        // PROTECTION CSRF : Utilisation de la méthode du contrôleur parent (Principe DRY)
+        // PROTECTION CSRF
         $csrf_token = $this->generateCsrfToken();
 
-        // SÉCURITÉ : Forçage du type en entier (Integer Casting) pour prévenir les injections
         $productId = (int)$id;
         $productInfo = $this->model->productInfo($productId);
         
-        // Gestion d'erreur : Redirection vers l'accueil si le produit n'existe pas
+        // Gestion d'erreur
         if (empty($productInfo)) {
             header('Location: ' . URL . 'Index/index');
             exit;
@@ -66,37 +58,35 @@ class Product extends Controller
             'comments'       => $comments,
             'questions'      => $questions,
             'answers'        => $answers,
-            // SÉCURITÉ : Protection XSS sur la variable de l'onglet actif
+            // Protection XSS sur la variable de l'onglet actif
             'activeTab'      => htmlspecialchars($activeTab, ENT_QUOTES, 'UTF-8'),
             'csrf_token'     => $csrf_token
         ];
 
-        // Chargement de la vue avec les données
+        // Chargement de la vue
         $this->view('product/product', $data);
     }
 
-    /**
-     * Action AJAX : Ajoute un produit au panier de l'utilisateur
-     * @param int $productId Identifiant du produit
-     */
+    
+    //  Ajoute un produit au panier de l'utilisateur
+
     public function addToCart($productId)
     {
-        // SÉCURITÉ : Définir le type de réponse attendu en JSON
+        // Définir le type de réponse attendu en JSON
         header('Content-Type: application/json; charset=utf-8');
-        // ANTI-CRASH : Nettoie le tampon de sortie pour garantir un JSON valide
         ob_clean(); 
 
-        // SÉCURITÉ : Rejeter toute requête qui n'est pas de type POST
+        // Rejeter toute requête qui n'est pas de type POST
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
             echo json_encode(['status' => 'error', 'message' => 'Méthode HTTP non autorisée.']);
             exit;
         }
 
-        // SÉCURITÉ : Vérification du jeton CSRF pour éviter les attaques intersites
+        // Vérification du jeton CSRF pour éviter les attaques intersites
         $this->checkCsrfToken($_POST['csrf_token'] ?? '');
 
-        // Récupération sécurisée des options sélectionnées par l'utilisateur (Typage strict)
+        // Récupération sécurisée des options sélectionnées par l'utilisateur
         $colorId = isset($_POST['colorId']) ? (int)$_POST['colorId'] : 0;
         $guaranteeId = isset($_POST['guaranteeId']) ? (int)$_POST['guaranteeId'] : 0;
 
@@ -107,10 +97,7 @@ class Product extends Controller
         exit;
     }
 
-    /**
-     * Action AJAX : Soumet une nouvelle question pour le produit
-     * @param int $productId Identifiant du produit
-     */
+    // Soumet une nouvelle question pour le produit
     public function addQuestion($productId)
     {
         header('Content-Type: application/json; charset=utf-8');
@@ -122,7 +109,7 @@ class Product extends Controller
             exit;
         }
 
-        // SÉCURITÉ CRITIQUE : Vérification de l'authentification (Auth Guard)
+        // Vérification de l'authentification
         $userId = Model::sessionGet('userId');
         if (!$userId) {
             http_response_code(401);
@@ -130,14 +117,13 @@ class Product extends Controller
             exit;
         }
 
-        // SÉCURITÉ : Vérification du jeton CSRF
+        // Vérification du jeton CSRF
         $this->checkCsrfToken($_POST['csrf_token'] ?? '');
 
         $questionText = $_POST['question'] ?? '';
         
-        // Validation basique : La question ne doit pas être une chaîne vide
         if (!empty(trim($questionText))) {
-            // L'ID utilisateur est géré par la session (Prévention IDOR)
+            // L'ID utilisateur est géré par la session
             $this->model->addQuestion((int)$productId, (int)$userId, $questionText);
             echo json_encode(['status' => 'success', 'message' => 'Votre question a été soumise avec succès. Elle sera visible après validation par notre équipe.']);
         } else {

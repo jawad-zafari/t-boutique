@@ -31,71 +31,14 @@ class ModelCheckout extends Model
     }
 
     /**
-     * Vérifie le statut du paiement au retour de la passerelle
+     * Mise à jour du statut de la commande après validation du paiement (Mock)
      */
-    public function stripeCheckout($data)
+    public function markOrderAsPaid($orderId, $transactionId)
     {
-        $authority = $data['Authority'] ?? '';
-        
-        $sql = "SELECT * FROM orders WHERE transaction_id_before = ?";
-        $result = $this->doSelect($sql, [$authority], 'fetch', PDO::FETCH_ASSOC);
-        
-        if (!$result) {
-            return false;
-        }
-
-        // Ici, vous intégrez l'API de votre passerelle (Stripe, etc.) pour vérifier le statut réel.
-        // C'est une simulation standard pour le projet de formation.
-        $status = "OK"; 
-        $refId = uniqid('ref_');
-
-        if ($status === "OK") {
-            // Mettre à jour la commande comme payée
-            $sqlUpdate = "UPDATE orders SET is_paid = 1, status_id = 2, transaction_id_after = ? WHERE id = ?";
-            $this->doQuery($sqlUpdate, [$refId, (int)$result['id']]);
-            return $this->getOrderInfo((int)$result['id']);
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * Initialise la session de paiement
-     */
-    public function payOnline($orderId)
-    {
-        $orderInfo = $this->getOrderInfo($orderId);
-        
-        if (!$orderInfo) {
-            header('Location: ' . URL . 'Checkout/showError?error=' . urlencode('Commande introuvable.'));
-            exit;
-        }
-
-        $amount = (float)($orderInfo['amount'] ?? 0);
-        
-        if ($amount <= 0) {
-            header('Location: ' . URL . 'Checkout/showError?error=' . urlencode('Montant invalide.') . '&orderId=' . (int)$orderId);
-            exit;
-        }
-
-        // Simulation de création d'une session de paiement (API Stripe / Bank)
-        $result = ['Status' => 100, 'Authority' => uniqid('auth_')];
-        $redirectUrl = URL . "Checkout/index?Authority=" . $result['Authority'];
-
-        if ($result['Status'] == 100) {
-            $authority = $result['Authority'];
-            
-            // Enregistrer l'autorité temporaire avant la redirection
-            $sqlAuth = "UPDATE orders SET transaction_id_before = ? WHERE id = ?";
-            $this->doQuery($sqlAuth, [$authority, (int)$orderId]);
-            
-            header('Location: ' . $redirectUrl);
-            exit;
-        } else {
-            $error = $result['Error'] ?? 'Erreur lors de la création de la session de paiement.';
-            header('Location: ' . URL . 'Checkout/showError?error=' . urlencode($error) . '&orderId=' . (int)$orderId);
-            exit;
-        }
+        // On passe is_paid à 1 et on enregistre le numéro de transaction généré
+        $sql = "UPDATE orders SET is_paid = 1, transaction_id_after = ? WHERE id = ?";
+        $this->doQuery($sql, [$transactionId, (int)$orderId]);
+        return true;
     }
 
     /**
@@ -114,10 +57,8 @@ class ModelCheckout extends Model
         $orderInfo = $this->getOrderInfo($orderId);
         
         if ($orderInfo) {
-            // SÉCURITÉ LOGIQUE : is_paid n'est PAS mis à 1 ici, car le virement doit être validé par l'admin.
-            $sql = "UPDATE orders SET payment_method_id = 2, pay_card_number = ?, pay_bank_name = ?, pay_day = ?, pay_month = ?, pay_year = ? WHERE id = ?";
+            $sql = "UPDATE orders SET pay_card_number = ?, pay_bank_name = ?, pay_day = ?, pay_month = ?, pay_year = ? WHERE id = ?";
             $this->doQuery($sql, [$creditCard, $bank, $day, $month, $year, (int)$orderId]);
         }
     }
 }
-?>

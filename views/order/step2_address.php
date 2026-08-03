@@ -1,6 +1,8 @@
 <?php
 // ARCHITECTURE MVC : Aucune logique métier complexe dans la vue.
 $cart = $data['cartData'][0] ?? [];
+if (!is_array($cart)) { $cart = []; }
+
 $totalProductsPrice = (float)($data['cartData'][1] ?? 0);
 $totalDiscount = (float)($data['cartData'][2] ?? 0);
 $addresses = $data['addresses'] ?? [];
@@ -10,7 +12,7 @@ $postTypes = $data['postType'] ?? [];
 
     <?php if(isset($_GET['error']) && $_GET['error'] == 'address_missing'): ?>
         <div class="alert-sticky danger alert-box-modern" role="alert">
-            <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Veuillez sélectionner ou ajouter une adresse de livraison avant de continuer.
+            <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Veuillez sélectionner une adresse et un mode de livraison avant de continuer.
         </div>
     <?php endif; ?>
 
@@ -28,7 +30,6 @@ $postTypes = $data['postType'] ?? [];
                 <ul class="stepper-steps-flex">
                     <li class="completed">Connexion</li>
                     <li class="active" aria-current="step">Livraison</li>
-                    <li>Résumé</li>
                     <li>Paiement</li>
                 </ul>
             </nav>
@@ -49,7 +50,7 @@ $postTypes = $data['postType'] ?? [];
                                 <label for="addr_<?= (int)$addr['id'] ?>"><strong><?= htmlspecialchars($addr['last_name'] ?? '', ENT_QUOTES, 'UTF-8') ?></strong></label>
                             </div>
                             <p class="address-text-summary"><?= htmlspecialchars($addr['address'] ?? '', ENT_QUOTES, 'UTF-8') ?></p>
-                            <span class="address-city-zip"><?= htmlspecialchars($addr['city'] ?? '', ENT_QUOTES, 'UTF-8') ?> (<?= htmlspecialchars($addr['postal_code'] ?? '', ENT_QUOTES, 'UTF-8') ?>)</span>
+                            <span class="address-city-zip"><?= htmlspecialchars($addr['city'] ?? $addr['city_name'] ?? '', ENT_QUOTES, 'UTF-8') ?> (<?= htmlspecialchars($addr['postal_code'] ?? '', ENT_QUOTES, 'UTF-8') ?>)</span>
                         </div>
                     <?php endforeach; else: ?>
                         <p class="empty-section-notice" id="emptyAddressNotice">Aucune adresse enregistrée. Veuillez en ajouter une ci-dessous.</p>
@@ -100,15 +101,44 @@ $postTypes = $data['postType'] ?? [];
 
         <div class="checkout-right-column">
             <div class="checkout-summary-card">
-                <h3>Résumé des articles</h3>
-                <div class="summary-lines-box">
-                    <div class="summary-line"><span class="label">Articles</span><span class="value"><?= count($cart) ?></span></div>
+                <h3><i class="fa-solid fa-basket-shopping" aria-hidden="true"></i> Vos articles (<?= count($cart) ?>)</h3>
+                
+                <div class="summary-products-list">
+                    <?php if(!empty($cart)): foreach($cart as $item):
+                        $qty = (int)($item['quantity'] ?? 1);
+                        $price = (float)($item['price'] ?? 0);
+                        $productId = (int)($item['id'] ?? 0);
+                    ?>
+                        <div class="summary-product-item">
+                            <div class="summary-product-img-box">
+                                <img src="<?= URL ?>public/images/products/<?= $productId ?>/product_220.jpg" 
+                                     alt="<?= htmlspecialchars($item['title'] ?? 'Produit', ENT_QUOTES, 'UTF-8') ?>"
+                                     onerror="this.src='https://placehold.co/60x60/f8f9fa/adb5bd?text=Img';">
+                                <span class="product-qty-badge"><?= $qty ?></span>
+                            </div>
+                            <div class="product-info-col">
+                                <span class="product-name"><?= htmlspecialchars($item['title'] ?? 'Produit', ENT_QUOTES, 'UTF-8') ?></span>
+                                <span class="product-meta"><?= number_format($price, 2, ',', ' ') ?> € / un.</span>
+                            </div>
+                            <span class="product-price"><?= number_format($price * $qty, 2, ',', ' ') ?> €</span>
+                        </div>
+                    <?php endforeach; endif; ?>
+                </div>
+
+                <div class="summary-totals">
                     <div class="summary-line"><span class="label">Sous-total</span><span class="value"><?= number_format($totalProductsPrice, 2, ',', ' ') ?> €</span></div>
                     <?php if($totalDiscount > 0): ?>
                         <div class="summary-line text-danger"><span class="label">Remise</span><span class="value">- <?= number_format($totalDiscount, 2, ',', ' ') ?> €</span></div>
                     <?php endif; ?>
+                    <div class="summary-line total-line">
+                        <span class="label">Total TTC</span>
+                        <span class="highlight-total"><?= number_format($totalProductsPrice - $totalDiscount, 2, ',', ' ') ?> €</span>
+                    </div>
                 </div>
-                <button type="button" id="btnContinueToSummary" class="btn-checkout-massive btn-full-width margin-top-md">Continuer <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
+
+                <button type="button" id="btnContinueToSummary" class="btn-checkout-massive btn-full-width margin-top-md">
+                    Procéder au paiement <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                </button>
             </div>
         </div>
 

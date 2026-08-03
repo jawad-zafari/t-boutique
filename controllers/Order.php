@@ -2,7 +2,7 @@
 
 /**
  * Contrôleur Order
- * Gère le tunnel d'achat en 4 étapes (Connexion, Adresse, Résumé, Paiement).
+ * Gère le tunnel d'achat optimisé en 2 étapes (Livraison, Paiement).
  * Sécurité stricte : Vérification du panier, requêtes POST obligatoires, et protection CSRF.
  */
 class Order extends Controller 
@@ -10,13 +10,9 @@ class Order extends Controller
     public function __construct() 
     {
         parent::__construct();
-        // SÉCURITÉ : Initialisation de la session pour accéder au panier et au jeton CSRF
         Model::sessionInit(); 
     }
 
-    /**
-     * Vérification de la connexion de l'utilisateur
-     */
     private function checkLogin()
     {
         $userId = Model::sessionGet('userId');
@@ -26,9 +22,6 @@ class Order extends Controller
         }
     }
 
-    /**
-     * SÉCURITÉ CRITIQUE : Empêche l'accès au processus de commande si le panier est vide
-     */
     private function checkCartNotEmpty()
     {
         $cartData = $this->processCartData();
@@ -40,9 +33,6 @@ class Order extends Controller
         }
     }
 
-    /**
-     * LOGIQUE MÉTIER (Business Logic) : Traitement unifié des données du panier
-     */
     private function processCartData() 
     {
         $rawCartData = $this->model->getCartData() ?? [];
@@ -51,7 +41,6 @@ class Order extends Controller
         $totalPrice = 0;
         $totalDiscount = 0;
 
-        // Validation et sécurisation des données du panier
         if (isset($rawCartData[0]) && is_array($rawCartData[0]) && isset($rawCartData[1]) && is_numeric($rawCartData[1])) {
             $cart = $rawCartData[0];
             $totalPrice = (float)$rawCartData[1];
@@ -60,10 +49,10 @@ class Order extends Controller
             $cart = is_array($rawCartData) ? $rawCartData : [];
         }
 
-        // Recalcul de sécurité si le total est incorrect
         if ($totalPrice <= 0 && !empty($cart)) {
             foreach ($cart as $item) {
-                $qty = (int)($item['tedad'] ?? $item['quantity'] ?? 1);
+                // NETTOYAGE : Utilisation exclusive de 'quantity' (Standardisation)
+                $qty = (int)($item['quantity'] ?? 1);
                 $price = (float)($item['price'] ?? 0);
                 $totalPrice += ($price * $qty);
             }
@@ -72,9 +61,6 @@ class Order extends Controller
         return [$cart, $totalPrice, $totalDiscount];
     }
 
-    /**
-     * Étape 1 : Connexion ou redirection
-     */
     public function index() 
     {
         $userId = Model::sessionGet('userId');
@@ -88,9 +74,6 @@ class Order extends Controller
         }
     }
 
-    /**
-     * Étape 2 : Choix de l'adresse de livraison
-     */
     public function address() 
     {
         $this->checkLogin(); 
@@ -109,21 +92,16 @@ class Order extends Controller
         $this->view('order/step2_address', $data);
     }
 
-    /**
-     * Traitement AJAX : Ajout d'une nouvelle adresse
-     */
     public function addAddressAjax()
     {
         $this->checkLogin();
 
-        // SÉCURITÉ : Uniquement les requêtes POST
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('HTTP/1.1 405 Method Not Allowed');
             echo json_encode(['status' => 'error', 'message' => 'Méthode non autorisée.']);
             exit;
         }
 
-        // SÉCURITÉ : Validation CSRF
         $this->checkCsrfToken($_POST['csrf_token'] ?? '');
 
         if (empty($_POST['last_name']) || empty($_POST['mobile']) || empty($_POST['city_name']) || empty($_POST['postal_code']) || empty($_POST['address'])) {
@@ -147,13 +125,16 @@ class Order extends Controller
         exit;
     }
 
-    /**
-     * Étape 3 : Résumé de la commande
-     */
     public function summary() 
     {
+        header('Location: ' . URL . 'Order/payment');
+        exit;
+    }
+
+    public function payment() 
+    {
         $this->checkLogin();
-        $this->checkCartNotEmpty();
+        $this->checkCartNotEmpty(); 
 
         $addressId = Model::sessionGet('selected_address_id');
         $shippingTypeId = Model::sessionGet('selected_shipping_type_id');
@@ -164,53 +145,27 @@ class Order extends Controller
             exit;
         }
 
-        // SÉCURITÉ IDOR : On passe l'ID utilisateur pour vérifier qu'il est bien propriétaire de l'adresse
         $addressInfo = $this->model->getAddressById((int)$addressId, $userId);
-        
-        // Si l'adresse n'appartient pas à l'utilisateur, on bloque
         if (!$addressInfo) {
             header('Location: ' . URL . 'Order/address?error=unauthorized_address');
             exit;
         }
 
         $shippingPrice = $this->model->getShippingPrice((int)$shippingTypeId);
+        $status = $this->model->getPaymentStatus();
 
         $data = [
+            'status'      => $status,
             'cartData'    => $this->processCartData(),
             'addressInfo' => $addressInfo,
             'postPrice'   => $shippingPrice,
             'postType'    => $shippingTypeId,
             'csrf_token'  => $this->generateCsrfToken()
         ];
-
-        $this->view('order/step3_summary', $data);
-    }
-
-    /**
-     * Étape 4 : Paiement
-     */
-    public function payment() 
-    {
-        $this->checkLogin();
-        $this->checkCartNotEmpty(); 
-
-        $shippingTypeId = Model::sessionGet('selected_shipping_type_id');
-        $shippingPrice = $this->model->getShippingPrice((int)$shippingTypeId);
-        $status = $this->model->getPaymentStatus();
-
-        $data = [
-            'status'     => $status,
-            'cartData'   => $this->processCartData(),
-            'postPrice'  => $shippingPrice,
-            'csrf_token' => $this->generateCsrfToken()
-        ];
         
         $this->view('order/step4_payment', $data);
     }
 
-    /**
-     * AJAX : Sauvegarde de la sélection (Adresse et Livraison) dans la session
-     */
     public function saveAddressSession()
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -234,14 +189,10 @@ class Order extends Controller
         exit;
     }
 
-    /**
-     * AJAX : Vérification du code promotionnel (Sécurisé en POST)
-     */
     public function checkPromoCode() 
     {
         $this->checkLogin();
         
-        // SÉCURITÉ : On bloque si ce n'est pas une requête POST
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             echo json_encode(['status' => 'error', 'message' => 'Méthode non autorisée.']);
             exit;
@@ -259,9 +210,6 @@ class Order extends Controller
         exit;
     }
 
-    /**
-     * Enregistrement final de la commande en base de données
-     */
     public function saveOrder() 
     {
         $this->checkLogin();
@@ -277,7 +225,6 @@ class Order extends Controller
         $orderId = $this->model->saveOrder($_POST);
         
         if ($orderId > 0) {
-            // Nettoyage de la session après validation
             Model::sessionSet('selected_address_id', null);
             Model::sessionSet('selected_shipping_type_id', null);
             
@@ -288,4 +235,3 @@ class Order extends Controller
         exit;
     }
 }
-?>

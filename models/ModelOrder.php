@@ -3,7 +3,7 @@
 /**
  * Modèle ModelOrder
  * Gestion sécurisée de la création des commandes et de l'assainissement des données.
- * Protection stricte contre les injections SQL (PDO), les failles XSS et les failles IDOR.
+ * Protection stricte contre les injections SQL (PDO), les failles XSS et respect des normes PCI-DSS pour les cartes.
  */
 class ModelOrder extends Model 
 {
@@ -20,64 +20,38 @@ class ModelOrder extends Model
         return $this->doSelect($sql, [$userId]);
     }
 
-    /**
-     * SÉCURITÉ CRITIQUE (Anti-IDOR) : 
-     * Ajout du paramètre $userId pour s'assurer qu'un utilisateur ne puisse pas
-     * récupérer l'adresse d'un autre utilisateur en modifiant l'ID.
-     */
     public function getAddressById($addressId, $userId)
     {
         $sql = "SELECT * FROM user_addresses WHERE id = ? AND user_id = ?";
-        $result = $this->doSelect($sql, [(int)$addressId, (int)$userId], true);
+        $result = $this->doSelect($sql, [(int)$addressId, (int)$userId], 'fetch', PDO::FETCH_ASSOC);
         return $result;
     }
 
-    /**
-     * Ajout d'une adresse via AJAX (Sanitisation stricte XSS)
-     */
     public function addAddress($data)
     {
         Model::sessionInit();
         $userId = (int)Model::sessionGet('userId');
-        
-        if ($userId <= 0) return 0; 
 
-        // Protection XSS avant l'insertion en base
-        $lastName = htmlspecialchars(trim($data['last_name'] ?? ''), ENT_QUOTES, 'UTF-8');
-        $mobile = htmlspecialchars(trim($data['mobile'] ?? ''), ENT_QUOTES, 'UTF-8');
-        $phone = htmlspecialchars(trim($data['phone'] ?? ''), ENT_QUOTES, 'UTF-8');
+        // Nettoyage des données pour prévenir les failles XSS
+        $lastName     = htmlspecialchars(trim($data['last_name'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $mobile       = htmlspecialchars(trim($data['mobile'] ?? ''), ENT_QUOTES, 'UTF-8');
         $provinceName = htmlspecialchars(trim($data['province_name'] ?? ''), ENT_QUOTES, 'UTF-8');
-        $cityName = htmlspecialchars(trim($data['city_name'] ?? ''), ENT_QUOTES, 'UTF-8');
-        $postalCode = htmlspecialchars(trim($data['postal_code'] ?? ''), ENT_QUOTES, 'UTF-8');
-        $address = htmlspecialchars(trim($data['address'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $cityName     = htmlspecialchars(trim($data['city_name'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $postalCode   = htmlspecialchars(trim($data['postal_code'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $address      = htmlspecialchars(trim($data['address'] ?? ''), ENT_QUOTES, 'UTF-8');
 
-        $sql = "INSERT INTO user_addresses 
-                (user_id, last_name, mobile, phone, province_id, city_id, neighborhood, address, postal_code, province_name, city_name) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        // CORRECTION DWWM : Correspondance exacte avec les colonnes de la BDD (province_name, city_name)
+        // Les colonnes sans valeur par défaut (phone, province_id, etc.) sont remplies avec des chaînes vides
+        $sql = "INSERT INTO user_addresses (user_id, last_name, mobile, province_name, city_name, postal_code, address, phone, province_id, city_id, neighborhood) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, '', '', '', '')";
         
-        $params = [
-            $userId, 
-            $lastName, 
-            $mobile, 
-            $phone, 
-            '', 
-            '', 
-            '', 
-            $address, 
-            $postalCode, 
-            $provinceName, 
-            $cityName
-        ];
+        $params = [$userId, $lastName, $mobile, $provinceName, $cityName, $postalCode, $address];
         
         $this->doQuery($sql, $params);
-
-        $sqlId = "SELECT id FROM user_addresses WHERE user_id = ? ORDER BY id DESC LIMIT 1";
-        $resId = $this->doSelect($sqlId, [$userId], true);
-        
-        return (int)($resId['id'] ?? 0);
+        return self::$conn->lastInsertId();
     }
 
-    public function getShippingTypes()
+    public function getShippingTypes() 
     {
         $sql = "SELECT * FROM shipping_methods";
         return $this->doSelect($sql);
@@ -85,87 +59,122 @@ class ModelOrder extends Model
 
     public function getShippingPrice($shippingId)
     {
-        $sql = "SELECT * FROM shipping_methods WHERE id = ?";
-        $res = $this->doSelect($sql, [(int)$shippingId], true);
-        return isset($res['price']) ? (float)$res['price'] : 0.0;
+        $sql = "SELECT price FROM shipping_methods WHERE id = ?";
+        $result = $this->doSelect($sql, [(int)$shippingId], 'fetch', PDO::FETCH_ASSOC);
+        return isset($result['price']) ? (float)$result['price'] : 0;
     }
 
-    public function getCartData()
+    public function getCartData() 
     {
         return parent::getCart();
     }
 
-    public function getPaymentStatus()
+    public function getPaymentStatus() 
     {
-        $sql = "SELECT * FROM payment_methods";
-        return $this->doSelect($sql);
+        $sql = "SELECT * FROM settings WHERE setting_key = 'payment_status'";
+        return $this->doSelect($sql, [], 'fetch', PDO::FETCH_ASSOC);
     }
 
     public function verifyPromoCode($code)
     {
-        if (empty($code)) return [];
-        $sql = "SELECT * FROM discount_codes WHERE code = ? AND is_used = 0";
-        return $this->doSelect($sql, [$code], true);
+        $sql = "SELECT * FROM discount_codes WHERE code = ? AND is_used = 0 AND expires_at > ?";
+        // Vérification de la validité du code promo (comparaison avec la date actuelle)
+        $currentDate = date('Y-m-d');
+        return $this->doSelect($sql, [$code, $currentDate], 'fetch', PDO::FETCH_ASSOC);
     }
 
-    public function calculateTotalPrice($code)
+    public function calculateTotalPrice($code = '')
     {
-        $cart = $this->getCartData();
-        $total = isset($cart[1]) ? (float)$cart[1] : 0.0;
-        
-        $promo = $this->verifyPromoCode($code);
-        if ($promo) {
-            $percent = (float)($promo['discount_percent'] ?? 0);
-            if ($percent > 0) {
-                $discountAmount = $total * ($percent / 100);
-                $total = $total - $discountAmount;
+        $cartData = $this->getCartData();
+        $totalPrice = (float)($cartData[1] ?? 0);
+        $discountTotal = (float)($cartData[2] ?? 0);
+
+        if (!empty($code)) {
+            $promo = $this->verifyPromoCode($code);
+            if ($promo && isset($promo['discount_percent'])) {
+                $promoDiscount = ($totalPrice * (float)$promo['discount_percent']) / 100;
+                $discountTotal += $promoDiscount;
             }
         }
-        return $total < 0 ? 0 : $total;
+
+        return max(0, $totalPrice - $discountTotal);
     }
 
     /**
-     * Crée la commande brute dans la base de données
+     * SÉCURITÉ DWWM : Enregistrement sécurisé de la commande
+     * Masquage strict du numéro de carte (Norme PCI-DSS : uniquement les 4 derniers chiffres).
      */
-    public function saveOrder($data) 
+    public function saveOrder($postData)
     {
         Model::sessionInit();
         $userId = (int)Model::sessionGet('userId');
-        
         $addressId = (int)Model::sessionGet('selected_address_id');
         $shippingMethodId = (int)Model::sessionGet('selected_shipping_type_id');
-        
-        // SÉCURITÉ IDOR : Vérification stricte du propriétaire de l'adresse
+
+        if (!$userId || !$addressId || !$shippingMethodId) {
+            return 0;
+        }
+
         $addressInfo = $this->getAddressById($addressId, $userId);
-        if (!$addressInfo) return 0;
+        if (!$addressInfo) {
+            return 0;
+        }
 
-        $lastName = strip_tags(trim($addressInfo['last_name'] ?? ''));
-        $addressText = strip_tags(trim($addressInfo['address'] ?? ''));
-        $city = strip_tags(trim($addressInfo['city_name'] ?? ''));
-        $postalCode = strip_tags(trim($addressInfo['postal_code'] ?? ''));
-        $mobile = strip_tags(trim($addressInfo['mobile'] ?? ''));
-        $phone = strip_tags(trim($addressInfo['phone'] ?? ''));
-        $province = strip_tags(trim($addressInfo['province_name'] ?? ''));
+        $cartInfo = $this->getCartData();
+        $cartItems = $cartInfo[0] ?? [];
+        if (empty($cartItems)) {
+            return 0;
+        }
 
-        $cartData = $this->getCartData();
-        $cartItems = $cartData[0] ?? [];
-        $cartDataString = serialize($cartItems); // Les objets sont désactivés au unserialize plus tard
-
+        $totalProductsPrice = (float)($cartInfo[1] ?? 0);
+        $totalDiscount = (float)($cartInfo[2] ?? 0);
         $shippingPrice = $this->getShippingPrice($shippingMethodId);
-        
-        $codePromo = htmlspecialchars(trim($data['code_promo'] ?? ''), ENT_QUOTES, 'UTF-8');
-        $totalAmount = $this->calculateTotalPrice($codePromo) + $shippingPrice;
+
+        // Code Promo optionnel
+        $codePromo = htmlspecialchars(trim($postData['code_promo'] ?? ''), ENT_QUOTES, 'UTF-8');
+        if (!empty($codePromo)) {
+            $promo = $this->verifyPromoCode($codePromo);
+            if ($promo && isset($promo['discount_percent'])) {
+                $promoDiscount = ($totalProductsPrice * (float)$promo['discount_percent']) / 100;
+                $totalDiscount += $promoDiscount;
+            }
+        }
+
+        $totalAmount = max(0, $totalProductsPrice + $shippingPrice - $totalDiscount);
+
+        // RÉCUPÉRATION DU MODE DE PAIEMENT SÉLECTIONNÉ (1 = Carte Bancaire, 2 = Virement)
+        $paymentMethodId = (int)($postData['payment_method'] ?? 1);
+        $maskedCard = '';
+        $payBankName = '';
+
+        if ($paymentMethodId === 1) {
+            $payBankName = 'Carte Bancaire';
+            $rawCardNumber = preg_replace('/\D/', '', $postData['card_number'] ?? '');
+            if (!empty($rawCardNumber)) {
+                $last4Digits = substr($rawCardNumber, -4);
+                $maskedCard = '**** **** **** ' . $last4Digits;
+            }
+        } else if ($paymentMethodId === 2) {
+            $payBankName = 'Virement Bancaire';
+            $maskedCard = 'N/A';
+        }
+
+        $lastName    = htmlspecialchars($addressInfo['last_name'] ?? '', ENT_QUOTES, 'UTF-8');
+        $mobile      = htmlspecialchars($addressInfo['mobile'] ?? '', ENT_QUOTES, 'UTF-8');
+        $province    = htmlspecialchars($addressInfo['province_name'] ?? '', ENT_QUOTES, 'UTF-8');
+        $city        = htmlspecialchars($addressInfo['city_name'] ?? '', ENT_QUOTES, 'UTF-8');
+        $postalCode  = htmlspecialchars($addressInfo['postal_code'] ?? '', ENT_QUOTES, 'UTF-8');
+        $addressText = htmlspecialchars($addressInfo['address'] ?? '', ENT_QUOTES, 'UTF-8');
+
+        $cartDataString = serialize($cartItems);
 
         $timestamp = time();
-        date_default_timezone_set('Europe/Paris');
         $date = date('Y-m-d H:i:s');
-        
-        $barcode = 'ORD-' . $timestamp . '-' . rand(1000, 9999);
+        $barcode = 'ORD-' . $timestamp . '-' . rand(100, 999);
 
-        // Requête préparée PDO pour contrer les injections SQL
         $sql = "INSERT INTO orders 
                 (transaction_id_before, transaction_id_after, barcode, tracking_code, last_name, province, city, postal_code, mobile, phone, address_data, cart_data, total_amount, shipping_method_id, shipping_price, user_id, is_paid, payment_method_id, pay_card_number, pay_bank_name, created_timestamp, created_date) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1, ?, ?, ?, ?)";
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)";
         
         $params = [
             '', 
@@ -177,30 +186,30 @@ class ModelOrder extends Model
             $city, 
             $postalCode, 
             $mobile, 
-            $phone, 
+            '', 
             $addressText, 
             $cartDataString, 
             $totalAmount, 
             $shippingMethodId, 
             $shippingPrice, 
             $userId, 
-            '', 
-            '', 
+            $paymentMethodId, 
+            $maskedCard, 
+            $payBankName, 
             $timestamp, 
             $date
         ];
         
         $this->doQuery($sql, $params);
+        $orderId = (int)self::$conn->lastInsertId();
 
-        // Vidage du panier
-        $cookie = parent::getCartCookie();
-        $sqlEmptyCart = "DELETE FROM cart_items WHERE session_cookie = ?";
-        $this->doQuery($sqlEmptyCart, [$cookie]);
+        if ($orderId > 0) {
+            $cookie = parent::getCartCookie();
+            $sqlEmptyCart = "DELETE FROM cart_items WHERE session_cookie = ?";
+            $this->doQuery($sqlEmptyCart, [$cookie]);
+        }
 
-        $sqlId = "SELECT id FROM orders WHERE user_id = ? ORDER BY id DESC LIMIT 1";
-        $resId = $this->doSelect($sqlId, [$userId], true);
-        
-        return (int)($resId['id'] ?? 0);
+        return $orderId;
     }
 }
 ?>

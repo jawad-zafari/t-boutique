@@ -1,14 +1,12 @@
 /**
  * Logique globale JavaScript pour la gestion des commandes (Checkout Stepper)
- * Architecture Vanilla JS
- * Sécurité : Protection CSRF pour toutes les requêtes Fetch & Prévention DOM-Based XSS
+ * Vanilla JS - Notification Toast centrée en haut de page & requêtes AJAX sécurisées
  */
 document.addEventListener("DOMContentLoaded", () => {
 
     const baseTag = document.querySelector('base');
     const baseUrl = baseTag ? baseTag.getAttribute('href') : '/';
     
-    // SÉCURITÉ : Récupération dynamique du jeton CSRF pour les requêtes AJAX
     function getCsrfToken() {
         const wrapper = document.querySelector('[data-csrf]');
         if (wrapper) return wrapper.getAttribute('data-csrf');
@@ -18,7 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // =========================================================================
-    // 1. SYSTÈME DE TOAST (Notification sécurisée)
+    // SYSTÈME DE TOAST (Positionné en haut au centre de l'écran)
     // =========================================================================
     function showOrderToast(message, type = 'success') {
         let toast = document.getElementById('orderToastNotification');
@@ -34,21 +32,19 @@ document.addEventListener("DOMContentLoaded", () => {
             toast.style.color = '#fff';
             toast.style.fontWeight = 'bold';
             toast.style.zIndex = '10000';
-            toast.style.boxShadow = '0 10px 15px -3px rgba(0,0,0,0.2)';
-            toast.style.transition = 'opacity 0.3s ease-in-out';
+            toast.style.boxShadow = '0 10px 25px rgba(0,0,0,0.15)';
+            toast.style.transition = 'opacity 0.3s ease-in-out, transform 0.3s ease-in-out';
             document.body.appendChild(toast);
         }
 
         toast.style.backgroundColor = (type === 'danger') ? '#e03131' : '#2b8a3e';
-        toast.innerHTML = ''; 
+        toast.innerHTML = '';
         
         const icon = document.createElement('i');
-        icon.className = type === 'danger' ? 'fa-solid fa-circle-exclamation' : 'fa-solid fa-circle-check';
+        icon.className = (type === 'danger') ? 'fa-solid fa-circle-exclamation' : 'fa-solid fa-circle-check';
         icon.style.marginRight = '10px';
         
-        // SÉCURITÉ : Échappement des caractères HTML pour éviter le XSS
         const textNode = document.createTextNode(message);
-
         toast.appendChild(icon);
         toast.appendChild(textNode);
 
@@ -58,219 +54,315 @@ document.addEventListener("DOMContentLoaded", () => {
         setTimeout(() => {
             toast.style.opacity = '0';
             setTimeout(() => { toast.style.display = 'none'; }, 300);
-        }, 3500);
+        }, 4000);
     }
 
     // =========================================================================
-    // 2. ÉTAPE 2 : GESTION DES ADRESSES ET MODES DE LIVRAISON
+    // GESTION DES CARTES DE SÉLECTION (Adresse & Transport)
     // =========================================================================
-    const btnOpenAddressModal = document.getElementById('btnOpenAddressModal');
-    const addressModal = document.getElementById('newAddressModal');
-    const btnCloseAddressModal = document.getElementById('btnCloseAddressModal');
-    const btnCancelAddress = document.getElementById('btnCancelAddress');
+    function attachCardClickEvent(card) {
+        card.addEventListener('click', function(e) {
+            if(e.target.closest('button') || e.target.closest('a')) return;
 
-    const openModal = () => { if (addressModal) addressModal.classList.add('active'); };
-    const closeModal = () => { if (addressModal) addressModal.classList.remove('active'); };
-
-    if (btnOpenAddressModal) btnOpenAddressModal.addEventListener('click', openModal);
-    if (btnCloseAddressModal) btnCloseAddressModal.addEventListener('click', closeModal);
-    if (btnCancelAddress) btnCancelAddress.addEventListener('click', closeModal);
-
-    const formNewAddress = document.getElementById('formNewAddress');
-    if (formNewAddress) {
-        formNewAddress.addEventListener('submit', async function(e) {
-            e.preventDefault();
+            const isAddress = this.classList.contains('js-address-card');
+            const groupSelector = isAddress ? '.js-address-card' : '.js-shipping-card';
             
-            const btnSubmit = document.getElementById('btnSubmitAddress');
-            if (btnSubmit) {
-                btnSubmit.disabled = true;
-                btnSubmit.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Enregistrement...';
+            document.querySelectorAll(groupSelector).forEach(c => {
+                c.classList.remove('active');
+                const radio = c.querySelector('input[type="radio"]');
+                if (radio) radio.checked = false;
+            });
+            
+            this.classList.add('active');
+            const targetRadio = this.querySelector('input[type="radio"]');
+            if (targetRadio) targetRadio.checked = true;
+        });
+    }
+
+    document.querySelectorAll('.js-address-card, .js-shipping-card').forEach(card => {
+        attachCardClickEvent(card);
+    });
+
+    // =========================================================================
+    // GESTION DU MODE DE PAIEMENT (BASCULEMENT DYNAMIQUE DES DÉTAILS SOUS LES CARTES)
+    // =========================================================================
+    const paymentCards = document.querySelectorAll('.js-payment-card');
+    const cardDetailsBox = document.getElementById('cardPaymentDetails');
+    const bankDetailsBox = document.getElementById('bankTransferDetails');
+
+    if (paymentCards.length > 0) {
+        paymentCards.forEach(card => {
+            card.addEventListener('click', function() {
+                paymentCards.forEach(c => {
+                    c.classList.remove('active');
+                    const radio = c.querySelector('input[type="radio"]');
+                    if (radio) radio.checked = false;
+                });
+
+                this.classList.add('active');
+                const selectedRadio = this.querySelector('input[type="radio"]');
+                if (selectedRadio) selectedRadio.checked = true;
+
+                const method = this.getAttribute('data-method');
+
+                if (method === '1') {
+                    if (cardDetailsBox) cardDetailsBox.classList.remove('display-none-box');
+                    if (bankDetailsBox) bankDetailsBox.classList.add('display-none-box');
+                } else if (method === '2') {
+                    if (cardDetailsBox) cardDetailsBox.classList.add('display-none-box');
+                    if (bankDetailsBox) bankDetailsBox.classList.remove('display-none-box');
+                }
+            });
+        });
+    }
+
+    // Formatage automatique du numéro de carte bancaire (groupes de 4 chiffres)
+    const cardNumberInput = document.getElementById('cardNumber');
+    if (cardNumberInput) {
+        cardNumberInput.addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\D/g, '');
+            value = value.substring(0, 16);
+            let formatted = value.match(/.{1,4}/g)?.join(' ') || value;
+            e.target.value = formatted;
+        });
+    }
+
+    // Formatage de la date d'expiration (MM/AA)
+    const cardExpiryInput = document.getElementById('cardExpiry');
+    if (cardExpiryInput) {
+        cardExpiryInput.addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length >= 2) {
+                value = value.substring(0, 2) + '/' + value.substring(2, 4);
             }
+            e.target.value = value.substring(0, 5);
+        });
+    }
+
+    // =========================================================================
+    // AJOUT D'ADRESSE INLINE EN AJAX
+    // =========================================================================
+    const btnToggleAddressForm = document.getElementById('btnToggleAddressForm');
+    const inlineAddressFormContainer = document.getElementById('inlineAddressFormContainer');
+    const btnCancelAddressInline = document.getElementById('btnCancelAddressInline');
+    const formAddAddress = document.getElementById('formAddAddress');
+
+    if (btnToggleAddressForm && inlineAddressFormContainer) {
+        btnToggleAddressForm.addEventListener('click', () => {
+            const isHidden = inlineAddressFormContainer.classList.contains('display-none-box');
+            
+            if (isHidden) {
+                inlineAddressFormContainer.classList.remove('display-none-box');
+                btnToggleAddressForm.setAttribute('aria-expanded', 'true');
+                btnToggleAddressForm.innerHTML = '<i class="fa-solid fa-minus" aria-hidden="true"></i> Masquer le formulaire';
+                
+                const firstInput = inlineAddressFormContainer.querySelector('input');
+                if (firstInput) firstInput.focus();
+            } else {
+                inlineAddressFormContainer.classList.add('display-none-box');
+                btnToggleAddressForm.setAttribute('aria-expanded', 'false');
+                btnToggleAddressForm.innerHTML = '<i class="fa-solid fa-plus" aria-hidden="true"></i> Ajouter une adresse';
+            }
+        });
+    }
+
+    if (btnCancelAddressInline && inlineAddressFormContainer && btnToggleAddressForm) {
+        btnCancelAddressInline.addEventListener('click', () => {
+            inlineAddressFormContainer.classList.add('display-none-box');
+            btnToggleAddressForm.setAttribute('aria-expanded', 'false');
+            btnToggleAddressForm.innerHTML = '<i class="fa-solid fa-plus" aria-hidden="true"></i> Ajouter une adresse';
+            if (formAddAddress) formAddAddress.reset();
+        });
+    }
+
+    if (formAddAddress) {
+        formAddAddress.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const submitBtn = formAddAddress.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+            
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enregistrement...';
+            submitBtn.disabled = true;
+
+            const formData = new FormData(formAddAddress);
+            formData.append('csrf_token', getCsrfToken());
 
             try {
-                const formData = new FormData(this);
-                // SÉCURITÉ : Ajout du jeton CSRF à la requête
-                formData.append('csrf_token', getCsrfToken());
-
                 const response = await fetch(`${baseUrl}Order/addAddressAjax`, {
                     method: 'POST',
                     body: formData
                 });
 
-                const data = await response.json();
+                const result = await response.json();
 
-                if (data.status === 'success') {
-                    showOrderToast(data.message, 'success');
-                    closeModal();
-                    this.reset();
+                if (result.status === 'success' && result.address) {
+                    showOrderToast(result.message, "success");
 
-                    // SÉCURITÉ : Création sécurisée des éléments DOM au lieu de l'injection HTML brute
-                    const addressList = document.getElementById('addressListContainer');
-                    if (addressList && data.address) {
-                        const emptyMsg = document.getElementById('emptyAddressMsg');
-                        if (emptyMsg) emptyMsg.style.display = 'none';
+                    const addr = result.address;
+                    const addressGrid = document.querySelector('.address-cards-grid');
+                    const emptyNotice = document.getElementById('emptyAddressNotice');
+                    if (emptyNotice) emptyNotice.remove();
 
-                        const newDiv = document.createElement('div');
-                        newDiv.className = 'address-card-item';
+                    document.querySelectorAll('.js-address-card').forEach(c => {
+                        c.classList.remove('active');
+                        const r = c.querySelector('input[type="radio"]');
+                        if (r) r.checked = false;
+                    });
 
-                        const inputRadio = document.createElement('input');
-                        inputRadio.type = 'radio';
-                        inputRadio.name = 'selected_address';
-                        inputRadio.id = `addr_${data.address.id}`;
-                        inputRadio.value = data.address.id;
-                        inputRadio.className = 'address-radio';
-                        inputRadio.checked = true; // Auto-sélection de la nouvelle adresse
+                    const newCard = document.createElement('div');
+                    newCard.className = 'modern-selection-card js-address-card active';
+                    newCard.setAttribute('data-id', addr.id);
 
-                        const label = document.createElement('label');
-                        label.htmlFor = `addr_${data.address.id}`;
-                        label.className = 'address-label';
+                    const radioBox = document.createElement('div');
+                    radioBox.className = 'card-radio-select';
 
-                        const headerDiv = document.createElement('div');
-                        headerDiv.className = 'address-header';
-                        const nameSpan = document.createElement('span');
-                        nameSpan.className = 'address-name';
-                        nameSpan.textContent = data.address.last_name || 'Utilisateur';
-                        const checkIcon = document.createElement('i');
-                        checkIcon.className = 'fa-solid fa-circle-check check-icon';
-                        headerDiv.appendChild(nameSpan);
-                        headerDiv.appendChild(checkIcon);
+                    const radioInput = document.createElement('input');
+                    radioInput.type = 'radio';
+                    radioInput.name = 'selected_address';
+                    radioInput.id = `addr_${addr.id}`;
+                    radioInput.value = addr.id;
+                    radioInput.checked = true;
 
-                        const bodyDiv = document.createElement('div');
-                        bodyDiv.className = 'address-body';
-                        const pAddress = document.createElement('p');
-                        pAddress.textContent = data.address.address || '';
-                        
-                        const pMeta = document.createElement('p');
-                        pMeta.className = 'address-meta';
-                        pMeta.textContent = `${data.address.city_name || ''} - ${data.address.postal_code || ''} | Tél: ${data.address.mobile || ''}`;
+                    const label = document.createElement('label');
+                    label.setAttribute('for', `addr_${addr.id}`);
+                    const strong = document.createElement('strong');
+                    strong.textContent = addr.last_name || '';
+                    label.appendChild(strong);
 
-                        bodyDiv.appendChild(pAddress);
-                        bodyDiv.appendChild(pMeta);
+                    radioBox.appendChild(radioInput);
+                    radioBox.appendChild(label);
 
-                        label.appendChild(headerDiv);
-                        label.appendChild(bodyDiv);
+                    const pSummary = document.createElement('p');
+                    pSummary.className = 'address-text-summary';
+                    pSummary.textContent = addr.address || '';
 
-                        newDiv.appendChild(inputRadio);
-                        newDiv.appendChild(label);
+                    const spanCity = document.createElement('span');
+                    spanCity.className = 'address-city-zip';
+                    spanCity.textContent = `${addr.city_name || addr.city || ''} (${addr.postal_code || ''})`;
 
-                        addressList.appendChild(newDiv);
+                    newCard.appendChild(radioBox);
+                    newCard.appendChild(pSummary);
+                    newCard.appendChild(spanCity);
+
+                    attachCardClickEvent(newCard);
+
+                    if (addressGrid) {
+                        addressGrid.prepend(newCard);
                     }
+
+                    inlineAddressFormContainer.classList.add('display-none-box');
+                    btnToggleAddressForm.setAttribute('aria-expanded', 'false');
+                    btnToggleAddressForm.innerHTML = '<i class="fa-solid fa-plus" aria-hidden="true"></i> Ajouter une adresse';
+                    formAddAddress.reset();
+
                 } else {
-                    showOrderToast(data.message || "Erreur lors de l'enregistrement.", 'danger');
+                    showOrderToast(result.message || "Erreur lors de l'enregistrement.", "danger");
                 }
             } catch (error) {
-                console.error("Erreur d'ajout d'adresse :", error);
-                showOrderToast("Une erreur de communication est survenue.", 'danger');
+                console.error("Erreur AJAX Adresse:", error);
+                showOrderToast("Erreur de connexion au serveur.", "danger");
             } finally {
-                if (btnSubmit) {
-                    btnSubmit.disabled = false;
-                    btnSubmit.innerHTML = 'Enregistrer l\'adresse';
-                }
-            }
-        });
-    }
-
-    const btnContinueToSummary = document.getElementById('btnContinueToSummary');
-    if (btnContinueToSummary) {
-        btnContinueToSummary.addEventListener('click', async function() {
-            
-            const errBox = document.getElementById('jsErrorMessage');
-            if (errBox) errBox.classList.add('display-none-box');
-
-            const selectedAddress = document.querySelector('input[name="selected_address"]:checked');
-            const selectedShipping = document.querySelector('input[name="selected_shipping"]:checked');
-
-            if (!selectedAddress || !selectedShipping) {
-                if (errBox) {
-                    // SÉCURITÉ : Nettoyage sécurisé
-                    errBox.innerHTML = '';
-                    const errIcon = document.createElement('i');
-                    errIcon.className = 'fa-solid fa-triangle-exclamation';
-                    const errMsg = document.createTextNode(' Veuillez sélectionner une adresse et un mode de livraison.');
-                    errBox.appendChild(errIcon);
-                    errBox.appendChild(errMsg);
-                    errBox.classList.remove('display-none-box');
-                }
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-                return;
-            }
-
-            const addressId = selectedAddress.value;
-            const shippingId = selectedShipping.value;
-
-            try {
-                const formData = new URLSearchParams();
-                formData.append('addressId', addressId);
-                formData.append('shippingId', shippingId);
-                // SÉCURITÉ : Ajout du jeton CSRF
-                formData.append('csrf_token', getCsrfToken());
-
-                const response = await fetch(`${baseUrl}Order/saveAddressSession`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: formData.toString()
-                });
-
-                const data = await response.json();
-                
-                if (data.status === 'success') {
-                    window.location.href = `${baseUrl}Order/summary`;
-                } else {
-                    showOrderToast(data.message || "Erreur de sauvegarde de la sélection.", "danger");
-                }
-
-            } catch (error) {
-                console.error("Erreur sauvegarde session :", error);
-                showOrderToast("Erreur de connexion.", "danger");
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
             }
         });
     }
 
     // =========================================================================
-    // 3. ÉTAPE 4 : GESTION DU CODE PROMO (PAIEMENT)
+    // VALIDATION DE L'ÉTAPE ADRESSE ET CONTINUATION VERS LE PAIEMENT
+    // =========================================================================
+    const btnContinueToSummary = document.getElementById('btnContinueToSummary');
+    const jsErrorMessage = document.getElementById('jsErrorMessage');
+
+    if (btnContinueToSummary) {
+        btnContinueToSummary.addEventListener('click', async (e) => {
+            e.preventDefault();
+            
+            const activeAddress = document.querySelector('.js-address-card.active');
+            const activeShipping = document.querySelector('.js-shipping-card.active');
+
+            if (!activeAddress || !activeShipping) {
+                if (jsErrorMessage) {
+                    jsErrorMessage.innerHTML = '<i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Veuillez sélectionner une adresse et un mode de livraison.';
+                    jsErrorMessage.classList.remove('display-none-box');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                    showOrderToast("Veuillez sélectionner une adresse et un mode de livraison.", "danger");
+                }
+                return;
+            }
+            
+            if (jsErrorMessage) jsErrorMessage.classList.add('display-none-box');
+            
+            const addressId = activeAddress.querySelector('input[type="radio"]').value;
+            const shippingId = activeShipping.querySelector('input[type="radio"]').value;
+
+            const formData = new URLSearchParams();
+            formData.append('addressId', addressId);
+            formData.append('shippingId', shippingId);
+            formData.append('csrf_token', getCsrfToken());
+
+            btnContinueToSummary.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i> Traitement...';
+            btnContinueToSummary.disabled = true;
+
+            try {
+                const response = await fetch(`${baseUrl}Order/saveAddressSession`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    window.location.href = `${baseUrl}Order/payment`;
+                } else {
+                    showOrderToast(result.message || "Erreur de validation.", "danger");
+                    btnContinueToSummary.innerHTML = 'Continuer <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>';
+                    btnContinueToSummary.disabled = false;
+                }
+            } catch (err) {
+                console.error("Erreur Checkout:", err);
+                showOrderToast("Erreur de connexion au serveur.", "danger");
+                btnContinueToSummary.innerHTML = 'Continuer <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>';
+                btnContinueToSummary.disabled = false;
+            }
+        });
+    }
+
+    // =========================================================================
+    // VÉRIFICATION DU CODE PROMO VIA AJAX
     // =========================================================================
     const btnVerifyPromo = document.getElementById('btnVerifyPromo');
     const codePromoInput = document.getElementById('codePromoInput');
+    const summaryDiscountLine = document.getElementById('summaryDiscountLine');
+    const summaryDiscountValue = document.getElementById('summaryDiscountValue');
+    const finalTotalAmount = document.getElementById('finalTotalAmount');
 
     if (btnVerifyPromo && codePromoInput) {
-        btnVerifyPromo.addEventListener('click', async function() {
+        btnVerifyPromo.addEventListener('click', async () => {
             const code = codePromoInput.value.trim();
-            if (code === "") {
-                showOrderToast("Veuillez saisir un code promo.", "danger");
-                return;
-            }
+            if (code === '') return;
 
-            btnVerifyPromo.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            btnVerifyPromo.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>';
 
             try {
-                const formData = new URLSearchParams();
-                formData.append('code', code);
-                // SÉCURITÉ : Ajout du jeton CSRF pour vérifier le code
-                formData.append('csrf_token', getCsrfToken());
-
-                const response = await fetch(`${baseUrl}Order/checkPromoCode`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: formData.toString()
-                });
-
-                const dataArr = await response.json();
-                const promoData = dataArr[0];
-                const newTotal = dataArr[1];
-
-                const finalTotalAmount = document.getElementById('finalTotalAmount');
-                const summaryDiscountLine = document.getElementById('summaryDiscountLine');
-                const summaryDiscountValue = document.getElementById('summaryDiscountValue');
-
-                if (promoData && promoData.id) {
+                const safeCode = encodeURIComponent(code);
+                
+                const response = await fetch(`${baseUrl}Order/checkPromoCode/${safeCode}`);
+                const data = await response.json();
+                
+                const promoData = data[0]; 
+                const newTotal = parseFloat(data[1]); 
+                
+                if (promoData && promoData.discount_amount) {
                     codePromoInput.classList.remove('input-error');
                     codePromoInput.classList.add('input-success');
                     showOrderToast("Code de réduction appliqué avec succès !", "success");
                     
                     if(summaryDiscountLine && summaryDiscountValue) {
                         summaryDiscountLine.classList.remove('display-none-box');
-                        // SÉCURITÉ : Utilisation de textContent
-                        summaryDiscountValue.textContent = '- ' + new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2 }).format(promoData.discount_amount || 0) + ' €';
+                        summaryDiscountValue.textContent = '- ' + new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2 }).format(promoData.discount_amount) + ' €';
                     }
                 } else {
                     codePromoInput.classList.remove('input-success');
@@ -283,7 +375,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
                 
                 if (finalTotalAmount) {
-                    // SÉCURITÉ : textContent
                     finalTotalAmount.textContent = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2 }).format(newTotal) + ' €';
                 }
             } catch (error) { 

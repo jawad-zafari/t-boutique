@@ -42,10 +42,10 @@ class ModelRegister extends Model
         $city = '';
         $postalCode = '';
         
-        // Gestion de la date (Format standard MySQL ou fonction personnalisée)
+        // Gestion de la date (Format standard MySQL)
         $createdAt = date('Y-m-d H:i:s'); 
-        if (method_exists($this, 'jaliliDate')) {
-            $createdAt = self::jaliliDate('Y/m/d'); 
+        if (method_exists($this, 'getCurrentDate')) {
+            $createdAt = self::getCurrentDate('Y-m-d H:i:s'); 
         }
 
         // SÉCURITÉ : Vérification de l'existence de l'e-mail pour éviter les doublons (Requête préparée)

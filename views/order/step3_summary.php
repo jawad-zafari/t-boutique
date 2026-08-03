@@ -44,7 +44,7 @@ $finalTotal = $totalProductsPrice + $shippingPrice - $totalDiscount;
                 
                 <div class="summary-items-list-grid">
                     <?php if (!empty($cart)): foreach($cart as $item):
-                        $qty = (int)($item['tedad'] ?? $item['quantity'] ?? 1);
+                        $qty = (int)($item['quantity'] ?? 1);
                         $price = (float)($item['price'] ?? 0);
                     ?>
                         <div class="summary-item-row-card">

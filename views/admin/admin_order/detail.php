@@ -95,7 +95,7 @@ $orderId = (int)($orderInfo['id'] ?? 0);
                 </thead>
                 <tbody>
                     <?php if(!empty($cart)): foreach ($cart as $row): 
-                        $qty = (int)($row['quantity'] ?? $row['tedad'] ?? 1);
+                        $qty = (int)($row['quantity'] ?? 1);
                     ?>
                     <tr>
                         <td><strong><?= htmlspecialchars($row['title'] ?? '', ENT_QUOTES, 'UTF-8') ?></strong></td>

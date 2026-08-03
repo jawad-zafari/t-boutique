@@ -1,6 +1,6 @@
 /**
- * Logique JavaScript pour la page Collection
- * Sécurisé (Anti-XSS, CSRF, Routing dynamique) et Junior-Friendly
+ * Logique JavaScript pour la page Collection / Catalogue
+ * Architecture Vanilla JS - Sécurisé (Anti-XSS, CSRF, Routing dynamique) et Junior-Friendly.
  */
 document.addEventListener("DOMContentLoaded", () => {
     
@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
         
         formElements.forEach(element => {
             element.addEventListener('change', () => {
-                // Effet visuel de chargement fluide
+                // Effet visuel de chargement fluide sur la grille
                 const grid = document.querySelector('.products-grid-layout');
                 if (grid) {
                     grid.style.opacity = '0.4';
@@ -110,9 +110,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const sidebarTotal = document.getElementById('cartSidebarTotal');
         
         if (!sidebarBody) return;
-        sidebarBody.innerHTML = ''; // Nettoyage propre
+        sidebarBody.innerHTML = ''; // Nettoyage propre du conteneur
         
-        if (items.length === 0) {
+        if (!items || items.length === 0) {
             const emptyDiv = document.createElement('div');
             emptyDiv.className = 'empty-cart-msg';
             emptyDiv.textContent = 'Votre panier est vide.';
@@ -122,7 +122,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         
         items.forEach(item => {
-            const qty = item.quantity || item.tedad || 1;
+            // SÉCURITÉ DWWM : Utilisation stricte de la variable 'quantity'
+            const qty = item.quantity || 1;
             
             // SÉCURITÉ (Anti-XSS) : Construction manuelle du DOM
             const cardDiv = document.createElement('div');
@@ -139,7 +140,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const h4 = document.createElement('h4');
             h4.className = 'item-title';
-            h4.textContent = item.title; // Les scripts malveillants sont neutralisés ici
+            h4.textContent = item.title; // Neutralisation des scripts malveillants
 
             const priceDiv = document.createElement('div');
             priceDiv.className = 'item-price';
@@ -151,12 +152,28 @@ document.addEventListener("DOMContentLoaded", () => {
             const qtyWrapper = document.createElement('div');
             qtyWrapper.className = 'qty-wrapper';
             
-            // Les variables ici sont garanties comme étant des entiers (cartRow)
-            qtyWrapper.innerHTML = `
-                <button type="button" class="btn-qty minus" data-row="${item.cartRow}">-</button>
-                <input type="text" class="input-qty" value="${qty}" readonly data-row="${item.cartRow}">
-                <button type="button" class="btn-qty plus" data-row="${item.cartRow}">+</button>
-            `;
+            const btnMinus = document.createElement('button');
+            btnMinus.type = 'button';
+            btnMinus.className = 'btn-qty minus';
+            btnMinus.setAttribute('data-row', item.cartRow);
+            btnMinus.textContent = '-';
+
+            const inputQty = document.createElement('input');
+            inputQty.type = 'text';
+            inputQty.className = 'input-qty';
+            inputQty.value = qty;
+            inputQty.readOnly = true;
+            inputQty.setAttribute('data-row', item.cartRow);
+
+            const btnPlus = document.createElement('button');
+            btnPlus.type = 'button';
+            btnPlus.className = 'btn-qty plus';
+            btnPlus.setAttribute('data-row', item.cartRow);
+            btnPlus.textContent = '+';
+
+            qtyWrapper.appendChild(btnMinus);
+            qtyWrapper.appendChild(inputQty);
+            qtyWrapper.appendChild(btnPlus);
 
             const btnRemove = document.createElement('button');
             btnRemove.type = 'button';
@@ -224,7 +241,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     const totalPrice = cartData[1] || 0;
                     
                     let totalCount = 0;
-                    cartItems.forEach(item => totalCount += parseInt(item.quantity || item.tedad || 1));
+                    if (Array.isArray(cartItems)) {
+                        // SÉCURITÉ DWWM : Utilisation stricte de la variable 'quantity'
+                        cartItems.forEach(item => totalCount += parseInt(item.quantity || 1, 10));
+                    }
                     
                     const badge = document.getElementById('navCartCounterBadge');
                     if (badge) {

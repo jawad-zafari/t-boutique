@@ -127,8 +127,8 @@ $csrfToken = $csrf_token ?? '';
         $priceTotalAll = 0;
         if(!empty($cartItems)): 
             foreach($cartItems as $item): 
-                // SÉCURITÉ : Typage rigoureux pour les calculs financiers
-                $qty = (int)($item['quantity'] ?? $item['tedad'] ?? 1);
+                // SÉCURITÉ : Typage rigoureux pour les calculs financiers (suppression de la variable obsolète)
+                $qty = (int)($item['quantity'] ?? 1);
                 $price = (float)($item['price'] ?? 0);
                 $priceTotalAll += ($price * $qty);
         ?>
