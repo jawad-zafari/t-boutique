@@ -1,10 +1,5 @@
 <?php
 
-/**
- * Classe App (Routeur principal du système MVC)
- * Analyse l'URL et charge dynamiquement le contrôleur et la méthode correspondants.
- * Conforme aux exigences DWWM : Protection contre les failles LFI (Local File Inclusion).
- */
 class App
 {
     protected $controller = 'Index';
@@ -31,12 +26,12 @@ class App
             $this->params = array_values($url);
         }
 
-        // 2. SÉCURITÉ DWWM : Bloquer les caractères spéciaux (Prévention LFI / Path Traversal)
+        // Bloquer les caractères spéciaux 
         if (!preg_match('/^[a-zA-Z0-9_]+$/', $this->controller) || !preg_match('/^[a-zA-Z0-9_]+$/', $this->method)) {
             die("Erreur de sécurité : Caractères non autorisés détectés dans l'URL.");
         }
 
-        // 3. Chargement sécurisé du contrôleur
+        // Chargement sécurisé du contrôleur
         $controllerPath = 'controllers/' . $this->controller . '.php';
 
         if (file_exists($controllerPath)) {
@@ -45,7 +40,7 @@ class App
             if (class_exists($this->controller)) {
                 $controllerObject = new $this->controller();
 
-                // 4. Vérification de l'existence de la méthode dans le contrôleur enfant
+                // Vérification de l'existence de la méthode dans le contrôleur enfant
                 if (method_exists($controllerObject, $this->method)) {
                     $reflection = new ReflectionMethod($controllerObject, $this->method);
 

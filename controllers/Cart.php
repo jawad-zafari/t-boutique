@@ -1,10 +1,5 @@
 <?php
 
-/**
- * Contrôleur Cart (Panier)
- * Gère les actions du panier d'achats via des requêtes AJAX sécurisées (POST & CSRF).
- * Standard DWWM : Séparation des responsabilités et sécurité des flux.
- */
 class Cart extends Controller
 {
     public function __construct()

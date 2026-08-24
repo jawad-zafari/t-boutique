@@ -139,7 +139,6 @@ document.addEventListener("DOMContentLoaded", function() {
                         const count = parseInt(result.favCount || 0);
                         favBadge.innerText = count;
                         if (count > 0) {
-                            // On retire la classe is-hidden si elle existe
                             favBadge.classList.remove('is-hidden');
                             favBadge.style.display = 'inline-flex';
                             favBadge.style.transform = 'scale(1.4)';
@@ -156,4 +155,42 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         }
     });
-});
+
+    // =========================================================================
+    // 5. GESTION DU CONSENTEMENT AUX COOKIES (RGPD / CNIL)
+    // =========================================================================
+    const cookieBanner = document.getElementById('cookieConsentBanner');
+    const btnAccept = document.getElementById('btnAcceptCookies');
+    const btnReject = document.getElementById('btnRejectCookies');
+
+    if (cookieBanner) {
+        // Vérification du consentement préalable dans le navigateur
+        if (!localStorage.getItem('rgpd_cookie_consent')) {
+            cookieBanner.classList.remove('is-hidden');
+            setTimeout(() => {
+                cookieBanner.classList.add('show');
+            }, 500);
+        }
+
+        function hideCookieBanner(consentValue) {
+            localStorage.setItem('rgpd_cookie_consent', consentValue);
+            cookieBanner.classList.remove('show');
+            setTimeout(() => {
+                cookieBanner.classList.add('is-hidden');
+            }, 500);
+        }
+
+        if (btnAccept) {
+            btnAccept.addEventListener('click', () => {
+                hideCookieBanner('accepted');
+            });
+        }
+
+        if (btnReject) {
+            btnReject.addEventListener('click', () => {
+                hideCookieBanner('rejected');
+            });
+        }
+    }
+
+}); // Fin du DOMContentLoaded global

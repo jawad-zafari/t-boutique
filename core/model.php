@@ -1,9 +1,6 @@
 <?php
 
-/**
- * Classe Model (Modèle de base)
- * Gère la connexion PDO à la base de données et les requêtes préparées (Sécurité DWWM).
- */
+
 class Model
 {
     public static ?PDO $conn = null;
@@ -11,7 +8,7 @@ class Model
 
     public function __construct()
     {
-        // 1. Inclusion de la configuration d'environnement sécurisée
+        // Inclusion de la configuration d'environnement sécurisée
         $envPath = __DIR__ . '/env.php';
         if (file_exists($envPath)) {
             require_once $envPath;
@@ -27,7 +24,7 @@ class Model
 
         $initCommand = defined('Pdo\Mysql::ATTR_INIT_COMMAND') ? \Pdo\Mysql::ATTR_INIT_COMMAND : \PDO::MYSQL_ATTR_INIT_COMMAND;
 
-        // 2. Options PDO sécurisées (Blocage des injections SQL avancées)
+        // Options PDO sécurisées 
         $attr = array(
             $initCommand => "SET NAMES utf8mb4",
             PDO::ATTR_EMULATE_PREPARES => false,
@@ -43,9 +40,8 @@ class Model
         }
     }
 
-    /**
-     * Récupère les options/paramètres du système depuis la base de données
-     */
+    //   Récupère les options/paramètres du système depuis la base de données
+
     public static function getoption()
     {
         if (self::$conn === null) {
@@ -86,9 +82,9 @@ class Model
         return $products;
     }
 
-    /**
-     * Exécute une requête SELECT avec des requêtes préparées
-     */
+   
+    //   Exécute une requête SELECT avec des requêtes préparées
+     
     public function doSelect($sql, $values = array(), $fetch = '', $fetchStyle = PDO::FETCH_ASSOC)
     {
         $stmt = self::$conn->prepare($sql);
@@ -105,9 +101,9 @@ class Model
         return $result;
     }
 
-    /**
-     * Exécute une requête INSERT, UPDATE ou DELETE sécurisée
-     */
+    
+    //  Exécute une requête INSERT, UPDATE ou DELETE sécurisée
+     
     public function doQuery($sql, $values = array())
     {
         $stmt = self::$conn->prepare($sql);

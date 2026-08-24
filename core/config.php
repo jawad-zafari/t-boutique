@@ -23,30 +23,19 @@ define('PAYMENT_DEADLINE', $options['payment_deadline'] ?? 24);
 define('menu_color', $options['menu_color'] ?? '');
 define('body_color', $options['body_color'] ?? '');
 
-/**
- * Génère le chemin absolu pour les fichiers CSS
- * @param string $path Le nom du fichier CSS
- * @return string L'URL complète
- */
+
 function style(string $path): string 
 {
     return URL . 'public/assets/css/' . $path;
 }
 
-/**
- * Génère le chemin absolu pour les fichiers JavaScript
- * @param string $path Le nom du fichier JS
- * @return string L'URL complète
- */
+
 function script(string $path): string 
 {
     return URL . 'public/assets/js/' . $path;
 }
 
-/**
- * Affiche le contenu d'une variable pour le débogage (Réservé au développement)
- * @param mixed $var La variable à inspecter
- */
+
 function dd($var) 
 {
     echo '<pre style="background: #f4f4f4; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">';

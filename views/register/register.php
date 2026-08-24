@@ -1,9 +1,4 @@
 <?php
-/**
- * Vue de la page d'inscription (register.php)
- * Structure HTML5 accessible et 100% conforme au principe SoC (Séparation des préoccupations).
- * Suppression totale des styles en ligne (inline styles) et protection Anti-XSS stricte.
- */
 
 // SÉCURITÉ : Récupération et nettoyage du jeton CSRF transmis par le contrôleur
 $csrfToken = $data['csrf_token'] ?? '';
@@ -93,7 +88,7 @@ $csrfToken = $data['csrf_token'] ?? '';
                 </div>
 
                 <div class="checkbox-group">
-                    <input type="checkbox" id="newsletter" name="newsletter" value="1" checked>
+                    <input type="checkbox" id="newsletter" name="newsletter" value="1">
                     <label for="newsletter">S'abonner à la newsletter pour recevoir nos offres</label>
                 </div>
 

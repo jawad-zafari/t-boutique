@@ -1,10 +1,5 @@
 <?php
 
-/**
- * Modèle ModelRegister
- * Gère l'insertion sécurisée des utilisateurs dans la base de données.
- * Sécurité : PDO (Anti-Injection SQL), Hachage des mots de passe, Anti-XSS.
- */
 class ModelRegister extends Model 
 {
     public function __construct() 
@@ -12,11 +7,7 @@ class ModelRegister extends Model
         parent::__construct();
     }
     
-    /**
-     * Enregistre un nouvel utilisateur dans la base de données
-     * @param array $data Les données du formulaire
-     * @return bool Vrai si l'inscription réussit, faux si l'e-mail existe déjà
-     */
+
     public function insertUser(array $data): bool 
     {
         // Nettoyage de l'e-mail
@@ -28,7 +19,7 @@ class ModelRegister extends Model
         $mobile = htmlspecialchars(trim($data['mobile'] ?? ''), ENT_QUOTES, 'UTF-8');
         $newsletter = isset($data['newsletter']) ? 1 : 0;
         
-        // SÉCURITÉ CRITIQUE : Hachage robuste du mot de passe avec l'algorithme par défaut (bcrypt)
+        // Hachage robuste du mot de passe avec l'algorithme par défaut (bcrypt)
         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
         // Valeurs par défaut pour le profil d'un nouvel inscrit
@@ -42,13 +33,13 @@ class ModelRegister extends Model
         $city = '';
         $postalCode = '';
         
-        // Gestion de la date (Format standard MySQL)
+        // Gestion de la date 
         $createdAt = date('Y-m-d H:i:s'); 
         if (method_exists($this, 'getCurrentDate')) {
             $createdAt = self::getCurrentDate('Y-m-d H:i:s'); 
         }
 
-        // SÉCURITÉ : Vérification de l'existence de l'e-mail pour éviter les doublons (Requête préparée)
+        // Vérification de l'existence de l'e-mail pour éviter les doublons
         $sqlCheck = "SELECT id FROM users WHERE email = ?";
         $result = $this->doSelect($sqlCheck, [$email], 'fetch', PDO::FETCH_ASSOC);
 

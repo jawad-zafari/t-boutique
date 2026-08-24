@@ -27,19 +27,19 @@ class ModelLogin extends Model
             return false;
         }
 
-        // SÉCURITÉ : Prévention de l'injection SQL grâce aux requêtes préparées PDO
+        // Prévention de l'injection SQL grâce aux requêtes préparées PDO
         $sql = "SELECT id, password FROM users WHERE email = ?";
         $user = $this->doSelect($sql, [$email], 'fetch', PDO::FETCH_ASSOC);
 
-        // SÉCURITÉ : Vérification du mot de passe haché (bcrypt/argon2)
+        // Vérification du mot de passe haché 
         if ($user && password_verify($password, $user['password'])) {
             
             Model::sessionInit();
             
-            // SÉCURITÉ CRITIQUE : Régénération de l'ID de session contre la fixation de session
+            // Régénération de l'ID de session contre la fixation de session
             session_regenerate_id(true);
             
-            // SÉCURITÉ : Forçage du typage en entier (Integer Casting)
+            // Forçage du typage en entier
             Model::sessionSet('userId', (int)$user['id']);
             Model::sessionSet('loggedIn', true);
             
