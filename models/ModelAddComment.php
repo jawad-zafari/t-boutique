@@ -1,10 +1,4 @@
 <?php
-
-/**
- * Model ModelAddComment
- * Gère la logique des commentaires.
- * Sécurité Anti-XSS stricte et respect total du standard européen (Dates standardisées).
- */
 class ModelAddComment extends Model
 {
     public function __construct()
@@ -27,10 +21,9 @@ class ModelAddComment extends Model
         return $this->doSelect($sql, [(int)$categoryId]);
     }
 
-    /**
-     * Enregistre ou met à jour le commentaire
-     * Le $userId est fourni par le contrôleur (Règle MVC)
-     */
+    
+    //  * Enregistre ou met à jour le commentaire
+    
     public function saveComment($data, $productId, $userId)
     {
         // Sécurité : ne rien faire si l'utilisateur n'est pas valide
@@ -54,7 +47,7 @@ class ModelAddComment extends Model
         $negative = htmlspecialchars(trim($data['negative'] ?? ''), ENT_QUOTES, 'UTF-8');
         $comment = htmlspecialchars(trim($data['comment'] ?? ''), ENT_QUOTES, 'UTF-8');
         
-        // STANDARD DWWM : Utilisation de la date classique (pas de calendrier localisé)
+        // Utilisation de la date classique 
         date_default_timezone_set('Europe/Paris');
         $createdAt = date('Y-m-d H:i:s');
 
@@ -76,10 +69,9 @@ class ModelAddComment extends Model
         }
     }
 
-    /**
-     * Récupère les infos d'un commentaire existant pour un utilisateur
-     * Le $userId est fourni par le contrôleur (Règle MVC)
-     */
+    
+    //  * Récupère les infos d'un commentaire existant pour un utilisateur
+     
     public function commentInfo($productId, $userId)
     {
         $sql = "SELECT * FROM comments WHERE product_id = ? AND user_id = ?";

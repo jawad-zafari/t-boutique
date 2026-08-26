@@ -7,47 +7,46 @@ class Model
 
     public function __construct()
     {
+        // Chemin d'accès au fichier de configuration
         $envPath = __DIR__ . '/env.php';
 
+        // Vérification de l'existence du fichier de configuration
         if (file_exists($envPath)) {
             require_once $envPath;
         } else {
-            die("Erreur système : Le fichier de configuration 'core/env.php' est introuvable. Veuillez le créer à partir de env.example.php.");
+            die("Erreur : Le fichier de configuration 'core/env.php' est introuvable. Veuillez le créer à partir de env.example.php.");
         }
 
-        // Vérification de la définition de toutes les constantes requises
+        // Vérification des constantes requises pour la base de données
         if (!defined('DB_HOST') || !defined('DB_USER') || !defined('DB_PASS') || !defined('DB_NAME')) {
-            die("Erreur de sécurité : Les variables d'environnement pour la base de données sont incomplètes dans 'core/env.php'.");
+            die("Erreur : Les variables de connexion à la base de données sont incomplètes.");
         }
 
-        // Récupération des informations
         $servername = DB_HOST;
         $username   = DB_USER;
         $password   = DB_PASS;
         $dbname     = DB_NAME;
 
-        // Définition de la commande d'initialisation PDO
         $initCommand = defined('Pdo\Mysql::ATTR_INIT_COMMAND') ? \Pdo\Mysql::ATTR_INIT_COMMAND : \PDO::MYSQL_ATTR_INIT_COMMAND;
 
-        // Configuration des options PDO sécurisées
+        // Configuration des options PDO
         $attr = array(
             $initCommand => "SET NAMES utf8mb4",
             PDO::ATTR_EMULATE_PREPARES => false,
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
         );
 
-        // Initialisation du design pattern Singleton pour la connexion
+        // Initialisation de la connexion à la base de données (Singleton)
         if (self::$conn === null) {
             try {
                 self::$conn = new PDO('mysql:host=' . $servername . ';dbname=' . $dbname, $username, $password, $attr);
             } catch (PDOException $e) {
-                // Arrêt sécurisé sans exposer la trace de l'erreur SQL
-                die("Erreur critique : Connexion à la base de données refusée. Vérifiez vos identifiants dans 'core/env.php'.");
+                die("Erreur critique : Connexion à la base de données échouée. Vérifiez vos identifiants.");
             }
         }
     }
 
-    // Récupère les options/paramètres du système depuis la base de données
+    // Récupère les paramètres globaux du système depuis la base de données
     public static function getoption()
     {
         if (self::$conn === null) {
@@ -88,6 +87,7 @@ class Model
         return $products;
     }
 
+    // Exécute une requête SELECT de manière sécurisée
     public function doSelect($sql, $values = array(), $fetch = '', $fetchStyle = PDO::FETCH_ASSOC)
     {
         $stmt = self::$conn->prepare($sql);
@@ -104,7 +104,7 @@ class Model
         return $result;
     }
 
-    // Exécute une requête INSERT, UPDATE ou DELETE sécurisée
+    // Exécute une requête INSERT, UPDATE ou DELETE
     public function doQuery($sql, $values = array())
     {
         $stmt = self::$conn->prepare($sql);
@@ -114,9 +114,7 @@ class Model
         $stmt->execute();
     }
 
-   
-    //  Récupère le nombre de favoris pour un utilisateur
-     
+    // Récupère le nombre total de favoris pour un utilisateur spécifique
     public function getFavoriteCount($userId)
     {
         if (!$userId) {
@@ -129,8 +127,7 @@ class Model
         return isset($result['total']) ? (int)$result['total'] : 0;
     }
 
-    //  Redimensionne et génère une vignette d'image de manière sécurisée
-
+    // Redimensionne et sauvegarde une image
     public function create_thumbnail($file, $pathToSave, $w, $h = '', $crop = false)
     {
         if (!file_exists($file)) return false;
@@ -198,9 +195,7 @@ class Model
         return true;
     }
 
-   
-    //  Initialise la session PHP de manière propre et sécurisée
-     
+    // Gestion propre du démarrage de la session
     public static function sessionInit()
     {
         if (session_status() === PHP_SESSION_NONE) {
@@ -220,15 +215,13 @@ class Model
         return isset($_SESSION[$name]) ? $_SESSION[$name] : false;
     }
 
-    //  Génère un identifiant de panier cryptographiquement sécurisé et imprévisible
-
+    // Génère un identifiant unique pour le panier
     public static function getCartCookie()
     {
         if (isset($_COOKIE['cart']) && !empty($_COOKIE['cart'])) {
             return $_COOKIE['cart'];
         } else {
             $expire = time() + 7 * 24 * 3600;
-            // Utilisation de random_bytes au lieu de time() pour éviter la prédictibilité de session
             $value = bin2hex(random_bytes(16));
 
             setcookie('cart', $value, [
@@ -274,19 +267,15 @@ class Model
         return array($result, $priceTotalall, $discountTotalAll);
     }
 
-    
-    // Calcule les frais de livraison depuis la base de données
-     
+    // Calcule les frais de livraison (Méthodes locales uniquement)
     public function calculatePostPrice($cityId = 0)
     {
-        // Récupération dynamique des prix depuis la table shipping_methods
         $sql = "SELECT id, price FROM shipping_methods";
         $methods = $this->doSelect($sql);
         
-        // Valeurs par défaut sécurisées
         $prices = array(
             'express' => 5.00, 
-            'standard' => 0.00,
+            'standard' => 0.00
         );
 
         if (is_array($methods)) {
@@ -294,12 +283,10 @@ class Model
                 $id = (int)$method['id'];
                 $price = (float)$method['price'];
                 
-                if ($id === 1) { // 1 correspond généralement à la Livraison Express
+                if ($id === 1) { 
                     $prices['express'] = $price;
-                    $prices['pishtaz'] = $price;
-                } elseif ($id === 2) { // 2 correspond généralement à la Livraison Standard
+                } elseif ($id === 2) { 
                     $prices['standard'] = $price;
-                    $prices['sefareshi'] = $price;
                 }
             }
         }
@@ -307,17 +294,11 @@ class Model
         return $prices;
     }
 
-    
-    //   Formatage standard de la date actuelle
-     
     public static function getCurrentDate($format = 'Y-m-d H:i:s') 
     {
         return date($format);
     }
 
-   
-    // Traitement et normalisation d'une date pour la base de données
-    
     public static function formatDateForDB($dateStr, $format = '/')
     {
         try {
@@ -329,9 +310,6 @@ class Model
         }
     }
 
-    
-    //  Formatage d'une date standard pour l'affichage (JJ/MM/AAAA)
-     
     public static function formatDateForDisplay($dateStr, $format = '/')
     {
         try {

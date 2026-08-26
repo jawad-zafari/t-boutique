@@ -1,10 +1,4 @@
 <?php
-
-/**
- * Contrôleur Account
- * Gère l'espace client (Tableau de bord, profil, commandes, favoris).
- * Sécurité: Authentification stricte, vérification CSRF pour toutes les actions POST.
- */
 class Account extends Controller
 {
     public function __construct()
@@ -34,7 +28,6 @@ class Account extends Controller
         $userInfo = $this->model->getUserInfo($userId);
         $orders = $this->model->getOrders($userId);
         
-        // ARCHITECTURE MVC : Les calculs métiers sont réalisés dans le contrôleur
         $totalOrdersCount = count($orders);
         $totalSpent = 0;
         foreach($orders as $o) {
