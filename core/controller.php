@@ -1,10 +1,6 @@
 <?php
 
-/**
- * Classe Controller (Contrôleur de base)
- * Fournit les fonctionnalités communes : chargement des vues, gestion du CSRF et protection XSS.
- * Injecte automatiquement les données du Header pour respecter strictement l'architecture MVC.
- */
+
 class Controller
 {
     protected $model;
@@ -68,12 +64,8 @@ class Controller
         return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
     }
 
-    /**
-     * Charge une vue avec son layout et ses données
-     * ARCHITECTURE DWWM : Injection automatique des données globales pour le Header
-     * @param string $viewName Le nom du fichier vue (ex: 'index/index')
-     * @param array $data Les données à passer à la vue
-     */
+// Méthode responsable de l'affichage de l'ensemble des sections de la vue.
+
     public function view(string $viewName, array $data = []): void
     {
         $controllerName = get_class($this);
