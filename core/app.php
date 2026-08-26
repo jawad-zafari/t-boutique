@@ -61,11 +61,9 @@ class App
         }
     }
 
-    /**
-     * Nettoie et découpe l'URL passée en paramètre
-     * @param string $url L'URL brute
-     * @return array Tableau des segments de l'URL
-     */
+    
+    // Nettoie et découpe l'URL passée en paramètre
+     
     private function parseUrl($url)
     {
         $url = filter_var($url, FILTER_SANITIZE_URL);
